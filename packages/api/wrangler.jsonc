@@ -1,0 +1,43 @@
+{
+  "name": "bits-pay-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "send_email": [{ "name": "EMAIL" }],
+
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "bits-pay-db",
+    "database_id": ""
+  }],
+
+  "r2_buckets": [{
+    "binding": "R2",
+    "bucket_name": "bits-pay-proofs"
+  }],
+
+  "queues": {
+    "producers": [{ "binding": "CALLBACK_QUEUE", "queue": "payment-callback" }],
+    "consumers": [{ "queue": "payment-callback", "max_retries": 3, "max_batch_size": 10 }]
+  },
+
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+
+  "vars": {
+    "APP_URL": "https://pay.bits.co.id",
+    "FROM_EMAIL": "noreply@pay.bits.co.id",
+    "QRIS_STATIC": "",
+    "TRANSACTION_EXPIRE_MINUTES": "15",
+    "PREMIUM_PRICE_MONTHLY": "50000",
+    "PREMIUM_PRICE_YEARLY": "500000",
+    "GOOGLE_CLIENT_ID": "",
+    "GOOGLE_REDIRECT_URI": "https://pay.bits.co.id/auth/google/callback",
+    "JWT_EXPIRES_IN": "7d",
+    "OCR_CONFIDENCE_THRESHOLD": "85",
+    "MAX_UNIQUE_CODE": "9999",
+    "PROOF_RETENTION_DAYS": "30"
+  }
+}

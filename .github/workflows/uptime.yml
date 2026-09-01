@@ -1,0 +1,12 @@
+name: Uptime Monitor
+on:
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sSf https://api.pay.bits.co.id/health || echo "::warning::API down"
+          curl -sSf https://pay.bits.co.id/health || echo "::warning::Web down"

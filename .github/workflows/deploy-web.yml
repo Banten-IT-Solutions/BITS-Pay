@@ -1,0 +1,29 @@
+name: Deploy Web
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/web/**'
+      - 'packages/user/**'
+      - 'packages/admin/**'
+      - 'packages/web/wrangler.jsonc'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build -w packages/web
+      - run: npm run build -w packages/user
+      - run: npm run build -w packages/admin
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          command: deploy
+          workingDirectory: packages/web
