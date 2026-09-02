@@ -169,11 +169,11 @@ POST {app_callback_url}
 
 ```
 Content-Type: application/json
-X-BITS-Signature: hmac_sha256(secret, payload)
+X-BITS-Signature: <hex HMAC-SHA256>
 X-BITS-Event: payment.success
 ```
 
-**Payload:**
+**Payload (raw JSON string):**
 
 ```json
 {
@@ -198,6 +198,102 @@ X-BITS-Event: payment.success
 | payment.success | Pembayaran berhasil       |
 | payment.failed  | Pembayaran gagal / reject |
 | payment.expired | Transaksi expired         |
+
+#### Verifikasi Signature
+
+Setiap callback dikirim dengan header `X-BITS-Signature` yang berisi HMAC-SHA256 dari body request. **Wajib diverifikasi** untuk memastikan callback benar-benar dikirim oleh BITS Pay.
+
+**Header yang dikirim:**
+
+| Header             | Value                                |
+| ------------------ | ------------------------------------ |
+| `Content-Type`     | `application/json`                   |
+| `X-BITS-Signature` | Hex HMAC-SHA256 dari raw body string |
+| `X-BITS-Event`     | Nama event (mis. `payment.success`)  |
+
+**Algoritma signing:**
+
+```
+signature = HMAC-SHA256(secret, raw_body_string) → hex lowercase (64 karakter)
+```
+
+- **Input signing** = raw body string persis seperti yang diterima (bukan parsed object, bukan formatted ulang).
+- **Secret** = `callback_secret` milik app Anda. Jika `callback_secret` tidak di-set (row lama), fallback ke `api_key_hash` app.
+- **Output** = hex lowercase tanpa prefix (contoh: `a1b2c3d4e5...`, bukan `sha256=a1b2c3...`).
+
+> Algoritma ini identik dengan `signCallbackPayload()` di `packages/shared/src/utils/crypto.ts`.
+
+**Mendapatkan `callback_secret`:**
+
+`callback_secret` di-generate otomatis saat app dibuat (`POST /app/workspaces/:wid/apps`). Nilainya 64 karakter hex random. **Secret hanya ditampilkan sekali saat create app** (field ini tidak di-expose di response `GET` atau `UPDATE` app). Simpan di environment variable / secret manager sisi Anda.
+
+> Jika Anda tidak menyimpan `callback_secret` saat create, Anda perlu rotate atau buat app baru.
+
+**Langkah verifikasi (di sisi Anda):**
+
+1. Baca raw body sebagai string — **jangan parse JSON dulu**. Parsing mengubah urutan/spasi key, menghasilkan string berbeda dari yang di-sign.
+2. Hitung `HMAC-SHA256(callback_secret, raw_body_string)`.
+3. Bandingkan hasilnya dengan header `X-BITS-Signature` menggunakan **constant-time comparison** (timing-safe). Jangan pakai `===` biasa — rentan timing attack.
+4. Jika cocok → proses callback. Jika tidak → reject (HTTP 403).
+
+**Contoh verifikasi — Node.js / TypeScript (server-side):**
+
+```typescript
+import crypto from 'node:crypto';
+
+function verifySignature(rawBody: string, signatureHeader: string | null, secret: string): boolean {
+  if (!signatureHeader) return false;
+
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(rawBody);
+  const expected = hmac.digest('hex'); // hex lowercase, 64 karakter
+
+  // Constant-time comparison
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(expected, 'hex'),
+      Buffer.from(signatureHeader, 'hex'),
+    );
+  } catch {
+    return false; // panjang beda → langsung reject
+  }
+}
+```
+
+**Contoh handler — Hono / Cloudflare Worker:**
+
+```typescript
+app.post('/webhook/bits-pay', async (c) => {
+  const secret = c.env.BITS_CALLBACK_SECRET; // simpan di env/secret
+  const signature = c.req.header('X-BITS-Signature');
+  const event = c.req.header('X-BITS-Event');
+
+  // 1. Baca raw body (jangan .json())
+  const rawBody = await c.req.text();
+
+  // 2. Verifikasi signature
+  if (!verifySignature(rawBody, signature, secret)) {
+    return c.json({ error: 'Invalid signature' }, 403);
+  }
+
+  // 3. Baru parse payload
+  const payload = JSON.parse(rawBody);
+  console.log(`Event: ${event}, Order: ${payload.transaction.order_id}`);
+
+  // 4. Proses sesuai event
+  // ...
+
+  return c.json({ received: true }, 200);
+});
+```
+
+**Catatan keamanan:**
+
+- **Jangan log raw body** di production. Body berisi data transaksi, logging berlebihan melanggar keamanan data.
+- **Selalu pakai constant-time comparison** (`crypto.timingSafeEqual` di Node.js, `crypto.subtle.timingSafeEqual` atau manual XOR di Web Crypto). `===` biasa bocor via timing side-channel.
+- **Reject jika header `X-BITS-Signature` tidak ada.** Jangan skip verifikasi "untuk testing".
+- **Simpan `callback_secret` di secret manager** (Cloudflare Secrets, Vault, env var), bukan di kode sumber atau database yang di-log.
+- **URL callback harus HTTPS.** BITS Pay menolak HTTP URLs saat create/update app (SSRF defense).
 
 ### 4. Workspaces
 

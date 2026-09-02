@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quickstart — BITS Pay API</title>
+    <meta
+      name="description"
+      content="Quickstart integrasi BITS Pay API: buat charge, cek status, konfirmasi pembayaran."
+    />
+    <link rel="stylesheet" href="/docs/guides/style.css" />
+  </head>
+  <body>
+    <div class="topbar">
+      <a class="logo" href="/">BITS Pay</a>
+      <a href="/docs/">API Docs</a>
+      <span class="spacer"></span>
+      <a class="guide" href="/docs/guides/quickstart.html">Quickstart</a>
+      <a class="guide" href="/docs/guides/webhook.html">Webhook</a>
+    </div>
+    <main>
+      <h1>Quickstart</h1>
+      <p class="lead">
+        Integrasi BITS Pay dalam 3 langkah: buat charge, tampilkan QRIS, konfirmasi pembayaran.
+      </p>
+
+      <h2>0. Dapatkan API key</h2>
+      <p>
+        Daftar di dashboard, buat <strong>App</strong> di workspace kamu. API key
+        (<code>sk_...</code>) hanya ditampilkan <strong>sekali</strong> saat create/rotate — simpan
+        di tempat aman. Semua request <code>/v1/*</code> pakai header:
+      </p>
+      <pre><code>Authorization: Bearer sk_xxxxxxxxxxxxxxxx</code></pre>
+      <p>
+        Base URL: <code>https://api.pay.bits.co.id</code>. Response sukses selalu
+        <code>{ "success": true, "data": ... }</code>, error
+        <code>{ "success": false, "error": { "code", "message" } }</code>.
+      </p>
+
+      <h2>1. Buat charge (QRIS dinamis)</h2>
+      <div class="step">
+        <h3><span class="num">1</span>POST /v1/charges</h3>
+        <p>
+          Kirim <code>order_id</code> (unik per app, idempoten) dan <code>amount</code> (minimal Rp
+          100). API mengembalikan QRIS dinamis dengan <strong>kode unik</strong>:
+          <code>amount_due = amount × 10000 + unique_code</code>.
+        </p>
+      </div>
+      <pre><code>const res = await fetch('https://api.pay.bits.co.id/v1/charges', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer sk_xxxxxxxxxxxxxxxx',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    order_id: 'ORD-001',
+    amount: 150000,
+    description: 'Pembayaran invoice #001',
+  }),
+});
+const { success, data, error } = await res.json();
+if (!success) throw new Error(`${error.code}: ${error.message}`);
+
+console.log(data.amount_due);  // 1500000001
+console.log(data.qr_image);    // data:image/png;base64,...
+console.log(data.expired_at);  // batas bayar (default 15 menit)</code></pre>
+      <p>
+        Tampilkan <code>data.qr_image</code> sebagai <code>&lt;img src&gt;</code> ke pelanggan.
+        Pelanggan bayar nominal <strong>persis</strong> <code>amount_due</code>.
+      </p>
+
+      <h2>2. Cek status pembayaran</h2>
+      <div class="step">
+        <h3><span class="num">2</span>GET /v1/payments/:id</h3>
+        <p>
+          Poll status transaksi, atau terima update real-time via
+          <a href="/docs/guides/webhook.html">webhook</a>.
+        </p>
+      </div>
+      <pre><code>const res = await fetch(`https://api.pay.bits.co.id/v1/payments/${id}`, {
+  headers: { Authorization: 'Bearer sk_xxxxxxxxxxxxxxxx' },
+});
+const { data } = await res.json();
+// data.status: 'pending' | 'success' | 'failed' | 'expired' | 'pending_review'</code></pre>
+
+      <h2>3. Konfirmasi pembayaran</h2>
+      <div class="step">
+        <h3><span class="num">3</span>POST /v1/payments/:id/confirm</h3>
+        <p>
+          Kirim <code>multipart/form-data</code> berisi <code>amount</code> (harus sama persis
+          dengan <code>amount_due</code>) dan opsional <code>proof_image</code> (JPG/PNG, maks 5MB)
+          untuk auto-confirm via OCR.
+        </p>
+      </div>
+      <pre><code>const form = new FormData();
+form.append('amount', '1500000001');        // = amount_due
+form.append('proof_image', fileInput.files[0]); // opsional
+
+const res = await fetch(`https://api.pay.bits.co.id/v1/payments/${id}/confirm`, {
+  method: 'POST',
+  headers: { Authorization: 'Bearer sk_xxxxxxxxxxxxxxxx' },
+  body: form,
+});
+const { data } = await res.json();
+// HTTP 200 → data.status 'success' (auto_confirm)
+// HTTP 202 → 'pending_review' (OCR confidence rendah, direview admin)
+// HTTP 400 → 'failed' (nominal tidak cocok)</code></pre>
+
+      <h2>Error handling</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>HTTP</th>
+            <th>Arti</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>validation_error</code></td>
+            <td>400</td>
+            <td>Body tidak valid (cek <code>error.details</code>)</td>
+          </tr>
+          <tr>
+            <td><code>invalid_amount</code></td>
+            <td>400</td>
+            <td>Amount di bawah Rp 100</td>
+          </tr>
+          <tr>
+            <td><code>unauthorized</code></td>
+            <td>401</td>
+            <td>API key salah / app nonaktif</td>
+          </tr>
+          <tr>
+            <td><code>not_found</code></td>
+            <td>404</td>
+            <td>Transaksi tidak ditemukan</td>
+          </tr>
+          <tr>
+            <td><code>duplicate_order</code></td>
+            <td>409</td>
+            <td><code>order_id</code> sudah dipakai transaksi aktif</td>
+          </tr>
+          <tr>
+            <td><code>duplicate_hash</code></td>
+            <td>409</td>
+            <td>Bukti bayar sudah dipakai</td>
+          </tr>
+          <tr>
+            <td><code>expired</code></td>
+            <td>400</td>
+            <td>Transaksi kedaluwarsa</td>
+          </tr>
+          <tr>
+            <td><code>rate_limited</code></td>
+            <td>429</td>
+            <td>Rate limit / kuota tercapai</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        Rate limit per tier: Free 10 req/s, Premium 100 req/s. Cek header
+        <code>X-RateLimit-Remaining</code> dan <code>X-RateLimit-Reset</code>.
+      </div>
+      <p>
+        Lanjut: <a href="/docs/guides/webhook.html">Webhook &amp; verifikasi signature</a> ·
+        <a href="/docs/">Referensi API (Swagger)</a>
+      </p>
+    </main>
+  </body>
+</html>

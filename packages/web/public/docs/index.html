@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BITS Pay API — Dokumentasi</title>
+    <meta
+      name="description"
+      content="Dokumentasi API BITS Pay — QRIS payment gateway. Create charge, cek status, konfirmasi pembayaran."
+    />
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <style>
+      :root {
+        --brand: oklch(0.45 0.13 250);
+        --bg: oklch(0.99 0.005 80);
+        --text: oklch(0.2 0.01 80);
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .topbar {
+        background: var(--brand);
+        padding: 0.9rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .topbar a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+      .topbar .logo {
+        font-size: 1.15rem;
+        font-weight: 700;
+      }
+      .topbar .spacer {
+        flex: 1;
+      }
+      .topbar a.guide {
+        opacity: 0.9;
+        font-weight: 500;
+      }
+      .topbar a.guide:hover {
+        opacity: 1;
+        text-decoration: underline;
+      }
+      .swagger-ui .topbar {
+        display: none;
+      }
+      .swagger-ui {
+        color: var(--text);
+      }
+      .swagger-ui .info .title {
+        font-family: Inter, system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <a class="logo" href="/">BITS Pay</a>
+      <span style="color: #fff; opacity: 0.85; font-weight: 600">API Docs</span>
+      <span class="spacer"></span>
+      <a class="guide" href="/docs/guides/quickstart.html">Quickstart</a>
+      <a class="guide" href="/docs/guides/webhook.html">Webhook</a>
+    </div>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" crossorigin></script>
+    <script>
+      window.onload = () => {
+        window.ui = SwaggerUIBundle({
+          url: '/docs/openapi.json',
+          dom_id: '#swagger-ui',
+          deepLinking: true,
+          persistAuthorization: true,
+          displayRequestDuration: true,
+          tryItOutEnabled: true,
+        });
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Webhook — BITS Pay API</title>
+    <meta
+      name="description"
+      content="Webhook BITS Pay: event payment.success/failed/expired, verifikasi signature HMAC-SHA256."
+    />
+    <link rel="stylesheet" href="/docs/guides/style.css" />
+  </head>
+  <body>
+    <div class="topbar">
+      <a class="logo" href="/">BITS Pay</a>
+      <a href="/docs/">API Docs</a>
+      <span class="spacer"></span>
+      <a class="guide" href="/docs/guides/quickstart.html">Quickstart</a>
+      <a class="guide" href="/docs/guides/webhook.html">Webhook</a>
+    </div>
+    <main>
+      <h1>Webhook / Callback</h1>
+      <p class="lead">
+        BITS Pay mengirim HTTP POST ke <code>callback_url</code> app kamu setiap status pembayaran
+        berubah. Tidak perlu polling.
+      </p>
+
+      <h2>Setup</h2>
+      <p>
+        Isi <code>callback_url</code> saat membuat App di dashboard. BITS Pay menyimpan
+        <code>callback_secret</code> per app untuk menandatangani setiap payload.
+      </p>
+      <div class="note">
+        Fitur callback tunduk pada tier (<code>callback_allowed</code> di tier features). Tier free
+        bisa saja tidak mendapat callback — cek tier kamu di dashboard.
+      </div>
+
+      <h2>Request yang dikirim</h2>
+      <pre><code>POST {callback_url}
+Content-Type: application/json
+X-BITS-Signature: &lt;hmac-sha256-hex&gt;
+X-BITS-Event: payment.success</code></pre>
+      <p>Payload JSON:</p>
+      <pre><code>{
+  "event": "payment.success",
+  "transaction": {
+    "id": "9b1f2c3e-...",
+    "order_id": "ORD-001",
+    "amount": 150000,
+    "amount_due": 1500000001,
+    "status": "success",
+    "paid_at": "2026-09-02T12:32:00Z"
+  }
+}</code></pre>
+
+      <h2>Event</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Kapan dikirim</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>payment.success</code></td>
+            <td>Pembayaran terkonfirmasi (OCR auto / manual admin)</td>
+          </tr>
+          <tr>
+            <td><code>payment.failed</code></td>
+            <td>Pembayaran gagal / ditolak</td>
+          </tr>
+          <tr>
+            <td><code>payment.expired</code></td>
+            <td>Transaksi melewati <code>expired_at</code> tanpa pembayaran</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Verifikasi signature</h2>
+      <p>
+        <code>X-BITS-Signature</code> = HMAC-SHA256 hex dari <strong>raw body string</strong>,
+        dengan key <code>callback_secret</code> app kamu. Selalu verifikasi sebelum memproses
+        payload.
+      </p>
+      <pre><code>// Node.js / Workers (Web Crypto)
+async function verify(rawBody, signature, secret) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody));
+  const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  return hex === signature;
+}
+
+// Di handler webhook:
+const rawBody = await request.text();          // PENTING: raw string, bukan JSON.parse dulu
+const signature = request.headers.get('X-BITS-Signature');
+if (!(await verify(rawBody, signature, CALLBACK_SECRET))) {
+  return new Response('invalid signature', { status: 401 });
+}
+const payload = JSON.parse(rawBody);</code></pre>
+      <div class="note">
+        Signature dihitung dari body mentah apa adanya. Jangan re-serialize JSON sebelum verifikasi
+        — urutan key/spasi berbeda akan mengubah hash.
+      </div>
+
+      <h2>Retry</h2>
+      <p>
+        Jika endpoint kamu tidak merespons sukses (HTTP 2xx), callback masuk antrian retry dengan
+        backoff sampai <code>max_attempts</code> (per tier). Balas cepat dengan 2xx, proses berat
+        lakukan async. Handler kamu harus <strong>idempoten</strong> — event yang sama bisa dikirim
+        ulang.
+      </p>
+      <p>
+        <a href="/docs/guides/quickstart.html">&larr; Quickstart</a> ·
+        <a href="/docs/">Referensi API (Swagger)</a>
+      </p>
+    </main>
+  </body>
+</html>

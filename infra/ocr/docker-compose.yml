@@ -1,0 +1,26 @@
+services:
+  ocr:
+    build: .
+    image: bits-pay-ocr:latest
+    ports:
+      - '8080:8080'
+    environment:
+      # Kosongkan OCR_API_KEY = tanpa auth (hanya untuk jaringan privat).
+      OCR_API_KEY: ${OCR_API_KEY:-}
+      PORT: 8080
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - 'import os,urllib.request;urllib.request.urlopen(f"http://localhost:{os.environ.get(''PORT'',''8080'')}/healthz")'
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
