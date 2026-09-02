@@ -5,7 +5,6 @@ import { AppError } from '../lib/errors';
 
 const WINDOW_MS = 1000;
 const PUBLIC_LIMIT = 10;
-const API_LIMIT = 10;
 const USER_LIMITS: Record<string, number> = { free: 10, premium: 100 };
 
 interface CheckResult {
@@ -58,7 +57,8 @@ export const userRateLimit = build((c) => {
   return { key: `user:${user.id}`, limit: USER_LIMITS[user.tier] ?? USER_LIMITS.free };
 });
 
-// Route /v1: per app.
-// ponytail: limit hardcoded; ceiling = tier_features.api_rate_limit per workspace.
-// Upgrade path: baca tier_features di requireApiKey, pass via context.
-export const apiRateLimit = build((c) => ({ key: `app:${c.get('app').id}`, limit: API_LIMIT }));
+// Route /v1: per app, limit from tier_features.api_rate_limit.
+export const apiRateLimit = build((c) => {
+  const app = c.get('app');
+  return { key: `app:${app.id}`, limit: app.api_rate_limit };
+});

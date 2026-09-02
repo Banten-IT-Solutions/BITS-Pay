@@ -1,9 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-
-interface Bucket {
-  count: number;
-  reset: number;
-}
+import { tickBucket, type RateBucket } from './window';
 
 interface CheckRequest {
   key: string;
@@ -14,18 +10,14 @@ interface CheckRequest {
 // Fixed-window rate limiter. State in-memory per DO instance (soft limit —
 // DO restart boleh reset counter). Di-shard via idFromName(key).
 export class RateLimiter extends DurableObject {
-  private buckets = new Map<string, Bucket>();
+  private buckets = new Map<string, RateBucket>();
 
   async fetch(request: Request): Promise<Response> {
     const { key, limit, windowMs } = (await request.json()) as CheckRequest;
     const now = Date.now();
 
-    let bucket = this.buckets.get(key);
-    if (!bucket || now >= bucket.reset) {
-      bucket = { count: 0, reset: now + windowMs };
-      this.buckets.set(key, bucket);
-    }
-    bucket.count += 1;
+    const result = tickBucket(this.buckets.get(key), now, windowMs, limit);
+    this.buckets.set(key, result.bucket);
 
     // Guard memory growth — shard per key, tapi tetap jaga-jaga
     if (this.buckets.size > 1000) {
@@ -35,8 +27,10 @@ export class RateLimiter extends DurableObject {
       if (this.buckets.size > 1000) this.buckets.clear();
     }
 
-    const allowed = bucket.count <= limit;
-    const remaining = Math.max(0, limit - bucket.count);
-    return Response.json({ allowed, remaining, reset: bucket.reset });
+    return Response.json({
+      allowed: result.allowed,
+      remaining: result.remaining,
+      reset: result.bucket.reset,
+    });
   }
 }
