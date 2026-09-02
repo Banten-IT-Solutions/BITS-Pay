@@ -9,9 +9,10 @@ import { reportsRoute } from './reports';
 import { tierFeaturesRoute } from './tier-features';
 import { requireAuth } from '../../middleware/auth';
 import { requireAdmin } from '../../middleware/admin';
+import { userRateLimit } from '../../middleware/rate-limit';
 
 const router = new Hono();
-router.use('*', requireAuth, requireAdmin);
+router.use('*', requireAuth, requireAdmin, userRateLimit);
 router.route('/overview', overviewRoute);
 router.route('/payments', adminPaymentsRoute);
 router.route('/users', adminUsersRoute);

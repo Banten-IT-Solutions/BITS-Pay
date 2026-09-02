@@ -9,12 +9,12 @@ import { billingRoutes } from './routes/billing';
 import { CallbackService } from './services/callback';
 import { SubscriptionService } from './services/subscription';
 import { corsMiddleware } from './middleware/cors';
-import { rateLimit } from './middleware/rate-limit';
+import { publicRateLimit } from './middleware/rate-limit';
 
 const app = new Hono<{ Bindings: Env }>();
 
 app.use('*', corsMiddleware());
-app.use('*', rateLimit);
+app.use('/auth/*', publicRateLimit);
 app.onError(errorHandler);
 
 app.route('/auth', authRoutes);
@@ -26,6 +26,8 @@ app.route('/billing', billingRoutes);
 app.get('/health', (c) => c.json({ success: true, data: { status: 'ok' } }));
 
 export default app;
+
+export { RateLimiter } from './durable/rate-limiter';
 
 export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
   ctx.waitUntil(

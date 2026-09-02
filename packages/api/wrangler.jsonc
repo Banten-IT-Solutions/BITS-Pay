@@ -14,11 +14,9 @@
     },
   ],
 
-  "ai": [
-    {
-      "binding": "AI",
-    },
-  ],
+  "ai": {
+    "binding": "AI",
+  },
 
   "r2_buckets": [
     {
@@ -31,6 +29,12 @@
     "producers": [{ "binding": "CALLBACK_QUEUE", "queue": "payment-callback" }],
     "consumers": [{ "queue": "payment-callback", "max_retries": 3, "max_batch_size": 10 }],
   },
+
+  "durable_objects": {
+    "bindings": [{ "name": "RATE_LIMITER", "class_name": "RateLimiter" }],
+  },
+
+  "migrations": [{ "tag": "v1", "new_classes": ["RateLimiter"] }],
 
   "triggers": {
     "crons": ["*/5 * * * *"],

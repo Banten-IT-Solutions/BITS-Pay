@@ -8,9 +8,11 @@ import Payments from './routes/Payments.svelte';
 import PaymentDetail from './routes/PaymentDetail.svelte';
 import Subscription from './routes/Subscription.svelte';
 import Invoices from './routes/Invoices.svelte';
+import OAuthCallback from './routes/OAuthCallback.svelte';
 
 const routes: RouteDefinition = {
   '/login': Login,
+  '/auth/callback': OAuthCallback,
   '/': Overview,
   '/workspaces': Workspaces,
   '/workspaces/:id': WorkspaceDetail,

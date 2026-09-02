@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import type { Env } from '../../config';
 import { requireApiKey } from '../../middleware/api-key';
+import { apiRateLimit } from '../../middleware/rate-limit';
 import { validateBody } from '../../lib/validate';
 import { success } from '../../lib/response';
 import { PaymentService, chargeSchema } from '../../services/payment';
 
 const router = new Hono<{ Bindings: Env }>();
-router.use('*', requireApiKey);
+router.use('*', requireApiKey, apiRateLimit);
 
 router.post('/charges', async (c) => {
   const app = c.get('app');

@@ -1,6 +1,7 @@
 import type { Payment, Invoice } from '@bits-pay/shared';
 import type { Env } from '../config';
 import { EmailService } from './email';
+import { EmailTemplateService } from './email-template';
 
 export class SubscriptionService {
   static async activateFromInvoice(env: Env, paymentId: string): Promise<void> {
@@ -47,6 +48,7 @@ export class SubscriptionService {
   }
 
   static async sendInvoiceReminders(env: Env): Promise<void> {
+    const tpl = await EmailTemplateService.get(env, 'email_template_invoice_reminder');
     const { results: dueSoon3 } = await env.DB.prepare(
       "SELECT * FROM invoices WHERE status = 'pending' AND reminder_sent_3 = 0 AND due_at > datetime('now') AND due_at <= datetime('now', '+3 days')",
     ).all<Invoice>();
@@ -60,7 +62,15 @@ export class SubscriptionService {
       const appUrl = env.APP_URL || 'https://pay.bits.co.id';
       const fmtAmount = inv.amount_due.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       const dueDate = inv.due_at.slice(0, 10);
-      const text = `Halo ${user.name},\n\nIni pengingat bahwa invoice subscription kamu sebesar Rp ${fmtAmount} akan jatuh tempo pada ${dueDate}.\n\nSilakan lakukan pembayaran melalui dashboard:\n${appUrl}/billing/invoices/${inv.id}\n\nTerima kasih,\nBITS Pay`;
+      const invoiceUrl = `${appUrl}/billing/invoices/${inv.id}`;
+      const defaultText = `Halo ${user.name},\n\nIni pengingat bahwa invoice subscription kamu sebesar Rp ${fmtAmount} akan jatuh tempo pada ${dueDate}.\n\nSilakan lakukan pembayaran melalui dashboard:\n${invoiceUrl}\n\nTerima kasih,\nBITS Pay`;
+      const text =
+        EmailTemplateService.render(tpl, {
+          name: user.name,
+          amount: fmtAmount,
+          due_date: dueDate,
+          invoice_url: invoiceUrl,
+        }) || defaultText;
 
       try {
         await EmailService.send(env, {
@@ -89,7 +99,15 @@ export class SubscriptionService {
       const appUrl = env.APP_URL || 'https://pay.bits.co.id';
       const fmtAmount = inv.amount_due.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       const dueDate = inv.due_at.slice(0, 10);
-      const text = `Halo ${user.name},\n\nIni pengingat terakhir! Invoice subscription kamu sebesar Rp ${fmtAmount} akan jatuh tempo besok (${dueDate}).\n\nSegera lakukan pembayaran melalui dashboard:\n${appUrl}/billing/invoices/${inv.id}\n\nTerima kasih,\nBITS Pay`;
+      const invoiceUrl = `${appUrl}/billing/invoices/${inv.id}`;
+      const defaultText = `Halo ${user.name},\n\nIni pengingat terakhir! Invoice subscription kamu sebesar Rp ${fmtAmount} akan jatuh tempo besok (${dueDate}).\n\nSegera lakukan pembayaran melalui dashboard:\n${invoiceUrl}\n\nTerima kasih,\nBITS Pay`;
+      const text =
+        EmailTemplateService.render(tpl, {
+          name: user.name,
+          amount: fmtAmount,
+          due_date: dueDate,
+          invoice_url: invoiceUrl,
+        }) || defaultText;
 
       try {
         await EmailService.send(env, {

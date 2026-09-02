@@ -18,6 +18,19 @@ export const emailTemplatesSchema = z.object({
 type EmailTemplatesInput = z.infer<typeof emailTemplatesSchema>;
 
 export class EmailTemplateService {
+  /** Render {{key}} placeholders. Template kosong/undefined = caller pakai default. */
+  static render(tpl: string | null | undefined, vars: Record<string, string>): string {
+    if (!tpl) return '';
+    return tpl.replace(/\{\{(\w+)\}\}/g, (m, key: string) => vars[key] ?? m);
+  }
+
+  static async get(env: Env, key: string): Promise<string> {
+    const row = await env.DB.prepare('SELECT value FROM config WHERE key = ?')
+      .bind(key)
+      .first<{ value: string }>();
+    return row?.value ?? '';
+  }
+
   static async getAll(env: Env): Promise<EmailTemplates> {
     const { results } = await env.DB.prepare(
       "SELECT key, value FROM config WHERE key IN ('email_template_verify', 'email_template_reset', 'email_template_invoice_reminder')",

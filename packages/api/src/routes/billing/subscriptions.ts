@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import type { Env } from '../../config';
 import { requireAuth } from '../../middleware/auth';
+import { userRateLimit } from '../../middleware/rate-limit';
 import { validateBody } from '../../lib/validate';
 import { success } from '../../lib/response';
 import { BillingService, upgradeSchema } from '../../services/billing';
 
 const router = new Hono<{ Bindings: Env }>();
-router.use('*', requireAuth);
+router.use('*', requireAuth, userRateLimit);
 
 router.post('/upgrade', async (c) => {
   const user = c.get('user');

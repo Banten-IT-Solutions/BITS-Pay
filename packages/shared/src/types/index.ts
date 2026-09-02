@@ -23,6 +23,7 @@ export interface User {
   phone_verified: number; // 0 | 1
   google_id: string | null;
   last_login_at: string | null;
+  token_version: number;
   created_at: string;
   updated_at: string;
 }
@@ -109,13 +110,14 @@ export interface App {
   name: string;
   api_key_hash: string;
   api_key_prefix: string;
+  callback_secret: string | null;
   callback_url: string | null;
   is_active: number; // 0 | 1
   created_at: string;
   updated_at: string;
 }
 
-export interface AppPublic extends Omit<App, 'api_key_hash'> {
+export interface AppPublic extends Omit<App, 'api_key_hash' | 'callback_secret'> {
   api_key?: string; // hanya muncul saat create/rotate
 }
 

@@ -2,11 +2,12 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { Env } from '../../config';
 import { requireAuth } from '../../middleware/auth';
+import { userRateLimit } from '../../middleware/rate-limit';
 import { success, paginated } from '../../lib/response';
 import { BillingService } from '../../services/billing';
 
 const router = new Hono<{ Bindings: Env }>();
-router.use('*', requireAuth);
+router.use('*', requireAuth, userRateLimit);
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

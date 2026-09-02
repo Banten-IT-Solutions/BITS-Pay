@@ -2,13 +2,14 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { Env } from '../../config';
 import { requireApiKey } from '../../middleware/api-key';
+import { apiRateLimit } from '../../middleware/rate-limit';
 import { success } from '../../lib/response';
 import { AppError } from '../../lib/errors';
 import { validateProofFile } from '../../lib/upload';
 import { PaymentService } from '../../services/payment';
 
 const router = new Hono<{ Bindings: Env }>();
-router.use('*', requireApiKey);
+router.use('*', requireApiKey, apiRateLimit);
 
 const confirmAmountSchema = z.object({
   amount: z.coerce.number().int().min(100),

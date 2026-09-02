@@ -46,11 +46,12 @@ export class CallbackService {
       return;
     }
 
-    const app = await env.DB.prepare('SELECT api_key_hash FROM apps WHERE id = ?')
+    const app = await env.DB.prepare('SELECT callback_secret, api_key_hash FROM apps WHERE id = ?')
       .bind(callback.app_id)
-      .first<{ api_key_hash: string }>();
+      .first<{ callback_secret: string | null; api_key_hash: string }>();
 
-    const secret = app?.api_key_hash ?? '';
+    // Backward-compat: row lama callback_secret NULL → pakai api_key_hash.
+    const secret = app ? (app.callback_secret ?? app.api_key_hash) : '';
     const signature = await signCallbackPayload(callback.payload, secret);
 
     const attempt = callback.attempt + 1;

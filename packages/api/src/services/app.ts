@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { generateApiKey, type AppPublic, type MemberRole, type UserTier } from '@bits-pay/shared';
+import {
+  generateApiKey,
+  generateToken,
+  type AppPublic,
+  type MemberRole,
+  type UserTier,
+} from '@bits-pay/shared';
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { validateCallbackUrl } from '../lib/ssrf';
@@ -69,11 +75,12 @@ export class AppService {
     TierService.checkLimit('max_apps', existing.length, features.max_apps);
 
     const { key, prefix, hash } = await generateApiKey();
+    const callbackSecret = generateToken(32);
     const id = crypto.randomUUID();
     const app = await env.DB.prepare(
-      'INSERT INTO apps (id, workspace_id, name, api_key_hash, api_key_prefix, callback_url) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, workspace_id, name, api_key_prefix, callback_url, is_active, created_at, updated_at',
+      'INSERT INTO apps (id, workspace_id, name, api_key_hash, api_key_prefix, callback_url, callback_secret) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, workspace_id, name, api_key_prefix, callback_url, is_active, created_at, updated_at',
     )
-      .bind(id, workspaceId, input.name, hash, prefix, callbackUrl)
+      .bind(id, workspaceId, input.name, hash, prefix, callbackUrl, callbackSecret)
       .first<AppPublic>();
     if (!app) throw AppError.internal('Gagal membuat app');
 

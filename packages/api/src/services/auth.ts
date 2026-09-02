@@ -10,6 +10,7 @@ import {
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { EmailService } from './email';
+import { EmailTemplateService } from './email-template';
 
 export const signupSchema = z.object({
   email: z.email('Email tidak valid'),
@@ -59,15 +60,22 @@ export class AuthService {
       .run();
 
     const verifyUrl = `${env.APP_URL}/verify-email?token=${token}`;
+    const tpl = await EmailTemplateService.get(env, 'email_template_verify');
+    const defaultText = `Halo ${input.name}, verifikasi email kamu: ${verifyUrl}`;
+    const text =
+      EmailTemplateService.render(tpl, { name: input.name, verify_url: verifyUrl }) || defaultText;
     await EmailService.send(env, {
       to: input.email,
       subject: 'Verifikasi Email BITS Pay',
-      text: `Halo ${input.name}, verifikasi email kamu: ${verifyUrl}`,
-      html: `<p>Halo ${input.name},</p><p>Klik <a href="${verifyUrl}">di sini</a> untuk verifikasi email.</p>`,
+      text,
+      html:
+        text === defaultText
+          ? `<p>Halo ${input.name},</p><p>Klik <a href="${verifyUrl}">di sini</a> untuk verifikasi email.</p>`
+          : undefined,
     }).catch(() => {});
 
     const jwt = await signJWT(
-      { id: user.id, email: user.email, tier: user.tier },
+      { id: user.id, email: user.email, tier: user.tier, token_version: 0 },
       env.JWT_SECRET,
       env.JWT_EXPIRES_IN,
     );
@@ -80,7 +88,7 @@ export class AuthService {
     input: z.infer<typeof loginSchema>,
   ): Promise<{ user: UserPublic; token: string }> {
     const user = await env.DB.prepare(
-      'SELECT id, email, password_hash, name, avatar_url, tier, status FROM users WHERE email = ?',
+      'SELECT id, email, password_hash, name, avatar_url, tier, status, token_version FROM users WHERE email = ?',
     )
       .bind(input.email)
       .first<User & { password_hash: string | null }>();
@@ -99,7 +107,7 @@ export class AuthService {
       .run();
 
     const jwt = await signJWT(
-      { id: user.id, email: user.email, tier: user.tier },
+      { id: user.id, email: user.email, tier: user.tier, token_version: user.token_version },
       env.JWT_SECRET,
       env.JWT_EXPIRES_IN,
     );
@@ -148,11 +156,18 @@ export class AuthService {
       .run();
 
     const resetUrl = `${env.APP_URL}/reset-password?token=${token}`;
+    const tpl = await EmailTemplateService.get(env, 'email_template_reset');
+    const defaultText = `Halo ${user.name}, reset password kamu: ${resetUrl}`;
+    const text =
+      EmailTemplateService.render(tpl, { name: user.name, reset_url: resetUrl }) || defaultText;
     await EmailService.send(env, {
       to: email,
       subject: 'Reset Password BITS Pay',
-      text: `Halo ${user.name}, reset password kamu: ${resetUrl}`,
-      html: `<p>Halo ${user.name},</p><p>Klik <a href="${resetUrl}">di sini</a> untuk reset password.</p>`,
+      text,
+      html:
+        text === defaultText
+          ? `<p>Halo ${user.name},</p><p>Klik <a href="${resetUrl}">di sini</a> untuk reset password.</p>`
+          : undefined,
     }).catch(() => {});
   }
 
@@ -200,7 +215,7 @@ export class AuthService {
     env: Env,
     code: string,
     state: string | undefined,
-  ): Promise<{ user: UserPublic; token: string; isNew: boolean }> {
+  ): Promise<{ code: string; isNew: boolean }> {
     if (!state) throw AppError.badRequest('google_auth_failed', 'State OAuth tidak ditemukan');
     const st = await env.DB.prepare('SELECT id, used, expires_at FROM oauth_states WHERE state = ?')
       .bind(state)
@@ -252,27 +267,66 @@ export class AuthService {
       )
         .bind(googleUser.id, existing.id)
         .run();
-      const jwt = await signJWT(
-        { id: existing.id, email: existing.email, tier: existing.tier },
-        env.JWT_SECRET,
-        env.JWT_EXPIRES_IN,
-      );
-      return { user: existing, token: jwt, isNew: false };
+      const authCode = await createAuthCode(env, existing.id);
+      return { code: authCode, isNew: false };
     }
 
     const id = crypto.randomUUID();
     const user = await env.DB.prepare(
-      'INSERT INTO users (id, email, name, avatar_url, google_id, email_verified) VALUES (?, ?, ?, ?, ?, 1) RETURNING id, email, name, avatar_url, tier, status',
+      'INSERT INTO users (id, email, name, avatar_url, google_id, email_verified) VALUES (?, ?, ?, ?, ?, 1) RETURNING id',
     )
       .bind(id, googleUser.email, googleUser.name, googleUser.picture, googleUser.id)
-      .first<UserPublic>();
+      .first<{ id: string }>();
     if (!user) throw AppError.internal('Gagal membuat user');
 
-    const jwt = await signJWT(
-      { id: user.id, email: user.email, tier: user.tier },
+    const authCode = await createAuthCode(env, user.id);
+    return { code: authCode, isNew: true };
+  }
+
+  static async exchangeCode(env: Env, code: string): Promise<{ user: UserPublic; token: string }> {
+    const row = await env.DB.prepare(
+      'SELECT id, user_id, expires_at, used FROM auth_codes WHERE code = ?',
+    )
+      .bind(code)
+      .first<{ id: string; user_id: string; expires_at: string; used: number }>();
+    if (!row) throw AppError.unauthorized('Kode tidak valid');
+    if (row.used) throw AppError.unauthorized('Kode sudah digunakan');
+    if (new Date(row.expires_at) < new Date()) {
+      throw AppError.unauthorized('Kode sudah kadaluarsa');
+    }
+    await env.DB.prepare('UPDATE auth_codes SET used = 1 WHERE id = ?').bind(row.id).run();
+
+    const user = await env.DB.prepare(
+      'SELECT id, email, name, avatar_url, tier, status, token_version FROM users WHERE id = ?',
+    )
+      .bind(row.user_id)
+      .first<User>();
+    if (!user || user.status !== 'active') throw AppError.unauthorized('Akun tidak aktif');
+
+    const token = await signJWT(
+      { id: user.id, email: user.email, tier: user.tier, token_version: user.token_version },
       env.JWT_SECRET,
       env.JWT_EXPIRES_IN,
     );
-    return { user, token: jwt, isNew: true };
+    const publicUser: UserPublic = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar_url: user.avatar_url,
+      tier: user.tier,
+      status: user.status,
+    };
+    return { user: publicUser, token };
   }
+}
+
+async function createAuthCode(env: Env, userId: string): Promise<string> {
+  const code = generateToken(32);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  await env.DB.prepare(
+    'INSERT INTO auth_codes (id, user_id, code, expires_at, used) VALUES (?, ?, ?, ?, 0)',
+  )
+    .bind(crypto.randomUUID(), userId, code, expiresAt)
+    .run();
+  return code;
 }

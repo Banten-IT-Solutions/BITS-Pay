@@ -5,6 +5,7 @@ export interface Env {
   EMAIL: SendEmail;
   AI: Ai;
   CALLBACK_QUEUE: Queue<unknown>;
+  RATE_LIMITER: DurableObjectNamespace;
   APP_URL: string;
   FROM_EMAIL: string;
   QRIS_STATIC: string;

@@ -11,17 +11,19 @@
 
   let initialized = $state(false);
 
+  const PUBLIC_PATHS = ['/login', '/', '/auth/callback'];
+
   onMount(async () => {
     await auth.init();
     initialized = true;
-    if (!$auth.token && router.location !== '/login' && router.location !== '/') {
+    if (!$auth.token && !PUBLIC_PATHS.includes(router.location)) {
       push('/login');
     }
   });
 
   function handleRouteLoaded(detail: RouteDetailLoaded) {
     if (!initialized) return;
-    if (!$auth.token && detail.location !== '/login' && detail.location !== '/') {
+    if (!$auth.token && !PUBLIC_PATHS.includes(detail.location)) {
       push('/login');
     }
   }
