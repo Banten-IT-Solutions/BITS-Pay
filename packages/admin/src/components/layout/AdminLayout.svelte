@@ -9,6 +9,11 @@
     { href: '/payments', icon: '&#128179;', label: 'Payments' },
     { href: '/review', icon: '&#128269;', label: 'Review Queue' },
     { href: '/users', icon: '&#128101;', label: 'Users' },
+    { href: '/callbacks', icon: '&#128260;', label: 'Callbacks' },
+    { href: '/audit-logs', icon: '&#128221;', label: 'Audit Logs' },
+    { href: '/reports', icon: '&#128200;', label: 'Reports' },
+    { href: '/tier-features', icon: '&#127912;', label: 'Tier Features' },
+    { href: '/settings', icon: '&#9881;', label: 'Settings' },
   ];
 
   function isActive(href: string) {

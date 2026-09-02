@@ -23,7 +23,7 @@ router.get('/', async (c) => {
 
 router.put('/:id', async (c) => {
   const input = await validateBody(c, updateUserSchema);
-  const user = await AdminService.updateUser(c.env, c.req.param('id'), input);
+  const user = await AdminService.updateUser(c.env, c.req.param('id'), c.get('user').id, input);
   return success(c, user);
 });
 

@@ -58,7 +58,7 @@ export class CallbackService {
 
       if (status === 'success') {
         await env.DB.prepare(
-          "UPDATE callbacks SET status = ?, response_code = ?, response_body = ?, attempt = ?, updated_at = datetime('now') WHERE id = ?",
+          'UPDATE callbacks SET status = ?, response_code = ?, response_body = ?, attempt = ? WHERE id = ?',
         )
           .bind('success', resp.status, responseBody, attempt, callbackId)
           .run();
@@ -71,7 +71,7 @@ export class CallbackService {
             : null;
 
         await env.DB.prepare(
-          "UPDATE callbacks SET status = ?, response_code = ?, response_body = ?, attempt = ?, next_retry_at = ?, last_error = ?, updated_at = datetime('now') WHERE id = ?",
+          'UPDATE callbacks SET status = ?, response_code = ?, response_body = ?, attempt = ?, next_retry_at = ?, last_error = ? WHERE id = ?',
         )
           .bind(
             nextStatus,
@@ -95,7 +95,7 @@ export class CallbackService {
       const errMsg = err instanceof Error ? err.message : String(err);
 
       await env.DB.prepare(
-        "UPDATE callbacks SET status = ?, attempt = ?, next_retry_at = ?, last_error = ?, updated_at = datetime('now') WHERE id = ?",
+        'UPDATE callbacks SET status = ?, attempt = ?, next_retry_at = ?, last_error = ? WHERE id = ?',
       )
         .bind(nextStatus, attempt, nextRetryAt, errMsg, callbackId)
         .run();

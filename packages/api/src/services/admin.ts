@@ -4,6 +4,7 @@ import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { CallbackService } from './callback';
 import { SubscriptionService } from './subscription';
+import { AuditService } from './audit';
 
 export const updateUserSchema = z.object({
   tier: z.enum(['free', 'premium']).optional(),
@@ -117,6 +118,13 @@ export class AdminService {
       .first<Payment>();
     if (!updated) throw AppError.internal('Gagal konfirmasi payment');
 
+    await AuditService.log(env, {
+      userId: adminId,
+      action: 'admin.confirm_payment',
+      entityType: 'payment',
+      entityId: paymentId,
+    });
+
     await SubscriptionService.activateFromInvoice(env, paymentId);
 
     if (payment.app_id) {
@@ -162,6 +170,13 @@ export class AdminService {
       .bind(adminId, paymentId)
       .first<Payment>();
     if (!updated) throw AppError.internal('Gagal reject payment');
+
+    await AuditService.log(env, {
+      userId: adminId,
+      action: 'admin.reject_payment',
+      entityType: 'payment',
+      entityId: paymentId,
+    });
 
     if (payment.app_id) {
       const app = await env.DB.prepare('SELECT id, callback_url FROM apps WHERE id = ?')
@@ -212,6 +227,7 @@ export class AdminService {
   static async updateUser(
     env: Env,
     userId: string,
+    adminId: string,
     input: z.infer<typeof updateUserSchema>,
   ): Promise<UserPublic> {
     const user = await env.DB.prepare(
@@ -231,6 +247,13 @@ export class AdminService {
       .bind(tier, status, name, userId)
       .first<UserPublic>();
     if (!updated) throw AppError.internal('Gagal update user');
+
+    await AuditService.log(env, {
+      userId: adminId,
+      action: 'admin.update_user',
+      entityType: 'user',
+      entityId: userId,
+    });
     return updated;
   }
 }

@@ -231,6 +231,30 @@ PUT /app/workspaces/:id
 DELETE /app/workspaces/:id
 ```
 
+#### List Members
+
+```
+GET /app/workspaces/:wid/members
+```
+
+#### Add Member
+
+```
+POST /app/workspaces/:wid/members
+```
+
+#### Update Member Role
+
+```
+PUT /app/workspaces/:wid/members/:id
+```
+
+#### Remove Member
+
+```
+DELETE /app/workspaces/:wid/members/:id
+```
+
 ### 5. Apps
 
 #### List Apps
@@ -354,6 +378,191 @@ GET /admin/settings/ocr
 PUT /admin/settings/ocr
 POST /admin/settings/ocr/test
 ```
+
+### 9. Admin Tools (Sprint 3)
+
+> Semua endpoint butuh `Authorization: Bearer <admin JWT>`. Admin diidentifikasi via `ADMIN_EMAILS` (wrangler vars).
+
+#### List Callbacks
+
+```
+GET /admin/callbacks
+```
+
+**Query:** `page`, `per_page`, `status`
+
+> Response paginated `callbacks` dengan meta `{ page, per_page, total }`.
+
+#### Retry Callback
+
+```
+POST /admin/callbacks/:id/retry
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "pending",
+    "attempt": 1
+  }
+}
+```
+
+#### Get OCR Settings
+
+```
+GET /admin/settings/ocr
+```
+
+**Response (200):**
+
+```json
+{
+  "ocr_provider": "workers-ai",
+  "vps_ocr_url": "",
+  "vps_ocr_api_key": ""
+}
+```
+
+> `ocr_provider`: `workers-ai` | `tesseract-vps`.
+
+#### Update OCR Settings
+
+```
+PUT /admin/settings/ocr
+```
+
+**Request:**
+
+```json
+{
+  "ocr_provider": "tesseract-vps",
+  "vps_ocr_url": "http://...",
+  "vps_ocr_api_key": "..."
+}
+```
+
+> `vps_ocr_url` dan `vps_ocr_api_key` opsional.
+
+#### Test OCR
+
+```
+POST /admin/settings/ocr/test
+```
+
+**Request (multipart/form-data):**
+
+```
+proof_image: File
+```
+
+**Response (200):**
+
+```json
+{
+  "amount": 150000,
+  "confidence": 91,
+  "merchant": "Toko X",
+  "rawText": "...",
+  "provider": "workers-ai"
+}
+```
+
+#### Get Email Templates
+
+```
+GET /admin/settings/email-templates
+```
+
+**Response (200):**
+
+```json
+{
+  "verify": "...",
+  "reset": "...",
+  "invoice_reminder": "..."
+}
+```
+
+#### Update Email Templates
+
+```
+PUT /admin/settings/email-templates
+```
+
+> Body partial: hanya kirim template yang mau diubah.
+
+#### List Audit Logs
+
+```
+GET /admin/audit-logs
+```
+
+**Query:** `page`, `per_page`
+
+> Response paginated `audit_logs`.
+
+#### Transaction Report
+
+```
+GET /admin/reports/transactions
+```
+
+**Query:** `days=30`
+
+**Response (200):**
+
+```json
+[
+  { "day": "2025-08-02", "count": 12, "revenue": 1500000 },
+  { "day": "2025-08-03", "count": 8, "revenue": 900000 }
+]
+```
+
+#### Export Report (CSV)
+
+```
+GET /admin/reports/export
+```
+
+**Query:** `days=30`
+
+> Download CSV.
+
+#### Get Tier Features
+
+```
+GET /admin/tier-features
+```
+
+**Response (200):**
+
+```json
+{
+  "free": { "max_workspaces": 1, "max_apps": 1 },
+  "premium": { "max_workspaces": 3, "max_apps": 5 }
+}
+```
+
+#### Update Tier Features
+
+```
+PUT /admin/tier-features
+```
+
+**Request:**
+
+```json
+{
+  "free": { "max_apps": 2 },
+  "premium": { "max_apps": 10 }
+}
+```
+
+> Body `free` dan `premium` opsional, berisi `Partial<TierFeatures>`.
 
 ## Error Codes
 

@@ -307,6 +307,29 @@ export interface OcrConfig {
   vps_ocr_api_key?: string;
 }
 
+export interface OcrConfigSettings {
+  ocr_provider: string;
+  vps_ocr_url: string;
+  vps_ocr_api_key: string;
+}
+
+export interface EmailTemplates {
+  verify: string;
+  reset: string;
+  invoice_reminder: string;
+}
+
+export interface TierFeaturesUpdateInput {
+  free?: Partial<Omit<TierFeatures, 'tier'>>;
+  premium?: Partial<Omit<TierFeatures, 'tier'>>;
+}
+
+export interface ReportDayRow {
+  day: string;
+  count: number;
+  revenue: number;
+}
+
 // ============================================================
 // AUDIT LOG
 // ============================================================
