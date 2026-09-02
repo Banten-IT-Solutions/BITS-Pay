@@ -63,7 +63,11 @@ Request → Hono Router
   │   ├── POST /charges
   │   ├── GET /payments/:id
   │   ├── POST /payments/:id/confirm
-  │   └── POST /webhook/receive
+  │   │
+  │   ├── /webhook/* → WebhookRoutes
+  │   │   └── POST /receive              # Callback dari external (webhook simulator)
+  │   │
+  │   └── /callback/* → CallbackRoutes   # BITS Pay → App callback (internal, via Queue)
   │
   ├── /app/* → AppRoutes
   │   ├── /workspaces/**
@@ -158,17 +162,46 @@ User → POST /subscriptions/upgrade { tier: 'premium_monthly' }
 
 ```
 /root/code/BITS-Pay/
-├── wrangler.jsonc                    # Worker 1 config (API)
-├── wrangler.static.jsonc             # Worker 2 config (static)
 ├── package.json                      # monorepo root
 ├── tsconfig.json
+├── vitest.config.ts
+├── eslint.config.mjs
+├── commitlint.config.mjs
+├── .prettierrc
+├── .releaserc.json
+├── .editorconfig
+├── .gitignore
+├── .node-version
+├── .npmrc
+├── LICENSE
+├── SECURITY.md
+├── README.md
+│
+├── docs/                             # Dokumentasi
+│   ├── PRD.md
+│   ├── ARCHITECTURE.md
+│   ├── API.md
+│   ├── DATABASE.md
+│   ├── UI_DESIGN.md
+│   ├── DEVOPS.md
+│   ├── ROADMAP.md
+│   ├── SPRINT.md
+│   └── IMPLEMENTATION_GUIDE.md
 │
 ├── packages/
 │   ├── api/                          # Worker 1 — Hono API
+│   │   ├── wrangler.jsonc
 │   │   ├── src/
 │   │   │   ├── index.ts
 │   │   │   ├── config.ts
+│   │   │   ├── lib/
+│   │   │   │   ├── errors.ts
+│   │   │   │   ├── response.ts
+│   │   │   │   └── validate.ts
 │   │   │   ├── middleware/
+│   │   │   │   ├── auth.ts
+│   │   │   │   ├── rate-limit.ts
+│   │   │   │   └── error-handler.ts
 │   │   │   ├── routes/
 │   │   │   │   ├── auth/
 │   │   │   │   ├── api/
@@ -176,28 +209,73 @@ User → POST /subscriptions/upgrade { tier: 'premium_monthly' }
 │   │   │   │   ├── billing/
 │   │   │   │   └── admin/
 │   │   │   ├── services/
-│   │   │   ├── templates/
+│   │   │   │   ├── email/
+│   │   │   │   ├── ocr/
+│   │   │   │   ├── qr.ts
+│   │   │   │   └── callback.ts
+│   │   │   ├── templates/email/
 │   │   │   └── db/
-│   │   └── package.json
+│   │   │       ├── schema.ts
+│   │   │       └── migrations/
+│   │   │           └── 0001_initial.sql
+│   │   └── tests/
 │   │
 │   ├── shared/                       # Types + utils
 │   │   ├── src/
 │   │   │   ├── types/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── user.ts
+│   │   │   │   ├── payment.ts
+│   │   │   │   ├── workspace.ts
+│   │   │   │   ├── subscription.ts
+│   │   │   │   └── api.ts
 │   │   │   ├── utils/
+│   │   │   │   ├── unique-code.ts
+│   │   │   │   └── crypto.ts
 │   │   │   └── db/
 │   │   └── package.json
 │   │
-│   ├── web/                          # Landing page (static)
+│   ├── web/                          # Worker 2 — Landing page (static)
+│   │   ├── wrangler.jsonc
 │   │   ├── src/
+│   │   │   ├── index.ts
+│   │   │   ├── styles/
+│   │   │   └── guides/
 │   │   ├── public/
-│   │   ├── index.html
 │   │   └── package.json
 │   │
-│   ├── docs/                         # API docs content
-│   │   ├── guides/
-│   │   │   ├── authentication.md
-│   │   │   ├── webhook.md
-│   │   │   ├── errors.md
+│   ├── user/                         # User Dashboard (Svelte SPA)
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   ├── routes/
+│   │   │   ├── stores/
+│   │   │   ├── lib/
+│   │   │   │   └── api.ts
+│   │   │   └── main.ts
+│   │   └── tests/
+│   │
+│   └── admin/                        # Admin Dashboard (Svelte SPA)
+│       ├── src/
+│       │   ├── components/
+│       │   ├── routes/
+│       │   ├── stores/
+│       │   ├── lib/
+│       │   │   └── api.ts
+│       │   └── main.ts
+│       └── tests/
+│
+├── tests/                            # Integration tests
+│   ├── api/
+│   └── helpers/
+│
+└── .github/
+    ├── workflows/
+    │   ├── ci.yml
+    │   ├── deploy-api.yml
+    │   ├── deploy-web.yml
+    │   └── uptime.yml
+    ├── CODEOWNERS
+    └── dependabot.yml
 │   │   │   └── rate-limits.md
 │   │   └── changelog.md
 │   │
@@ -224,7 +302,7 @@ User → POST /subscriptions/upgrade { tier: 'premium_monthly' }
 │   ├── API.md
 │   ├── DATABASE.md
 │   ├── UI_DESIGN.md
-│   ├── SPRINT_1.md
+│   ├── SPRINT.md
 │   └── ROADMAP.md
 │
 └── tests/

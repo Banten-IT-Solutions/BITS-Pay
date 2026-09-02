@@ -2,16 +2,16 @@
 
 ## 1. Tech Stack Tools
 
-| Tool | Guna | Config File |
-|------|------|-------------|
-| **ESLint** | Linter TypeScript | `eslint.config.mjs` |
-| **Prettier** | Formatter | `.prettierrc` |
-| **Husky** | Git hooks | `.husky/` |
-| **lint-staged** | Lint hanya file staged | `package.json` |
-| **commitlint** | Conventional commit | `commitlint.config.mjs` |
-| **Vitest** | Test runner | `vitest.config.ts` |
-| **GitHub Actions** | CI/CD | `.github/workflows/` |
-| **semantic-release** | Auto versioning | `.releaserc.json` |
+| Tool                 | Guna                   | Config File             |
+| -------------------- | ---------------------- | ----------------------- |
+| **ESLint**           | Linter TypeScript      | `eslint.config.mjs`     |
+| **Prettier**         | Formatter              | `.prettierrc`           |
+| **Husky**            | Git hooks              | `.husky/`               |
+| **lint-staged**      | Lint hanya file staged | `package.json`          |
+| **commitlint**       | Conventional commit    | `commitlint.config.mjs` |
+| **Vitest**           | Test runner            | `vitest.config.ts`      |
+| **GitHub Actions**   | CI/CD                  | `.github/workflows/`    |
+| **semantic-release** | Auto versioning        | `.releaserc.json`       |
 
 ## 2. Repository Structure
 
@@ -30,13 +30,13 @@
 ├── commit-msg                # commitlint
 └── pre-push                  # test
 
+docs/                             # Dokumentasi
 packages/
-├── api/                      # Worker 1 — Hono API
+├── api/                      # Worker 1 — Hono API (wrangler.jsonc)
 ├── shared/                   # Shared types + utils
-├── web/                      # Landing page + Worker 2
-├── user/                     # User dashboard (Svelte)
-└── admin/                    # Admin dashboard (Svelte)
-docs/
+├── web/                      # Worker 2 — Landing page (wrangler.jsonc)
+├── user/                     # User dashboard (Svelte SPA)
+└── admin/                    # Admin dashboard (Svelte SPA)
 ```
 
 ## 3. ESLint Config
@@ -61,7 +61,7 @@ export default tseslint.config(
   },
   {
     ignores: ['dist/', 'node_modules/', '*.config.*', '.wrangler/'],
-  }
+  },
 );
 ```
 
@@ -84,18 +84,20 @@ export default tseslint.config(
 **Format:** `type(scope): description`
 
 **Types:**
-| Type | Guna |
-|------|------|
-| `feat` | Fitur baru |
-| `fix` | Bug fix |
-| `chore` | Maintenance |
-| `docs` | Dokumentasi |
-| `style` | Formatting |
-| `refactor` | Refactor |
-| `test` | Test |
-| `ci` | CI/CD |
+
+| Type       | Guna        |
+| ---------- | ----------- |
+| `feat`     | Fitur baru  |
+| `fix`      | Bug fix     |
+| `chore`    | Maintenance |
+| `docs`     | Dokumentasi |
+| `style`    | Formatting  |
+| `refactor` | Refactor    |
+| `test`     | Test        |
+| `ci`       | CI/CD       |
 
 **Contoh:**
+
 ```
 feat(api): add POST /v1/charges endpoint
 fix(auth): handle google oauth state expiry
@@ -129,18 +131,21 @@ export default {
 ## 8. Husky Hooks
 
 ### pre-commit
+
 ```bash
 #!/bin/sh
 npx lint-staged
 ```
 
 ### commit-msg
+
 ```bash
 #!/bin/sh
 npx --no -- commitlint --edit $1
 ```
 
 ### pre-push
+
 ```bash
 #!/bin/sh
 npm test
@@ -165,7 +170,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
       - run: npm ci
       - run: npx eslint packages/api/src packages/shared/src
@@ -176,7 +181,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
       - run: npm ci
       - run: npx tsc --noEmit
@@ -187,7 +192,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
       - run: npm ci
       - run: npx vitest run --reporter=verbose
@@ -212,7 +217,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
       - run: npm ci
       - run: npm run build -w packages/shared
@@ -245,7 +250,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
       - run: npm ci
       - run: npm run build -w packages/web
@@ -324,13 +329,13 @@ updates:
 
 ## 12. GitHub Secrets Required
 
-| Secret | Guna |
-|--------|------|
-| `CF_API_TOKEN` | Deploy ke Cloudflare Workers |
-| `CF_ACCOUNT_ID` | Cloudflare account ID |
-| `JWT_SECRET` | JWT signing |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `PASSWORD_PEPPER` | Password hashing pepper |
+| Secret                 | Guna                         |
+| ---------------------- | ---------------------------- |
+| `CF_API_TOKEN`         | Deploy ke Cloudflare Workers |
+| `CF_ACCOUNT_ID`        | Cloudflare account ID        |
+| `JWT_SECRET`           | JWT signing                  |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth                 |
+| `PASSWORD_PEPPER`      | Password hashing pepper      |
 
 ## 13. .gitignore
 

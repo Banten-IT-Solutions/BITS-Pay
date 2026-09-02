@@ -17,8 +17,9 @@ npm run dev
 - [Database](docs/DATABASE.md) — Schema DDL
 - [UI Design](docs/UI_DESIGN.md) — Desain UI/UX
 - [DevOps](docs/DEVOPS.md) — CI/CD, lint, test
-- [Sprint 1](docs/SPRINT_1.md) — Task breakdown
+- [Sprint](docs/SPRINT.md) — Task breakdown
 - [Roadmap](docs/ROADMAP.md) — Roadmap keseluruhan
+- [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md) — Panduan implementasi untuk AI agent
 
 ## Tech Stack
 

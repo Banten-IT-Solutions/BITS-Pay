@@ -1,0 +1,26 @@
+{
+  "name": "@bits-pay/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bits-pay/shared": "*",
+    "hono": "^4.13.5",
+    "zod": "^4.5.4",
+    "jose": "^6.2.10",
+    "bcryptjs": "^3.0.3",
+    "bits-qris": "^1.5.0"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "wrangler": "^4.128.0",
+    "@cloudflare/workers-types": "^5.20260902.1",
+    "@types/bcryptjs": "^3.0.0"
+  }
+}

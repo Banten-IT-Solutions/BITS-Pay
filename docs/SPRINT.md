@@ -13,7 +13,7 @@
 |----|------|---------|----------|--------------|
 | S1-001 | Init monorepo: package.json, tsconfig, workspaces | root | 2h | - |
 | S1-002 | Setup wrangler.jsonc (Worker 1) | api | 1h | S1-001 |
-| S1-003 | Setup wrangler.static.jsonc (Worker 2) | web | 1h | S1-001 |
+| S1-003 | Setup packages/web/wrangler.jsonc (Worker 2) | web | 1h | S1-001 |
 | S1-004 | Setup D1 database + run migration | api | 1h | S1-002 |
 | S1-005 | Setup R2 bucket | api | 30m | S1-002 |
 | S1-006 | Setup Queue (payment-callback) | api | 30m | S1-002 |
