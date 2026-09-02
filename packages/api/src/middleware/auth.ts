@@ -30,14 +30,24 @@ export const requireAuth = createMiddleware<{ Bindings: Env }>(async (c, next) =
   }
 
   const user = await c.env.DB.prepare(
-    'SELECT id, email, tier, status, token_version FROM users WHERE id = ?',
+    'SELECT id, email, tier, status, token_version, email_verified FROM users WHERE id = ?',
   )
     .bind(payload.id)
-    .first<{ id: string; email: string; tier: string; status: string; token_version: number }>();
+    .first<{
+      id: string;
+      email: string;
+      tier: string;
+      status: string;
+      token_version: number;
+      email_verified: number;
+    }>();
   if (!user) throw AppError.unauthorized('User tidak ditemukan');
   if (user.status !== 'active') throw AppError.unauthorized('Akun tidak aktif');
   if (payload.token_version !== user.token_version) {
     throw AppError.unauthorized('Sesi telah dicabut, silakan login ulang');
+  }
+  if (!user.email_verified) {
+    throw new AppError(403, 'email_not_verified', 'Verifikasi email kamu terlebih dahulu');
   }
 
   c.set('user', {

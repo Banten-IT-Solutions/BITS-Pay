@@ -31,8 +31,8 @@
     try {
       const qs = new URLSearchParams({ page: String(page), per_page: '20' });
       data = await api.get<UserPage>(`/admin/users?${qs}`);
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }
@@ -47,8 +47,8 @@
       await api.put(`/admin/users/${user.id}`, { status: newStatus });
       showToast(`User ${newStatus === 'active' ? 'diaktifkan' : 'disuspend'}`, 'success');
       await load(currentPage);
-    } catch (e: any) {
-      showToast(e.message || 'Gagal update status', 'error');
+    } catch (e) {
+      showToast((e as Error).message || 'Gagal update status', 'error');
     } finally {
       actionLoading = null;
     }
@@ -61,8 +61,8 @@
       await api.put(`/admin/users/${user.id}`, { tier: newTier });
       showToast(`Tier diubah ke ${newTier === 'free' ? 'Free' : 'Premium'}`, 'success');
       await load(currentPage);
-    } catch (e: any) {
-      showToast(e.message || 'Gagal update tier', 'error');
+    } catch (e) {
+      showToast((e as Error).message || 'Gagal update tier', 'error');
     } finally {
       actionLoading = null;
     }

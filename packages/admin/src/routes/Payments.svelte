@@ -33,8 +33,8 @@
       if (search) qs.set('search', search);
       if (statusFilter) qs.set('status', statusFilter);
       data = await api.get<PaymentPage>(`/admin/payments?${qs}`);
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }

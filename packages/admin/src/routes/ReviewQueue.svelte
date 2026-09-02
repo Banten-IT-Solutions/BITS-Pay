@@ -36,8 +36,8 @@
           }),
       );
       proofUrls = urls;
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }
@@ -50,8 +50,8 @@
       await api.post(`/admin/payments/${paymentId}/${action}`);
       showToast(`Transaksi ${action === 'confirm' ? 'dikonfirmasi' : 'ditolak'}`, 'success');
       items = items.filter((p) => p.id !== paymentId);
-    } catch (e: any) {
-      showToast(e.message, 'error');
+    } catch (e) {
+      showToast((e as Error).message, 'error');
     }
   }
 </script>

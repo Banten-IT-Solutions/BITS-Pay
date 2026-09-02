@@ -3,6 +3,7 @@ import type { Env } from '../config';
 import type { OcrConfigSettings } from '@bits-pay/shared';
 import { getOcrProvider, type OcrResult } from './ocr';
 import { AuditService } from './audit';
+import { validateCallbackUrl } from '../lib/ssrf';
 
 const KEYS = ['ocr_provider', 'vps_ocr_url', 'vps_ocr_api_key'] as const;
 
@@ -32,6 +33,14 @@ export class OcrConfigService {
     adminId: string,
     input: OcrConfigInput,
   ): Promise<OcrConfigSettings> {
+    const current = await OcrConfigService.getConfig(env);
+    const provider = input.ocr_provider ?? current.ocr_provider;
+    const vpsUrl = input.vps_ocr_url ?? current.vps_ocr_url;
+    if (provider === 'tesseract-vps' && vpsUrl) {
+      // Tolak URL non-https / private IP (SSRF ke jaringan internal).
+      validateCallbackUrl(vpsUrl);
+    }
+
     for (const key of KEYS) {
       const value = input[key];
       if (value === undefined) continue;
@@ -56,9 +65,13 @@ export class OcrConfigService {
   }
 }
 
+// Chunk 32KB: concat per-byte = O(n²) untuk gambar besar.
 function arrayBufferToBase64(buf: Uint8Array | ArrayBuffer): string {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
+  const chunk = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
 }

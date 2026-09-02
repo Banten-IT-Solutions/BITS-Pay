@@ -32,8 +32,8 @@
         selectedWid = w[0].id;
         await loadApps(w[0].id);
       }
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }
@@ -62,8 +62,8 @@
       if (app.api_key) {
         showToast(`API Key: ${app.api_key} — simpan!`, 'info');
       }
-    } catch (e: any) {
-      showToast(e.message, 'error');
+    } catch (e) {
+      showToast((e as Error).message, 'error');
     } finally {
       submitting = false;
     }
@@ -74,8 +74,8 @@
     try {
       const app = await api.post<AppPublic>(`/app/workspaces/${selectedWid}/apps/${appId}/rotate-key`);
       showToast(`API Key baru: ${app.api_key} — simpan!`, 'success');
-    } catch (e: any) {
-      showToast(e.message, 'error');
+    } catch (e) {
+      showToast((e as Error).message, 'error');
     }
   }
 </script>

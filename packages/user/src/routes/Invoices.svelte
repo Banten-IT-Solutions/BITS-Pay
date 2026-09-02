@@ -57,8 +57,8 @@
     try {
       const qs = new URLSearchParams({ page: String(page), per_page: '20' });
       data = await api.get<InvoicePage>(`/billing/invoices?${qs}`);
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }
@@ -75,8 +75,8 @@
       const res = await api.post<InvoicePayResponse>(`/billing/invoices/${invoice.id}/pay`);
       payData = res;
       payModal = true;
-    } catch (e: any) {
-      showToast(e.message || 'Gagal memproses pembayaran', 'error');
+    } catch (e) {
+      showToast((e as Error).message || 'Gagal memproses pembayaran', 'error');
     } finally {
       payLoading = false;
       payingId = null;
@@ -97,8 +97,8 @@
       confirmResult = res;
       showToast('Pembayaran berhasil dikonfirmasi', 'success');
       await load(currentPage);
-    } catch (e: any) {
-      confirmError = e.message || 'Gagal konfirmasi pembayaran';
+    } catch (e) {
+      confirmError = (e as Error).message || 'Gagal konfirmasi pembayaran';
     } finally {
       confirmLoading = false;
     }
@@ -173,8 +173,9 @@
       </div>
       <form class="w-full space-y-4" onsubmit={handleConfirm}>
         <div>
-          <label class="mb-1 block text-sm font-medium text-neutral-600">Upload Bukti Transfer</label>
+          <label for="invoice-proof" class="mb-1 block text-sm font-medium text-neutral-600">Upload Bukti Transfer</label>
           <input
+            id="invoice-proof"
             type="file"
             name="proof_image"
             accept="image/jpeg,image/png"

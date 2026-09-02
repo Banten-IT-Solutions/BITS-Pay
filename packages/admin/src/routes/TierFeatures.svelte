@@ -119,8 +119,8 @@
       <div class="space-y-4">
         {#each fieldKeys as k}
           <div>
-            <label class="mb-1 block text-sm font-medium text-neutral-600">{labels[k]}</label>
-            <input type="number" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={free[k]} />
+            <label for="free-{k}" class="mb-1 block text-sm font-medium text-neutral-600">{labels[k]}</label>
+            <input id="free-{k}" type="number" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={free[k]} />
           </div>
         {/each}
       </div>
@@ -129,8 +129,8 @@
       <div class="space-y-4">
         {#each fieldKeys as k}
           <div>
-            <label class="mb-1 block text-sm font-medium text-neutral-600">{labels[k]}</label>
-            <input type="number" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={premium[k]} />
+            <label for="premium-{k}" class="mb-1 block text-sm font-medium text-neutral-600">{labels[k]}</label>
+            <input id="premium-{k}" type="number" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={premium[k]} />
           </div>
         {/each}
       </div>

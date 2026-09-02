@@ -32,8 +32,8 @@
     error = '';
     try {
       sub = await api.get<Subscription | null>('/billing/subscriptions/current');
-    } catch (e: any) {
-      error = e.message || 'Gagal memuat data langganan';
+    } catch (e) {
+      error = (e as Error).message || 'Gagal memuat data langganan';
     } finally {
       loading = false;
     }
@@ -55,8 +55,8 @@
       });
       qrData = res;
       showQr = true;
-    } catch (e: any) {
-      showToast(e.message || 'Gagal upgrade', 'error');
+    } catch (e) {
+      showToast((e as Error).message || 'Gagal upgrade', 'error');
     } finally {
       upgrading = false;
     }
@@ -68,8 +68,8 @@
       await api.post('/billing/subscriptions/cancel');
       showToast('Langganan dibatalkan', 'success');
       await load();
-    } catch (e: any) {
-      showToast(e.message || 'Gagal membatalkan', 'error');
+    } catch (e) {
+      showToast((e as Error).message || 'Gagal membatalkan', 'error');
     } finally {
       cancelLoading = false;
     }

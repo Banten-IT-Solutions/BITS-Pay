@@ -1,14 +1,11 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { Env } from '../../config';
-import { requireAuth } from '../../middleware/auth';
-import { requireAdmin } from '../../middleware/admin';
 import { success, paginated } from '../../lib/response';
 import { AppError } from '../../lib/errors';
 import { AdminService } from '../../services/admin';
 
 const router = new Hono<{ Bindings: Env }>();
-router.use('*', requireAuth, requireAdmin);
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

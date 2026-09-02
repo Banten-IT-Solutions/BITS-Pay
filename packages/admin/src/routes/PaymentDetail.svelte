@@ -31,8 +31,8 @@ import { api, proofUrl } from '../lib/api';
           proofUrlValue = '';
         }
       }
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }
@@ -46,8 +46,8 @@ import { api, proofUrl } from '../lib/api';
       const result = await api.post<Payment>(`/admin/payments/${paymentId}/${action}`);
       payment = result;
       showToast(`Transaksi ${action === 'confirm' ? 'dikonfirmasi' : 'ditolak'}`, 'success');
-    } catch (e: any) {
-      showToast(e.message, 'error');
+    } catch (e) {
+      showToast((e as Error).message, 'error');
     } finally {
       acting = false;
     }

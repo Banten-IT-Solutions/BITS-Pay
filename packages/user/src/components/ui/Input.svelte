@@ -24,6 +24,8 @@
     oninput,
   }: Props = $props();
 
+  const inputId = label.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
+
   function handleInput(e: Event) {
     const target = e.currentTarget as HTMLInputElement;
     oninput?.(e);
@@ -33,9 +35,10 @@
 
 <div>
   {#if label}
-    <label class="mb-1 block text-sm font-medium text-neutral-600">{label}</label>
+    <label for={inputId} class="mb-1 block text-sm font-medium text-neutral-600">{label}</label>
   {/if}
   <input
+    id={inputId}
     {type}
     {name}
     {step}

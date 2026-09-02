@@ -1,10 +1,13 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   interface Props {
     headers: string[];
     loading?: boolean;
     empty?: boolean;
+    children?: Snippet;
   }
-  let { headers, loading = false, empty = false }: Props = $props();
+  let { headers, loading = false, empty = false, children }: Props = $props();
 </script>
 
 <div class="overflow-x-auto">
@@ -28,7 +31,7 @@
           <td colspan={headers.length} class="px-4 py-8 text-center text-neutral-400">Tidak ada data</td>
         </tr>
       {:else}
-        <slot />
+        {@render children?.()}
       {/if}
     </tbody>
   </table>

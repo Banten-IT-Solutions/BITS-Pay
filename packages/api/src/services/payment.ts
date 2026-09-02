@@ -15,10 +15,15 @@ import { QrService } from './qr';
 import { getOcrProvider } from './ocr';
 import { TierService } from './tier';
 import { SubscriptionService } from './subscription';
+import { CallbackService } from './callback';
 
 export const chargeSchema = z.object({
   order_id: z.string().min(1, 'order_id wajib diisi'),
-  amount: z.number().int().min(100, 'Amount minimal Rp 100'),
+  amount: z
+    .number()
+    .int()
+    .min(100, 'Amount minimal Rp 100')
+    .max(1_000_000_000, 'Amount maksimal Rp 1.000.000.000'),
   currency: z.string().default('IDR'),
   description: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
@@ -46,51 +51,63 @@ export class PaymentService {
     ).all<{ unique_code: number }>();
     const usedCodeNumbers = (usedCodes ?? []).map((r) => r.unique_code);
     const maxCode = parseInt(env.MAX_UNIQUE_CODE, 10) || 9999;
-    const uniqueCode = findAvailableCode(usedCodeNumbers, maxCode);
-    if (uniqueCode === null)
-      throw AppError.badRequest('no_unique_code', 'Semua kode unik terpakai');
-
-    const amountDue = calculateAmountDue(input.amount, uniqueCode);
-
-    const qrisDynamic = QrService.convertStaticToDynamic(env, amountDue);
-    const qrImage = await QrService.generateQrImage(qrisDynamic, amountDue);
 
     const expireMinutes = parseInt(env.TRANSACTION_EXPIRE_MINUTES, 10) || 15;
     const expiredAt = dbTime(new Date(Date.now() + expireMinutes * 60 * 1000));
-
     const id = crypto.randomUUID();
-    let payment: Payment | null;
-    try {
-      payment = await env.DB.prepare(
-        `INSERT INTO payments (id, workspace_id, app_id, order_id, amount, amount_due, unique_code, currency, description, metadata, qris_dynamic, qr_image, expired_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
-      )
-        .bind(
-          id,
-          app.workspace_id,
-          app.id,
-          input.order_id,
-          input.amount,
-          amountDue,
-          uniqueCode,
-          input.currency,
-          input.description ?? null,
-          input.metadata ? JSON.stringify(input.metadata) : null,
-          qrisDynamic,
-          qrImage,
-          expiredAt,
+
+    // Alokasi unique_code non-atomik (SELECT lalu INSERT) → andalkan UNIQUE index
+    // idx_payments_amount_due_pending sebagai guard; konflik = ambil kode berikut, retry.
+    const maxAttempts = 5;
+    let payment: Payment | null = null;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const uniqueCode = findAvailableCode(usedCodeNumbers, maxCode);
+      if (uniqueCode === null)
+        throw AppError.badRequest('no_unique_code', 'Semua kode unik terpakai');
+      const amountDue = calculateAmountDue(input.amount, uniqueCode);
+
+      const qrisDynamic = QrService.convertStaticToDynamic(env, amountDue);
+      const qrImage = await QrService.generateQrImage(qrisDynamic, amountDue);
+
+      try {
+        payment = await env.DB.prepare(
+          `INSERT INTO payments (id, workspace_id, app_id, order_id, amount, amount_due, unique_code, currency, description, metadata, qris_dynamic, qr_image, expired_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         )
-        .first<Payment>();
-    } catch (err) {
-      if (err instanceof Error && err.message.includes('UNIQUE')) {
-        throw AppError.conflict(
-          'duplicate_order',
-          'order_id sudah digunakan untuk transaksi aktif',
-        );
+          .bind(
+            id,
+            app.workspace_id,
+            app.id,
+            input.order_id,
+            input.amount,
+            amountDue,
+            uniqueCode,
+            input.currency,
+            input.description ?? null,
+            input.metadata ? JSON.stringify(input.metadata) : null,
+            qrisDynamic,
+            qrImage,
+            expiredAt,
+          )
+          .first<Payment>();
+        break;
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('UNIQUE')) {
+          if (err.message.includes('amount_due')) {
+            // Race: kode ini baru saja dipakai transaksi lain. Tandai terpakai, retry.
+            usedCodeNumbers.push(uniqueCode);
+            continue;
+          }
+          throw AppError.conflict(
+            'duplicate_order',
+            'order_id sudah digunakan untuk transaksi aktif',
+          );
+        }
+        throw err;
       }
-      throw err;
     }
-    if (!payment) throw AppError.internal('Gagal membuat charge');
+    if (!payment)
+      throw AppError.conflict('no_unique_code', 'Gagal mengalokasikan kode unik, coba lagi');
 
     return {
       id: payment.id,
@@ -106,9 +123,16 @@ export class PaymentService {
     };
   }
 
-  static async getPayment(env: Env, workspaceId: string, paymentId: string): Promise<Payment> {
-    const payment = await env.DB.prepare('SELECT * FROM payments WHERE id = ? AND workspace_id = ?')
-      .bind(paymentId, workspaceId)
+  static async getPayment(
+    env: Env,
+    workspaceId: string,
+    appId: string,
+    paymentId: string,
+  ): Promise<Payment> {
+    const payment = await env.DB.prepare(
+      'SELECT * FROM payments WHERE id = ? AND workspace_id = ? AND app_id = ?',
+    )
+      .bind(paymentId, workspaceId, appId)
       .first<Payment>();
     if (!payment) throw AppError.notFound('Payment');
     return payment;
@@ -123,12 +147,12 @@ export class PaymentService {
     const features = await TierService.getTierFeatures(env, owner?.tier ?? 'free');
 
     const today = await env.DB.prepare(
-      "SELECT COUNT(*) as c FROM payments WHERE workspace_id = ? AND date(created_at) = date('now')",
+      "SELECT COUNT(*) as c FROM payments WHERE workspace_id = ? AND (type IS NULL OR type = 'payment') AND date(created_at) = date('now')",
     )
       .bind(workspaceId)
       .first<{ c: number }>();
     const month = await env.DB.prepare(
-      "SELECT COUNT(*) as c FROM payments WHERE workspace_id = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m','now')",
+      "SELECT COUNT(*) as c FROM payments WHERE workspace_id = ? AND (type IS NULL OR type = 'payment') AND strftime('%Y-%m', created_at) = strftime('%Y-%m','now')",
     )
       .bind(workspaceId)
       .first<{ c: number }>();
@@ -166,11 +190,15 @@ export class PaymentService {
     }
 
     if (formData.amount !== payment.amount_due) {
-      await env.DB.prepare(
-        "UPDATE payments SET status = 'failed', match_result = 'mismatch', user_input_amount = ?, updated_at = datetime('now') WHERE id = ?",
+      const res = await env.DB.prepare(
+        "UPDATE payments SET status = 'failed', match_result = 'mismatch', user_input_amount = ?, updated_at = datetime('now') WHERE id = ? AND status = 'pending'",
       )
         .bind(formData.amount, paymentId)
         .run();
+      if (res.meta.changes === 0) {
+        throw AppError.conflict('invalid_status', 'Transaksi sudah diproses');
+      }
+      await this.enqueueResultCallback(env, payment, 'payment.failed', null);
       return {
         id: paymentId,
         status: 'failed',
@@ -222,33 +250,56 @@ export class PaymentService {
       const paidAt = status === 'success' ? dbTime(new Date()) : null;
       const confirmedAt = status === 'success' ? dbTime(new Date()) : null;
 
-      await env.DB.prepare(
-        `UPDATE payments SET
-          status = ?, proof_hash = ?, proof_path = ?, proof_mime = ?, user_input_amount = ?,
-          ocr_amount = ?, ocr_confidence = ?, ocr_merchant = ?, ocr_raw_text = ?, ocr_provider = ?,
-          match_result = ?, paid_at = ?, confirmed_at = ?, updated_at = datetime('now')
-         WHERE id = ?`,
-      )
-        .bind(
-          status,
-          hash,
-          proofPath,
-          formData.proofMime,
-          formData.amount,
-          ocrResult.amount,
-          ocrResult.confidence,
-          ocrResult.merchant,
-          ocrResult.rawText,
-          ocrResult.provider,
-          matchResult,
-          paidAt,
-          confirmedAt,
-          paymentId,
+      try {
+        const res = await env.DB.prepare(
+          `UPDATE payments SET
+            status = ?, proof_hash = ?, proof_path = ?, proof_mime = ?, user_input_amount = ?,
+            ocr_amount = ?, ocr_confidence = ?, ocr_merchant = ?, ocr_raw_text = ?, ocr_provider = ?,
+            match_result = ?, paid_at = ?, confirmed_at = ?, updated_at = datetime('now')
+           WHERE id = ? AND status = 'pending'`,
         )
-        .run();
+          .bind(
+            status,
+            hash,
+            proofPath,
+            formData.proofMime,
+            formData.amount,
+            ocrResult.amount,
+            ocrResult.confidence,
+            ocrResult.merchant,
+            ocrResult.rawText,
+            ocrResult.provider,
+            matchResult,
+            paidAt,
+            confirmedAt,
+            paymentId,
+          )
+          .run();
+        if (res.meta.changes === 0) {
+          throw AppError.conflict('invalid_status', 'Transaksi sudah diproses');
+        }
+      } catch (err) {
+        // Atomic guard: index idx_payments_proof_hash menolak bukti bayar replay.
+        if (
+          err instanceof Error &&
+          err.message.includes('UNIQUE') &&
+          err.message.includes('proof_hash')
+        ) {
+          throw AppError.conflict('duplicate_hash', 'Bukti bayar sudah digunakan');
+        }
+        throw err;
+      }
 
       if (status === 'success') {
         await SubscriptionService.activateFromInvoice(env, paymentId);
+      }
+      if (status === 'success' || status === 'failed') {
+        await this.enqueueResultCallback(
+          env,
+          payment,
+          status === 'success' ? 'payment.success' : 'payment.failed',
+          paidAt,
+        );
       }
 
       return {
@@ -264,11 +315,15 @@ export class PaymentService {
       };
     }
 
-    await env.DB.prepare(
-      "UPDATE payments SET status = 'failed', match_result = 'mismatch', user_input_amount = ?, updated_at = datetime('now') WHERE id = ?",
+    const res = await env.DB.prepare(
+      "UPDATE payments SET status = 'failed', match_result = 'mismatch', user_input_amount = ?, updated_at = datetime('now') WHERE id = ? AND status = 'pending'",
     )
       .bind(formData.amount, paymentId)
       .run();
+    if (res.meta.changes === 0) {
+      throw AppError.conflict('invalid_status', 'Transaksi sudah diproses');
+    }
+    await this.enqueueResultCallback(env, payment, 'payment.failed', null);
     return {
       id: paymentId,
       status: 'failed',
@@ -278,6 +333,38 @@ export class PaymentService {
       paid_at: null,
       message: 'Bukti bayar tidak ditemukan',
     };
+  }
+
+  // Webhook hasil konfirmasi (sukses/gagal). Pola payload meniru AdminService.confirm/reject.
+  private static async enqueueResultCallback(
+    env: Env,
+    payment: Payment,
+    event: 'payment.success' | 'payment.failed',
+    paidAt: string | null,
+  ): Promise<void> {
+    if (!payment.app_id) return;
+    const app = await env.DB.prepare('SELECT callback_url FROM apps WHERE id = ?')
+      .bind(payment.app_id)
+      .first<{ callback_url: string | null }>();
+    if (!app?.callback_url) return;
+    await CallbackService.enqueueCallback(
+      env,
+      payment.id,
+      payment.app_id,
+      app.callback_url,
+      event,
+      {
+        event,
+        transaction: {
+          id: payment.id,
+          order_id: payment.order_id,
+          amount: payment.amount,
+          amount_due: payment.amount_due,
+          status: event === 'payment.success' ? 'success' : 'failed',
+          paid_at: paidAt,
+        },
+      },
+    );
   }
 
   static async listPayments(
@@ -320,6 +407,8 @@ export class PaymentService {
     perPage: number,
     status?: string,
     search?: string,
+    startDate?: string,
+    endDate?: string,
   ): Promise<{ data: Payment[]; total: number }> {
     const offset = (page - 1) * perPage;
     let where = `WHERE wm.user_id = ?`;
@@ -331,6 +420,14 @@ export class PaymentService {
     if (search) {
       where += ' AND (p.order_id LIKE ? OR p.id LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
+    }
+    if (startDate) {
+      where += ' AND date(p.created_at) >= date(?)';
+      params.push(startDate);
+    }
+    if (endDate) {
+      where += ' AND date(p.created_at) <= date(?)';
+      params.push(endDate);
     }
 
     const count = await env.DB.prepare(
@@ -395,9 +492,13 @@ export class PaymentService {
   }
 }
 
-function arrayBufferToBase64(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
+// Chunk 32KB: concat per-byte = O(n²) untuk proof besar (5MB).
+function arrayBufferToBase64(buf: ArrayBuffer | Uint8Array): string {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  const chunk = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
 }

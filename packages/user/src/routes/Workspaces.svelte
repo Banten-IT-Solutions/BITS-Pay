@@ -23,8 +23,8 @@
     error = '';
     try {
       await workspaces.fetch();
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }
@@ -42,8 +42,8 @@
       newName = '';
       newSlug = '';
       push(`/workspaces/${ws.id}`);
-    } catch (e: any) {
-      showToast(e.message, 'error');
+    } catch (e) {
+      showToast((e as Error).message, 'error');
     } finally {
       submitting = false;
     }
@@ -67,7 +67,7 @@
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
     {#each $workspaces as ws}
       <Card>
-        <div class="cursor-pointer" onclick={() => push(`/workspaces/${ws.id}`)}>
+        <div class="cursor-pointer" onclick={() => push(`/workspaces/${ws.id}`)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') push(`/workspaces/${ws.id}`); }} role="button" tabindex="0">
           <h3 class="text-lg font-semibold text-primary-500">{ws.name}</h3>
           <p class="mt-1 text-sm text-neutral-400">{ws.slug}</p>
           <div class="mt-3 flex gap-4 text-xs text-neutral-400">

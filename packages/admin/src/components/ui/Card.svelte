@@ -1,11 +1,15 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   interface Props {
     title?: string;
     subtitle?: string;
     padding?: boolean;
     class?: string;
+    children?: Snippet;
   }
-  let { title = '', subtitle = '', padding = true, class: className = '' }: Props = $props();
+  let { title = '', subtitle = '', padding = true, class: className = '', children }: Props =
+    $props();
 </script>
 
 <div class="rounded-xl border border-neutral-100 bg-white shadow-sm {className}" class:p-6={padding}>
@@ -17,5 +21,5 @@
       {/if}
     </div>
   {/if}
-  <slot />
+  {@render children?.()}
 </div>

@@ -30,8 +30,8 @@
       ]);
       stats = s;
       recent = r.items;
-    } catch (e: any) {
-      error = e.message || 'Gagal memuat data';
+    } catch (e) {
+      error = (e as Error).message || 'Gagal memuat data';
     } finally {
       loading = false;
     }

@@ -1,7 +1,9 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import { push, router } from 'svelte-spa-router';
   import { auth } from '../../stores/auth';
 
+  let { children }: { children?: Snippet } = $props();
   let collapsed = $state(false);
 
   const links = [
@@ -62,7 +64,7 @@
       {/if}
     </header>
     <main class="flex-1 overflow-y-auto bg-neutral-50 p-6">
-      <slot />
+      {@render children?.()}
     </main>
   </div>
 </div>

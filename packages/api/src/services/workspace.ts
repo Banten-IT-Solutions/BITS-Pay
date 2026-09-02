@@ -71,18 +71,16 @@ export class WorkspaceService {
     if (slugExists) throw AppError.conflict('slug_exists', 'Slug sudah digunakan');
 
     const id = crypto.randomUUID();
-    const workspace = await env.DB.prepare(
-      'INSERT INTO workspaces (id, user_id, name, slug, description) VALUES (?, ?, ?, ?, ?) RETURNING *',
-    )
-      .bind(id, userId, input.name, input.slug, input.description ?? null)
-      .first<Workspace>();
+    const [wsResult] = await env.DB.batch<Workspace>([
+      env.DB.prepare(
+        'INSERT INTO workspaces (id, user_id, name, slug, description) VALUES (?, ?, ?, ?, ?) RETURNING *',
+      ).bind(id, userId, input.name, input.slug, input.description ?? null),
+      env.DB.prepare(
+        'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)',
+      ).bind(crypto.randomUUID(), id, userId, 'owner'),
+    ]);
+    const workspace = wsResult.results?.[0];
     if (!workspace) throw AppError.internal('Gagal membuat workspace');
-
-    await env.DB.prepare(
-      'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?)',
-    )
-      .bind(crypto.randomUUID(), id, userId, 'owner')
-      .run();
 
     return workspace;
   }

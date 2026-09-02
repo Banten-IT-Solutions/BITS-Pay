@@ -40,15 +40,6 @@ function createAuthStore() {
       localStorage.setItem('token', data.token);
       set({ user: data.user, token: data.token, loading: false });
     },
-    async signup(name: string, email: string, password: string) {
-      const data = await api.post<{ token: string; user: UserPublic }>('/auth/signup', {
-        name,
-        email,
-        password,
-      });
-      localStorage.setItem('token', data.token);
-      set({ user: data.user, token: data.token, loading: false });
-    },
     async exchangeCode(code: string) {
       const data = await api.post<{ token: string; user: UserPublic }>('/auth/exchange', { code });
       localStorage.setItem('token', data.token);

@@ -24,8 +24,8 @@
         search: search || undefined,
         status: (statusFilter as PaymentStatus) || undefined,
       });
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }

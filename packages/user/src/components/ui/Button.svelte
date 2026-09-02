@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   interface Props {
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
     type?: 'button' | 'submit' | 'reset';
@@ -7,6 +9,7 @@
     block?: boolean;
     size?: 'sm' | 'md' | 'lg';
     onclick?: (e: MouseEvent) => void;
+    children?: Snippet;
   }
   let {
     variant = 'primary',
@@ -16,6 +19,7 @@
     block = false,
     size = 'md',
     onclick,
+    children,
   }: Props = $props();
 
   const base = 'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:opacity-50 disabled:cursor-not-allowed';
@@ -36,5 +40,5 @@
   {#if loading}
     <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
   {/if}
-  <slot />
+  {@render children?.()}
 </button>

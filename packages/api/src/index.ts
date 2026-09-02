@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { errorHandler } from './middleware/error-handler';
+import { errorHandler, setSecurityHeaders } from './middleware/error-handler';
 import type { Env } from './config';
 import { authRoutes } from './routes/auth';
 import { appRoutes } from './routes/app';
@@ -13,7 +13,19 @@ import { publicRateLimit } from './middleware/rate-limit';
 
 const app = new Hono<{ Bindings: Env }>();
 
+// Fail-fast: JWT_SECRET kosong/lemah = token bisa dipalsukan. Tolak semua request.
+app.use('*', async (c, next) => {
+  if (!c.env.JWT_SECRET || c.env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET wajib diset minimal 32 karakter');
+  }
+  await next();
+});
+
 app.use('*', corsMiddleware());
+app.use('*', async (c, next) => {
+  await next();
+  setSecurityHeaders(c.res.headers);
+});
 app.use('/auth/*', publicRateLimit);
 app.onError(errorHandler);
 
@@ -41,8 +53,8 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
         `SELECT p.id, p.app_id, a.callback_url, p.order_id, p.amount, p.amount_due
          FROM payments p
          LEFT JOIN apps a ON a.id = p.app_id
-         WHERE p.status = 'expired' AND p.app_id IS NOT NULL AND a.callback_url IS NOT NULL
-         AND p.updated_at > datetime('now', '-5 minutes')`,
+         WHERE p.status = 'expired' AND p.callback_queued = 0
+         AND p.app_id IS NOT NULL AND a.callback_url IS NOT NULL`,
       ).all<{
         id: string;
         app_id: string;
@@ -71,6 +83,9 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
             },
           },
         );
+        await env.DB.prepare('UPDATE payments SET callback_queued = 1 WHERE id = ?')
+          .bind(p.id)
+          .run();
       }
 
       await SubscriptionService.expireAndDowngrade(env);

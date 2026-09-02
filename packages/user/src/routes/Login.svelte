@@ -1,6 +1,7 @@
 <script lang="ts">
   import { push } from 'svelte-spa-router';
   import { auth } from '../stores/auth';
+  import { api } from '../lib/api';
   import { showToast } from '../lib/toast';
   import Button from '../components/ui/Button.svelte';
   import Input from '../components/ui/Input.svelte';
@@ -19,13 +20,16 @@
     try {
       if (mode === 'login') {
         await auth.login(email, password);
+        showToast('Selamat datang kembali!', 'success');
+        push('/');
       } else {
-        await auth.signup(name, email, password);
+        await api.post('/auth/signup', { name, email, password });
+        showToast('Cek email kamu untuk verifikasi, lalu masuk.', 'success');
+        mode = 'login';
+        error = '';
       }
-      showToast(mode === 'login' ? 'Selamat datang kembali!' : 'Akun berhasil dibuat!', 'success');
-      push('/');
-    } catch (e: any) {
-      error = e.message || 'Terjadi kesalahan';
+    } catch (e) {
+      error = (e as Error).message || 'Terjadi kesalahan';
     } finally {
       loading = false;
     }

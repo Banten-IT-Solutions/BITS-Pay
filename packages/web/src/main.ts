@@ -1,6 +1,6 @@
 import './style.css';
 
-const API_URL = 'https://api.pay.bits.co.id/v1';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.pay.bits.co.id';
 
 // Nav toggle
 const toggle = document.querySelector<HTMLButtonElement>('#nav-toggle')!;
@@ -82,7 +82,7 @@ async function handleLogin(e: Event) {
       return;
     }
     localStorage.setItem('token', json.data.token);
-    window.location.href = json.data.redirect || '/dashboard';
+    window.location.href = '/user/';
   } catch {
     showError('login-error', 'Gagal terhubung ke server');
   }
@@ -106,18 +106,26 @@ async function handleSignup(e: Event) {
       showError('signup-error', json.error?.message || 'Daftar gagal');
       return;
     }
-    localStorage.setItem('token', json.data.token);
-    window.location.href = json.data.redirect || '/dashboard';
+    // Verifikasi email dikirim; jangan auto-login (akun belum terverifikasi).
+    showError('signup-error', 'Cek email kamu untuk verifikasi akun.');
   } catch {
     showError('signup-error', 'Gagal terhubung ke server');
   }
 }
 
 // Expose for inline handlers
-(window as any).openModal = openModal;
-(window as any).closeModal = closeModal;
-(window as any).handleLogin = handleLogin;
-(window as any).handleSignup = handleSignup;
+declare global {
+  interface Window {
+    openModal: typeof openModal;
+    closeModal: typeof closeModal;
+    handleLogin: typeof handleLogin;
+    handleSignup: typeof handleSignup;
+  }
+}
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
 
 // Close modals on Escape
 document.addEventListener('keydown', (e) => {

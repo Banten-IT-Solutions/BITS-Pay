@@ -35,8 +35,8 @@
       apps = a;
       editName = w.name;
       editSlug = w.slug;
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }
@@ -52,8 +52,8 @@
       showToast('Workspace diperbarui', 'success');
       showEdit = false;
       load();
-    } catch (e: any) {
-      showToast(e.message, 'error');
+    } catch (e) {
+      showToast((e as Error).message, 'error');
     } finally {
       submitting = false;
     }
@@ -65,8 +65,8 @@
       await api.delete(`/app/workspaces/${wsId}`);
       showToast('Workspace dihapus', 'success');
       push('/workspaces');
-    } catch (e: any) {
-      showToast(e.message, 'error');
+    } catch (e) {
+      showToast((e as Error).message, 'error');
     }
   }
 </script>

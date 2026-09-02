@@ -169,6 +169,14 @@ export class BillingService {
     if (invoice.status !== 'pending') {
       throw AppError.badRequest('invalid_status', 'Invoice sudah dibayar atau expired');
     }
+    if (invoice.expired_at && invoice.expired_at < dbTime(new Date())) {
+      await env.DB.prepare(
+        "UPDATE invoices SET status = 'expired' WHERE id = ? AND status = 'pending'",
+      )
+        .bind(invoiceId)
+        .run();
+      throw AppError.badRequest('expired', 'Invoice sudah kedaluwarsa');
+    }
     if (invoice.payment_id) {
       const existing = await env.DB.prepare('SELECT * FROM payments WHERE id = ?')
         .bind(invoice.payment_id)

@@ -142,12 +142,12 @@
 
         {#if ocrProvider === 'tesseract-vps'}
           <div>
-            <label class="mb-1 block text-sm font-medium text-neutral-600">VPS OCR URL</label>
-            <input class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" placeholder="https://..." bind:value={vpsUrl} />
+            <label for="vps-ocr-url" class="mb-1 block text-sm font-medium text-neutral-600">VPS OCR URL</label>
+            <input id="vps-ocr-url" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" placeholder="https://..." bind:value={vpsUrl} />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-neutral-600">VPS OCR API Key</label>
-            <input type="password" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" placeholder="••••••••" bind:value={vpsKey} />
+            <label for="vps-ocr-key" class="mb-1 block text-sm font-medium text-neutral-600">VPS OCR API Key</label>
+            <input id="vps-ocr-key" type="password" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" placeholder="••••••••" bind:value={vpsKey} />
           </div>
         {/if}
 
@@ -185,16 +185,16 @@
     <Card title="Template Email" subtitle="Isi email untuk verifikasi, reset password & pengingat invoice">
       <div class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-medium text-neutral-600">Verifikasi Email</label>
-          <textarea rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.verify}></textarea>
+          <label for="tmpl-verify" class="mb-1 block text-sm font-medium text-neutral-600">Verifikasi Email</label>
+          <textarea id="tmpl-verify" rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.verify}></textarea>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-neutral-600">Reset Password</label>
-          <textarea rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.reset}></textarea>
+          <label for="tmpl-reset" class="mb-1 block text-sm font-medium text-neutral-600">Reset Password</label>
+          <textarea id="tmpl-reset" rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.reset}></textarea>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-neutral-600">Pengingat Invoice</label>
-          <textarea rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.invoice_reminder}></textarea>
+          <label for="tmpl-invoice" class="mb-1 block text-sm font-medium text-neutral-600">Pengingat Invoice</label>
+          <textarea id="tmpl-invoice" rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.invoice_reminder}></textarea>
         </div>
         <Button loading={templatesSaving} onclick={saveTemplates}>Simpan Template</Button>
       </div>

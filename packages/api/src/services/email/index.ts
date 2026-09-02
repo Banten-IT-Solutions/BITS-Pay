@@ -22,11 +22,16 @@ export class EmailService {
   }
 }
 
+// Cegah header injection (CRLF) dari input.
+function clean(value: string): string {
+  return value.replace(/[\r\n]/g, '');
+}
+
 function buildMime(from: string, input: SendEmailInput): string {
   const headers = [
-    `From: ${from}`,
-    `To: ${input.to}`,
-    `Subject: ${input.subject}`,
+    `From: ${clean(from)}`,
+    `To: ${clean(input.to)}`,
+    `Subject: ${clean(input.subject)}`,
     'MIME-Version: 1.0',
   ];
   if (!input.html) {

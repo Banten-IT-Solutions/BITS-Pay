@@ -12,12 +12,17 @@ const router = new Hono<{ Bindings: Env }>();
 router.use('*', requireApiKey, apiRateLimit);
 
 const confirmAmountSchema = z.object({
-  amount: z.coerce.number().int().min(100),
+  amount: z.coerce.number().int().min(100).max(1_000_000_000),
 });
 
 router.get('/payments/:id', async (c) => {
   const app = c.get('app');
-  const payment = await PaymentService.getPayment(c.env, app.workspace_id, c.req.param('id'));
+  const payment = await PaymentService.getPayment(
+    c.env,
+    app.workspace_id,
+    app.id,
+    c.req.param('id'),
+  );
   return success(c, payment);
 });
 
@@ -39,7 +44,7 @@ router.post('/payments/:id/confirm', async (c) => {
   let proofMime: string | null = null;
 
   if (proofImageFile instanceof File) {
-    validateProofFile(proofImageFile);
+    await validateProofFile(proofImageFile);
     proofImage = await proofImageFile.arrayBuffer();
     proofMime = proofImageFile.type || 'image/jpeg';
   }

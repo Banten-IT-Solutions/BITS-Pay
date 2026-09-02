@@ -1,4 +1,5 @@
 import { AppError } from '../../lib/errors';
+import { validateCallbackUrl } from '../../lib/ssrf';
 import type { OcrProvider, OcrResult } from './index';
 
 /**
@@ -18,6 +19,7 @@ export class TesseractVpsOcr implements OcrProvider {
     if (!this.url) {
       throw AppError.internal('vps_ocr_url belum dikonfigurasi');
     }
+    validateCallbackUrl(this.url);
 
     const resp = await fetch(this.url, {
       method: 'POST',

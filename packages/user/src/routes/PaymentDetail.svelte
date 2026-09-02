@@ -25,8 +25,8 @@
     error = '';
     try {
       payment = await api.get<Payment>(`/app/payments/${paymentId}`);
-    } catch (e: any) {
-      error = e.message;
+    } catch (e) {
+      error = (e as Error).message;
     } finally {
       loading = false;
     }
@@ -54,8 +54,8 @@
       payment!.ocr_confidence = result.ocr_confidence;
       selectedFile = null;
       userAmount = '';
-    } catch (e: any) {
-      showToast(e.message, 'error');
+    } catch (e) {
+      showToast((e as Error).message, 'error');
     } finally {
       uploading = false;
     }
@@ -150,12 +150,13 @@
       <Card title="Konfirmasi Pembayaran">
         <form onsubmit={(e) => { e.preventDefault(); confirmPayment(); }} class="space-y-4">
           <div>
-            <label class="mb-1 block text-sm font-medium text-neutral-600">Upload Bukti Transfer</label>
-            <input type="file" accept="image/*" onchange={handleFile} class="w-full text-sm" required />
+            <label for="proof-file" class="mb-1 block text-sm font-medium text-neutral-600">Upload Bukti Transfer</label>
+            <input id="proof-file" type="file" accept="image/*" onchange={handleFile} class="w-full text-sm" required />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-neutral-600">Jumlah yang Dibayar</label>
+            <label for="payment-amount" class="mb-1 block text-sm font-medium text-neutral-600">Jumlah yang Dibayar</label>
             <input
+              id="payment-amount"
               type="number"
               value={userAmount}
               oninput={(e) => userAmount = (e.target as HTMLInputElement).value}

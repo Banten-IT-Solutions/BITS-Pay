@@ -57,7 +57,9 @@ export class ReportService {
 }
 
 function csvEscape(value: unknown): string {
-  const s = value === null || value === undefined ? '' : String(value);
+  let s = value === null || value === undefined ? '' : String(value);
+  // Cegah CSV formula injection (Excel/Sheets eksekusi =,+,-,@ atau tab/CR di awal sel).
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

@@ -15,10 +15,12 @@ const querySchema = z.object({
   per_page: z.coerce.number().int().min(1).max(100).default(20),
   status: z.string().optional(),
   search: z.string().optional(),
+  start_date: z.string().optional(),
+  end_date: z.string().optional(),
 });
 
 const confirmAmountSchema = z.object({
-  amount: z.coerce.number().int().min(100),
+  amount: z.coerce.number().int().min(100).max(1_000_000_000),
 });
 
 router.get('/stats', async (c) => {
@@ -37,6 +39,8 @@ router.get('/', async (c) => {
     query.per_page,
     query.status,
     query.search,
+    query.start_date,
+    query.end_date,
   );
   return paginated(c, result.data, result.total, query.page, query.per_page);
 });
@@ -65,7 +69,7 @@ router.post('/:id/confirm', async (c) => {
   let proofImage: ArrayBuffer | null = null;
   let proofMime: string | null = null;
   if (proofImageFile instanceof File) {
-    validateProofFile(proofImageFile);
+    await validateProofFile(proofImageFile);
     proofImage = await proofImageFile.arrayBuffer();
     proofMime = proofImageFile.type || 'image/jpeg';
   }

@@ -17,8 +17,8 @@
       await auth.login(email, password);
       showToast('Selamat datang admin!', 'success');
       push('/');
-    } catch (e: any) {
-      error = e.message || 'Login gagal';
+    } catch (e) {
+      error = (e as Error).message || 'Login gagal';
     } finally {
       loading = false;
     }
@@ -39,12 +39,12 @@
 
       <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-medium text-neutral-600">Email</label>
-          <input type="email" value={email} oninput={(e) => email = (e.target as HTMLInputElement).value} class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" required />
+          <label for="admin-email" class="mb-1 block text-sm font-medium text-neutral-600">Email</label>
+          <input id="admin-email" type="email" value={email} oninput={(e) => email = (e.target as HTMLInputElement).value} class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" required />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-neutral-600">Password</label>
-          <input type="password" value={password} oninput={(e) => password = (e.target as HTMLInputElement).value} class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" required />
+          <label for="admin-password" class="mb-1 block text-sm font-medium text-neutral-600">Password</label>
+          <input id="admin-password" type="password" value={password} oninput={(e) => password = (e.target as HTMLInputElement).value} class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" required />
         </div>
         <Button type="submit" block loading={loading}>Masuk</Button>
       </form>
