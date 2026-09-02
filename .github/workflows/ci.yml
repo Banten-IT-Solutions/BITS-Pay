@@ -15,7 +15,7 @@ jobs:
           node-version: 24
           cache: 'npm'
       - run: npm ci
-      - run: npx eslint packages/api/src packages/shared/src
+      - run: npm run lint
 
   type-check:
     runs-on: ubuntu-latest

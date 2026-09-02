@@ -9,6 +9,10 @@
     "build": "tsc",
     "type-check": "tsc --noEmit"
   },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.10"
+  },
   "devDependencies": {
     "typescript": "6.0.3",
     "@cloudflare/workers-types": "^5.20260902.1"

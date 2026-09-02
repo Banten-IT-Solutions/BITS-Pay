@@ -15,6 +15,14 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', '*.config.*', '.wrangler/', 'admin/', 'user/', 'web/'],
-  }
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '*.config.*',
+      '.wrangler/',
+      'packages/admin/**',
+      'packages/user/**',
+      'packages/web/**',
+    ],
+  },
 );

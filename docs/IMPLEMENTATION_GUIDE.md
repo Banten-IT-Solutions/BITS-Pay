@@ -225,8 +225,11 @@ export const requireAuth = createMiddleware(async (c, next) => {
   }
   const token = header.slice(7);
   try {
-    const payload = await verifyJWT(token, c.env.JWT_SECRET);
-    c.set('user', payload as any);
+    const payload = await verifyJWT<{ id: string; email: string; tier: string }>(
+      token,
+      c.env.JWT_SECRET,
+    );
+    c.set('user', payload);
     await next();
   } catch {
     throw AppError.unauthorized('Token tidak valid atau expired');
@@ -534,7 +537,8 @@ export class ApiError extends Error {
 }
 
 export const api = {
-  get: <T>(path: string, params?: Record<string, any>) => request<T>(path, { params }),
+  get: <T>(path: string, params?: Record<string, string | number | undefined>) =>
+    request<T>(path, { params }),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body }),
   put: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PUT', body }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
@@ -583,7 +587,8 @@ export interface Env {
   DB: D1Database;
   R2: R2Bucket;
   EMAIL: SendEmail;
-  CALLBACK_QUEUE: Queue<any>;
+  AI: Ai;
+  CALLBACK_QUEUE: Queue<unknown>;
   APP_URL: string;
   FROM_EMAIL: string;
   QRIS_STATIC: string;
