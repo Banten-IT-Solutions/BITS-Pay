@@ -22,7 +22,7 @@ jobs:
       - run: npm run build -w packages/user
       - run: npm run build -w packages/admin
       - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           command: deploy
