@@ -167,7 +167,7 @@ Satu task → satu agent. Jangan pecah task kecil ke banyak agent. Delegasi inde
 - **`requireApiKey`** lookup full key via `api_key_hash`, bukan prefix.
 - **Web Worker 2 statis** — `packages/web` tidak punya `src/index.ts` logic; cuma serve `./dist` via `assets` binding. SPA user/admin dibuild lalu di-copy ke `web/dist`.
 - **API_URL di SPA** — pakai `import.meta.env.VITE_API_URL` (build-time), bukan wrangler vars runtime. Wrangler vars tidak terbaca di client SPA.
-- **`npm run dev:all`** — jalankan `scripts/setup-local.mjs` dulu, lalu `concurrently` 4 service: api (8787), web (5173), user (5174), admin (5175). Semua bind `0.0.0.0` untuk akses LAN/testing. Setiap SPA punya `.env` dengan `VITE_API_URL=http://localhost:8787`.
+- **`npm run dev:all`** — jalankan `scripts/setup-local.mjs` dulu, lalu `concurrently` 4 service: api (5173), web (5174), user (5175), admin (5176). Semua bind `0.0.0.0` untuk akses LAN/testing. Setiap SPA punya `.env` dengan `VITE_API_URL=http://localhost:5173`.
 - **`scripts/setup-local.mjs`** — idempotent, buat `.dev.vars` + `.env` + jalanin D1 migrations `--local`. Jangan tulis manual. File existing tidak ditimpa.
 - **`wrangler.jsonc` migrations_dir** — `"migrations_dir": "src/db/migrations"` (bukan default `migrations/`).
 - **Durable Object RateLimiter** — di-shard via `idFromName(key)`. State in-memory (DO restart reset counter). Guard memory growth di `fetch()`.

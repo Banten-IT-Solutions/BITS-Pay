@@ -23,14 +23,14 @@ const devVarsTemplate = () =>
     'JWT_EXPIRES_IN=7d',
     // QRIS static test payload (merchant test, bukan produksi)
     'QRIS_STATIC=00020101021126640012ID.CO.BITS.WWW01189360091200008080240215BITS-PAY-TEST5204000053033605802ID5914BITS Pay Test6007Banten61053630062070703A016304',
-    'APP_URL=http://localhost:5173',
+    'APP_URL=http://localhost:5174',
     'FROM_EMAIL=noreply@pay.bits.co.id',
     'TRANSACTION_EXPIRE_MINUTES=15',
     'PREMIUM_PRICE_MONTHLY=50000',
     'PREMIUM_PRICE_YEARLY=500000',
     'GOOGLE_CLIENT_ID=dummy-client-id',
     'GOOGLE_CLIENT_SECRET=dummy-client-secret',
-    'GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback',
+    'GOOGLE_REDIRECT_URI=http://localhost:5173/auth/google/callback',
     'OCR_CONFIDENCE_THRESHOLD=85',
     'MAX_UNIQUE_CODE=9999',
     'PROOF_RETENTION_DAYS=30',
@@ -47,9 +47,7 @@ if (!existsSync(devVarsPath)) {
   const secret = match?.[1]?.trim() ?? '';
   if (secret.length < 32) {
     const line = `JWT_SECRET=${genSecret()}`;
-    const next = match
-      ? content.replace(/^JWT_SECRET=.*$/m, line)
-      : `${line}\n${content}`;
+    const next = match ? content.replace(/^JWT_SECRET=.*$/m, line) : `${line}\n${content}`;
     writeFileSync(devVarsPath, next);
     log('JWT_SECRET di .dev.vars terlalu pendek/kosong — digenerate ulang');
   } else {
@@ -61,7 +59,7 @@ if (!existsSync(devVarsPath)) {
 for (const pkg of ['web', 'user', 'admin']) {
   const envPath = join(root, `packages/${pkg}/.env`);
   if (!existsSync(envPath)) {
-    writeFileSync(envPath, 'VITE_API_URL=http://localhost:8787\n');
+    writeFileSync(envPath, 'VITE_API_URL=http://localhost:5173\n');
     log(`buat packages/${pkg}/.env`);
   } else {
     log(`packages/${pkg}/.env OK, skip`);

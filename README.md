@@ -17,18 +17,18 @@ npm run dev:all
 
 | Service                  | Port | URL                   |
 | ------------------------ | ---- | --------------------- |
-| API (Hono Workers)       | 8787 | http://localhost:8787 |
-| Landing page (Web)       | 5173 | http://localhost:5173 |
-| User dashboard (Svelte)  | 5174 | http://localhost:5174 |
-| Admin dashboard (Svelte) | 5175 | http://localhost:5175 |
+| API (Hono Workers)       | 5173 | http://localhost:5173 |
+| Landing page (Web)       | 5174 | http://localhost:5174 |
+| User dashboard (Svelte)  | 5175 | http://localhost:5175 |
+| Admin dashboard (Svelte) | 5176 | http://localhost:5176 |
 
-> Semua SPA di-root `packages/{web,user,admin}/.env` punya `VITE_API_URL=http://localhost:8787`.
+> Semua SPA di-root `packages/{web,user,admin}/.env` punya `VITE_API_URL=http://localhost:5173`.
 
 ## Scripts
 
 | Script                | Fungsi                                                 |
 | --------------------- | ------------------------------------------------------ |
-| `npm run dev`         | API worker saja (port 8787)                            |
+| `npm run dev`         | API worker saja (port 5173)                            |
 | `npm run dev:all`     | Setup + run semua service (concurrently)               |
 | `npm run dev:all:run` | Run semua service tanpa setup ulang                    |
 | `npm run dev:setup`   | Setup idempotent lokal (dev vars, .env, D1 migrations) |
