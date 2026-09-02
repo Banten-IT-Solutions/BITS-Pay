@@ -8,6 +8,7 @@
     '/login': 'Masuk',
     '/apps': 'Apps',
     '/payments': 'Pembayaran',
+    '/invoices': 'Tagihan',
     '/subscription': 'Langganan',
   };
 

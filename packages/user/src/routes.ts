@@ -6,6 +6,8 @@ import WorkspaceDetail from './routes/WorkspaceDetail.svelte';
 import Apps from './routes/Apps.svelte';
 import Payments from './routes/Payments.svelte';
 import PaymentDetail from './routes/PaymentDetail.svelte';
+import Subscription from './routes/Subscription.svelte';
+import Invoices from './routes/Invoices.svelte';
 
 const routes: RouteDefinition = {
   '/login': Login,
@@ -15,6 +17,8 @@ const routes: RouteDefinition = {
   '/apps': Apps,
   '/payments': Payments,
   '/payments/:id': PaymentDetail,
+  '/subscription': Subscription,
+  '/invoices': Invoices,
 };
 
 export default routes;

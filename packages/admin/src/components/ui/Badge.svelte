@@ -14,6 +14,12 @@
     active: 'bg-success/10 text-success',
     suspended: 'bg-warning/15 text-warning',
     banned: 'bg-error/10 text-error',
+    canceled: 'bg-neutral-100 text-neutral-600',
+    paid: 'bg-success/10 text-success',
+    free: 'bg-neutral-100 text-neutral-600',
+    premium: 'bg-primary-500/10 text-primary-500',
+    premium_monthly: 'bg-primary-500/10 text-primary-500',
+    premium_yearly: 'bg-primary-500/10 text-primary-500',
   };
   const labels: Record<string, string> = {
     success: 'Sukses',
@@ -24,6 +30,12 @@
     active: 'Aktif',
     suspended: 'Suspend',
     banned: 'Banned',
+    canceled: 'Dibatalkan',
+    paid: 'Lunas',
+    free: 'Free',
+    premium: 'Premium',
+    premium_monthly: 'Premium Bulanan',
+    premium_yearly: 'Premium Tahunan',
   };
 </script>
 

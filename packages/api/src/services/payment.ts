@@ -11,6 +11,7 @@ import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { QrService } from './qr';
 import { getOcrProvider } from './ocr';
+import { SubscriptionService } from './subscription';
 
 export const chargeSchema = z.object({
   order_id: z.string().min(1, 'order_id wajib diisi'),
@@ -191,6 +192,10 @@ export class PaymentService {
           paymentId,
         )
         .run();
+
+      if (status === 'success') {
+        await SubscriptionService.activateFromInvoice(env, paymentId);
+      }
 
       return {
         id: paymentId,

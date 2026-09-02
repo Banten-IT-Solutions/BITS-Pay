@@ -4,6 +4,7 @@ import {
   findAvailableCode,
   type Subscription,
   type Invoice,
+  type Payment,
 } from '@bits-pay/shared';
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
@@ -121,6 +122,13 @@ export class BillingService {
       .bind(sub.id)
       .first<Subscription>();
     if (!updated) throw AppError.internal('Gagal cancel subscription');
+
+    await env.DB.prepare(
+      "UPDATE users SET tier = 'free', tier_expires_at = NULL, updated_at = datetime('now') WHERE id = ?",
+    )
+      .bind(userId)
+      .run();
+
     return updated;
   }
 
@@ -148,5 +156,57 @@ export class BillingService {
       .first<Invoice>();
     if (!invoice) throw AppError.notFound('Invoice');
     return invoice;
+  }
+
+  static async payInvoice(env: Env, userId: string, invoiceId: string): Promise<Payment> {
+    const invoice = await env.DB.prepare('SELECT * FROM invoices WHERE id = ? AND user_id = ?')
+      .bind(invoiceId, userId)
+      .first<Invoice>();
+    if (!invoice) throw AppError.notFound('Invoice');
+    if (invoice.status !== 'pending') {
+      throw AppError.badRequest('invalid_status', 'Invoice sudah dibayar atau expired');
+    }
+
+    let workspaceId: string | null = null;
+    if (invoice.subscription_id) {
+      const sub = await env.DB.prepare('SELECT workspace_id FROM subscriptions WHERE id = ?')
+        .bind(invoice.subscription_id)
+        .first<{ workspace_id: string }>();
+      if (sub) workspaceId = sub.workspace_id;
+    }
+    if (!workspaceId) {
+      const member = await env.DB.prepare(
+        'SELECT workspace_id FROM workspace_members WHERE user_id = ? LIMIT 1',
+      )
+        .bind(userId)
+        .first<{ workspace_id: string }>();
+      workspaceId = member?.workspace_id ?? null;
+    }
+    if (!workspaceId) throw AppError.badRequest('no_workspace', 'Tidak ada workspace');
+
+    const paymentId = crypto.randomUUID();
+    const payment = await env.DB.prepare(
+      `INSERT INTO payments (id, workspace_id, user_id, type, amount, amount_due, unique_code, currency, qris_dynamic, qr_image, expired_at, created_at, updated_at)
+       VALUES (?, ?, ?, 'invoice', ?, ?, ?, 'IDR', ?, ?, ?, datetime('now'), datetime('now')) RETURNING *`,
+    )
+      .bind(
+        paymentId,
+        workspaceId,
+        userId,
+        invoice.amount,
+        invoice.amount_due,
+        invoice.unique_code,
+        invoice.qris_dynamic,
+        invoice.qr_image,
+        invoice.expired_at,
+      )
+      .first<Payment>();
+    if (!payment) throw AppError.internal('Gagal membuat pembayaran');
+
+    await env.DB.prepare('UPDATE invoices SET payment_id = ? WHERE id = ?')
+      .bind(paymentId, invoiceId)
+      .run();
+
+    return payment;
   }
 }

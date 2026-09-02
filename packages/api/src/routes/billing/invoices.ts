@@ -26,4 +26,10 @@ router.get('/:id', async (c) => {
   return success(c, invoice);
 });
 
+router.post('/:id/pay', async (c) => {
+  const user = c.get('user');
+  const payment = await BillingService.payInvoice(c.env, user.id, c.req.param('id'));
+  return success(c, payment, 201);
+});
+
 export { router as invoicesRoute };

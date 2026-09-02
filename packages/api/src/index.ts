@@ -7,6 +7,7 @@ import { apiRoutes } from './routes/api';
 import { adminRoutes } from './routes/admin';
 import { billingRoutes } from './routes/billing';
 import { CallbackService } from './services/callback';
+import { SubscriptionService } from './services/subscription';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -65,6 +66,9 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
           },
         );
       }
+
+      await SubscriptionService.expireAndDowngrade(env);
+      await SubscriptionService.sendInvoiceReminders(env);
     })(),
   );
 }

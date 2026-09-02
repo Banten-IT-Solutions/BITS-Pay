@@ -9,6 +9,7 @@
     { href: '/workspaces', icon: '&#128193;', label: 'Workspaces' },
     { href: '/apps', icon: '&#129302;', label: 'Apps' },
     { href: '/payments', icon: '&#128179;', label: 'Payments' },
+    { href: '/invoices', icon: '&#128196;', label: 'Invoices' },
     { href: '/subscription', icon: '&#128230;', label: 'Subscription' },
   ];
 

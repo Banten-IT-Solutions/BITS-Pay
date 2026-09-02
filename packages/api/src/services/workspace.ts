@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import type { Workspace, WorkspaceWithMemberCount } from '@bits-pay/shared';
+import type {
+  Workspace,
+  WorkspaceWithMemberCount,
+  WorkspaceMember,
+  UserTier,
+} from '@bits-pay/shared';
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { TierService } from './tier';
@@ -23,6 +28,15 @@ export const updateWorkspaceSchema = z.object({
   description: z.string().optional(),
 });
 
+export const inviteMemberSchema = z.object({
+  email: z.string().email('Email tidak valid'),
+  role: z.enum(['admin', 'member']).default('member'),
+});
+
+export const updateMemberRoleSchema = z.object({
+  role: z.enum(['owner', 'admin', 'member']),
+});
+
 export class WorkspaceService {
   static async list(env: Env, userId: string): Promise<WorkspaceWithMemberCount[]> {
     const { results } = await env.DB.prepare(
@@ -44,7 +58,10 @@ export class WorkspaceService {
     userId: string,
     input: z.infer<typeof createWorkspaceSchema>,
   ): Promise<Workspace> {
-    const features = await TierService.getTierFeatures(env, 'free');
+    const user = await env.DB.prepare('SELECT tier FROM users WHERE id = ?')
+      .bind(userId)
+      .first<{ tier: UserTier }>();
+    const features = await TierService.getTierFeatures(env, user?.tier ?? 'free');
     const existing = await this.list(env, userId);
     TierService.checkLimit('max_workspaces', existing.length, features.max_workspaces);
 
@@ -126,6 +143,122 @@ export class WorkspaceService {
 
     await env.DB.prepare('UPDATE workspaces SET is_active = 0 WHERE id = ?')
       .bind(workspaceId)
+      .run();
+  }
+
+  static async getMemberRole(
+    env: Env,
+    workspaceId: string,
+    userId: string,
+  ): Promise<WorkspaceMember | null> {
+    const member = await env.DB.prepare(
+      'SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?',
+    )
+      .bind(workspaceId, userId)
+      .first<WorkspaceMember>();
+    return member ?? null;
+  }
+
+  static async inviteMember(
+    env: Env,
+    actorUserId: string,
+    workspaceId: string,
+    input: z.infer<typeof inviteMemberSchema>,
+  ): Promise<WorkspaceMember & { email: string; name: string }> {
+    const actorMember = await this.getMemberRole(env, workspaceId, actorUserId);
+    if (!actorMember || (actorMember.role !== 'owner' && actorMember.role !== 'admin')) {
+      throw AppError.unauthorized('Hanya owner/admin yang bisa mengundang anggota');
+    }
+
+    const targetUser = await env.DB.prepare('SELECT id, email, name FROM users WHERE email = ?')
+      .bind(input.email)
+      .first<{ id: string; email: string; name: string }>();
+    if (!targetUser) throw AppError.notFound('User dengan email tersebut');
+
+    const owner = await env.DB.prepare(
+      'SELECT tier FROM users WHERE id = (SELECT user_id FROM workspaces WHERE id = ?)',
+    )
+      .bind(workspaceId)
+      .first<{ tier: UserTier }>();
+    const features = await TierService.getTierFeatures(env, owner?.tier ?? 'free');
+    const { results: currentMembers } = await env.DB.prepare(
+      'SELECT COUNT(*) as c FROM workspace_members WHERE workspace_id = ?',
+    )
+      .bind(workspaceId)
+      .all<{ c: number }>();
+    const memberCount = currentMembers?.[0]?.c ?? 0;
+    TierService.checkLimit('max_team_members', memberCount, features.max_team_members);
+
+    const existing = await env.DB.prepare(
+      'SELECT id FROM workspace_members WHERE workspace_id = ? AND user_id = ?',
+    )
+      .bind(workspaceId, targetUser.id)
+      .first();
+    if (existing) throw AppError.conflict('member_exists', 'User sudah menjadi anggota');
+
+    const id = crypto.randomUUID();
+    const member = await env.DB.prepare(
+      'INSERT INTO workspace_members (id, workspace_id, user_id, role) VALUES (?, ?, ?, ?) RETURNING *',
+    )
+      .bind(id, workspaceId, targetUser.id, input.role)
+      .first<WorkspaceMember>();
+    if (!member) throw AppError.internal('Gagal menambahkan anggota');
+
+    return { ...member, email: targetUser.email, name: targetUser.name };
+  }
+
+  static async updateMemberRole(
+    env: Env,
+    actorUserId: string,
+    workspaceId: string,
+    memberId: string,
+    role: z.infer<typeof updateMemberRoleSchema>['role'],
+  ): Promise<WorkspaceMember> {
+    const actorMember = await this.getMemberRole(env, workspaceId, actorUserId);
+    if (!actorMember || actorMember.role !== 'owner') {
+      throw AppError.unauthorized('Hanya owner yang bisa mengubah peran anggota');
+    }
+
+    const target = await env.DB.prepare(
+      'SELECT * FROM workspace_members WHERE id = ? AND workspace_id = ?',
+    )
+      .bind(memberId, workspaceId)
+      .first<WorkspaceMember>();
+    if (!target) throw AppError.notFound('Anggota');
+    if (target.role === 'owner')
+      throw AppError.badRequest('invalid_role', 'Tidak bisa mengubah peran owner');
+
+    const updated = await env.DB.prepare(
+      'UPDATE workspace_members SET role = ? WHERE id = ? AND workspace_id = ? RETURNING *',
+    )
+      .bind(role, memberId, workspaceId)
+      .first<WorkspaceMember>();
+    if (!updated) throw AppError.internal('Gagal mengubah peran');
+    return updated;
+  }
+
+  static async removeMember(
+    env: Env,
+    actorUserId: string,
+    workspaceId: string,
+    memberId: string,
+  ): Promise<void> {
+    const actorMember = await this.getMemberRole(env, workspaceId, actorUserId);
+    if (!actorMember || (actorMember.role !== 'owner' && actorMember.role !== 'admin')) {
+      throw AppError.unauthorized('Hanya owner/admin yang bisa menghapus anggota');
+    }
+
+    const target = await env.DB.prepare(
+      'SELECT * FROM workspace_members WHERE id = ? AND workspace_id = ?',
+    )
+      .bind(memberId, workspaceId)
+      .first<WorkspaceMember>();
+    if (!target) throw AppError.notFound('Anggota');
+    if (target.role === 'owner')
+      throw AppError.badRequest('invalid_role', 'Tidak bisa menghapus owner');
+
+    await env.DB.prepare('DELETE FROM workspace_members WHERE id = ? AND workspace_id = ?')
+      .bind(memberId, workspaceId)
       .run();
   }
 }

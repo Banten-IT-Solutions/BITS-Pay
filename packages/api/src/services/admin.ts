@@ -3,6 +3,7 @@ import type { AdminOverview, Payment, UserPublic } from '@bits-pay/shared';
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { CallbackService } from './callback';
+import { SubscriptionService } from './subscription';
 
 export const updateUserSchema = z.object({
   tier: z.enum(['free', 'premium']).optional(),
@@ -115,6 +116,8 @@ export class AdminService {
       .bind(adminId, paymentId)
       .first<Payment>();
     if (!updated) throw AppError.internal('Gagal konfirmasi payment');
+
+    await SubscriptionService.activateFromInvoice(env, paymentId);
 
     if (payment.app_id) {
       const app = await env.DB.prepare('SELECT id, callback_url FROM apps WHERE id = ?')
