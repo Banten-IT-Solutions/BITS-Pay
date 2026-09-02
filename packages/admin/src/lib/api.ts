@@ -67,3 +67,17 @@ export const api = {
     });
   },
 };
+
+/**
+ * Ambil bukti transfer sebagai object URL (butuh header Authorization,
+ * tidak bisa lewat <img src> polos).
+ */
+export async function proofUrl(id: string): Promise<string> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}/admin/payments/${id}/proof`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new ApiError(res.status, 'proof_load_failed', 'Gagal memuat bukti bayar');
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}

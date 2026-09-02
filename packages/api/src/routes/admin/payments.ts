@@ -4,6 +4,7 @@ import type { Env } from '../../config';
 import { requireAuth } from '../../middleware/auth';
 import { requireAdmin } from '../../middleware/admin';
 import { success, paginated } from '../../lib/response';
+import { AppError } from '../../lib/errors';
 import { AdminService } from '../../services/admin';
 
 const router = new Hono<{ Bindings: Env }>();
@@ -37,6 +38,19 @@ router.get('/review', async (c) => {
 router.get('/:id', async (c) => {
   const payment = await AdminService.getPayment(c.env, c.req.param('id'));
   return success(c, payment);
+});
+
+router.get('/:id/proof', async (c) => {
+  const payment = await AdminService.getPayment(c.env, c.req.param('id'));
+  if (!payment.proof_path) throw AppError.notFound('Bukti bayar');
+  const obj = await c.env.R2.get(payment.proof_path);
+  if (!obj) throw AppError.notFound('Bukti bayar');
+  return new Response(obj.body, {
+    headers: {
+      'Content-Type': payment.proof_mime ?? 'image/jpeg',
+      'Cache-Control': 'private, max-age=3600',
+    },
+  });
 });
 
 router.post('/:id/confirm', async (c) => {

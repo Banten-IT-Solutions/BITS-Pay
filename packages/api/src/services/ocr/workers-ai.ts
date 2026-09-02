@@ -26,7 +26,12 @@ export class WorkersAiOcr implements OcrProvider {
     const rawText = result.response ?? '';
     const jsonText = rawText.match(/\{[\s\S]*\}/)?.[0];
     if (!jsonText) throw AppError.internal('OCR tidak mengembalikan JSON');
-    const parsed = ocrResultJsonSchema.safeParse(JSON.parse(jsonText));
+    let parsed;
+    try {
+      parsed = ocrResultJsonSchema.safeParse(JSON.parse(jsonText));
+    } catch {
+      throw AppError.internal('Gagal memproses hasil OCR');
+    }
     if (!parsed.success) throw AppError.internal('Format hasil OCR tidak valid');
     return { ...parsed.data, rawText, provider: this.name };
   }

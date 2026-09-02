@@ -44,7 +44,7 @@
     "PREMIUM_PRICE_MONTHLY": "50000",
     "PREMIUM_PRICE_YEARLY": "500000",
     "GOOGLE_CLIENT_ID": "",
-    "GOOGLE_REDIRECT_URI": "https://pay.bits.co.id/auth/google/callback",
+    "GOOGLE_REDIRECT_URI": "https://api.pay.bits.co.id/auth/google/callback",
     "JWT_SECRET": "",
     "JWT_EXPIRES_IN": "7d",
     "ADMIN_EMAILS": "",

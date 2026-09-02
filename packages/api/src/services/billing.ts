@@ -8,6 +8,7 @@ import {
 } from '@bits-pay/shared';
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
+import { dbTime } from '../lib/time';
 import { QrService } from './qr';
 
 export const upgradeSchema = z.object({
@@ -51,12 +52,14 @@ export class BillingService {
     const qrImage = await QrService.generateQrImage(qrisDynamic, amountDue);
 
     const now = new Date();
-    const periodStart = now.toISOString();
-    const periodEnd = new Date(
-      input.tier === 'premium_yearly'
-        ? now.setFullYear(now.getFullYear() + 1)
-        : now.setMonth(now.getMonth() + 1),
-    ).toISOString();
+    const periodStart = dbTime(now);
+    const periodEnd = dbTime(
+      new Date(
+        input.tier === 'premium_yearly'
+          ? now.setFullYear(now.getFullYear() + 1)
+          : now.setMonth(now.getMonth() + 1),
+      ),
+    );
 
     const subscriptionId = crypto.randomUUID();
     const subscription = await env.DB.prepare(
@@ -67,8 +70,8 @@ export class BillingService {
       .first<Subscription>();
     if (!subscription) throw AppError.internal('Gagal membuat subscription');
 
-    const dueAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    const expiredAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const dueAt = dbTime(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    const expiredAt = dbTime(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000));
     const invoiceId = crypto.randomUUID();
     const invoice = await env.DB.prepare(
       `INSERT INTO invoices (id, subscription_id, user_id, amount, amount_due, unique_code, tier, period_start, period_end, qris_dynamic, qr_image, due_at, expired_at)
@@ -165,6 +168,14 @@ export class BillingService {
     if (!invoice) throw AppError.notFound('Invoice');
     if (invoice.status !== 'pending') {
       throw AppError.badRequest('invalid_status', 'Invoice sudah dibayar atau expired');
+    }
+    if (invoice.payment_id) {
+      const existing = await env.DB.prepare('SELECT * FROM payments WHERE id = ?')
+        .bind(invoice.payment_id)
+        .first<Payment>();
+      if (existing && (existing.status === 'pending' || existing.status === 'success')) {
+        return existing;
+      }
     }
 
     let workspaceId: string | null = null;

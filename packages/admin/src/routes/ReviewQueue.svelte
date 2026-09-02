@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api } from '../lib/api';
+  import { api, proofUrl } from '../lib/api';
   import { showToast } from '../lib/toast';
   import Card from '../components/ui/Card.svelte';
   import Badge from '../components/ui/Badge.svelte';
@@ -8,9 +8,10 @@
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
-  import type { Payment, AdminPaymentConfirmInput } from '@bits-pay/shared';
+  import type { Payment } from '@bits-pay/shared';
 
   let items = $state<Payment[]>([]);
+  let proofUrls = $state<Record<string, string>>({});
   let loading = $state(true);
   let error = $state('');
 
@@ -18,7 +19,23 @@
     loading = true;
     error = '';
     try {
-      items = await api.get<Payment[]>('/admin/payments/review');
+      const data = await api.get<{ items: Payment[]; page: number; per_page: number; total: number }>(
+        '/admin/payments/review',
+      );
+      items = data.items;
+      const urls: Record<string, string> = {};
+      await Promise.all(
+        data.items
+          .filter((p) => p.proof_path)
+          .map(async (p) => {
+            try {
+              urls[p.id] = await proofUrl(p.id);
+            } catch {
+              urls[p.id] = '';
+            }
+          }),
+      );
+      proofUrls = urls;
     } catch (e: any) {
       error = e.message;
     } finally {
@@ -30,7 +47,7 @@
 
   async function handleAction(paymentId: string, action: 'confirm' | 'reject') {
     try {
-      await api.post(`/admin/payments/${paymentId}/${action}`, { note: '' } as AdminPaymentConfirmInput);
+      await api.post(`/admin/payments/${paymentId}/${action}`);
       showToast(`Transaksi ${action === 'confirm' ? 'dikonfirmasi' : 'ditolak'}`, 'success');
       items = items.filter((p) => p.id !== paymentId);
     } catch (e: any) {
@@ -84,7 +101,11 @@
         </div>
         {#if p.proof_path}
           <div class="my-3">
-            <img src={p.proof_path} alt="Bukti transfer" class="w-full rounded-lg border border-neutral-100" />
+            {#if proofUrls[p.id]}
+              <img src={proofUrls[p.id]} alt="Bukti transfer" class="w-full rounded-lg border border-neutral-100" />
+            {:else}
+              <p class="py-3 text-center text-sm text-neutral-400">Memuat bukti...</p>
+            {/if}
           </div>
         {/if}
         <div class="mt-3 flex gap-2">

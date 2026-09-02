@@ -159,6 +159,26 @@ export class WorkspaceService {
     return member ?? null;
   }
 
+  static async listMembers(
+    env: Env,
+    userId: string,
+    workspaceId: string,
+  ): Promise<(WorkspaceMember & { email: string; name: string; avatar_url: string | null })[]> {
+    const actor = await this.getMemberRole(env, workspaceId, userId);
+    if (!actor) throw AppError.notFound('Workspace');
+
+    const { results } = await env.DB.prepare(
+      `SELECT wm.id, wm.workspace_id, wm.user_id, wm.role, wm.joined_at, u.email, u.name, u.avatar_url
+       FROM workspace_members wm
+       INNER JOIN users u ON u.id = wm.user_id
+       WHERE wm.workspace_id = ?
+       ORDER BY wm.joined_at ASC`,
+    )
+      .bind(workspaceId)
+      .all<WorkspaceMember & { email: string; name: string; avatar_url: string | null }>();
+    return results ?? [];
+  }
+
   static async inviteMember(
     env: Env,
     actorUserId: string,

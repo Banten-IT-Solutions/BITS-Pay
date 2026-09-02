@@ -10,6 +10,7 @@ import {
 } from '@bits-pay/shared';
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
+import { dbTime } from '../lib/time';
 import { QrService } from './qr';
 import { getOcrProvider } from './ocr';
 import { TierService } from './tier';
@@ -20,7 +21,7 @@ export const chargeSchema = z.object({
   amount: z.number().int().min(100, 'Amount minimal Rp 100'),
   currency: z.string().default('IDR'),
   description: z.string().optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export class PaymentService {
@@ -55,29 +56,40 @@ export class PaymentService {
     const qrImage = await QrService.generateQrImage(qrisDynamic, amountDue);
 
     const expireMinutes = parseInt(env.TRANSACTION_EXPIRE_MINUTES, 10) || 15;
-    const expiredAt = new Date(Date.now() + expireMinutes * 60 * 1000).toISOString();
+    const expiredAt = dbTime(new Date(Date.now() + expireMinutes * 60 * 1000));
 
     const id = crypto.randomUUID();
-    const payment = await env.DB.prepare(
-      `INSERT INTO payments (id, workspace_id, app_id, order_id, amount, amount_due, unique_code, currency, description, metadata, qris_dynamic, qr_image, expired_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
-    )
-      .bind(
-        id,
-        app.workspace_id,
-        app.id,
-        input.order_id,
-        input.amount,
-        amountDue,
-        uniqueCode,
-        input.currency,
-        input.description ?? null,
-        input.metadata ? JSON.stringify(input.metadata) : null,
-        qrisDynamic,
-        qrImage,
-        expiredAt,
+    let payment: Payment | null;
+    try {
+      payment = await env.DB.prepare(
+        `INSERT INTO payments (id, workspace_id, app_id, order_id, amount, amount_due, unique_code, currency, description, metadata, qris_dynamic, qr_image, expired_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
       )
-      .first<Payment>();
+        .bind(
+          id,
+          app.workspace_id,
+          app.id,
+          input.order_id,
+          input.amount,
+          amountDue,
+          uniqueCode,
+          input.currency,
+          input.description ?? null,
+          input.metadata ? JSON.stringify(input.metadata) : null,
+          qrisDynamic,
+          qrImage,
+          expiredAt,
+        )
+        .first<Payment>();
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('UNIQUE')) {
+        throw AppError.conflict(
+          'duplicate_order',
+          'order_id sudah digunakan untuk transaksi aktif',
+        );
+      }
+      throw err;
+    }
     if (!payment) throw AppError.internal('Gagal membuat charge');
 
     return {
@@ -131,15 +143,26 @@ export class PaymentService {
 
   static async confirmPayment(
     env: Env,
+    workspaceId: string,
+    appId: string | null,
     paymentId: string,
     formData: { amount: number; proofImage: ArrayBuffer | null; proofMime: string | null },
   ): Promise<PaymentConfirmResponse> {
-    const payment = await env.DB.prepare('SELECT * FROM payments WHERE id = ?')
-      .bind(paymentId)
-      .first<Payment>();
+    const payment = appId
+      ? await env.DB.prepare(
+          'SELECT * FROM payments WHERE id = ? AND workspace_id = ? AND app_id = ?',
+        )
+          .bind(paymentId, workspaceId, appId)
+          .first<Payment>()
+      : await env.DB.prepare('SELECT * FROM payments WHERE id = ? AND workspace_id = ?')
+          .bind(paymentId, workspaceId)
+          .first<Payment>();
     if (!payment) throw AppError.notFound('Payment');
     if (payment.status !== 'pending') {
       throw AppError.badRequest('invalid_status', `Status transaksi: ${payment.status}`);
+    }
+    if (payment.expired_at && payment.expired_at < dbTime(new Date())) {
+      throw AppError.badRequest('expired', 'Transaksi sudah kedaluwarsa');
     }
 
     if (formData.amount !== payment.amount_due) {
@@ -196,8 +219,8 @@ export class PaymentService {
         matchResult = 'mismatch';
       }
 
-      const paidAt = status === 'success' ? new Date().toISOString() : null;
-      const confirmedAt = status === 'success' ? new Date().toISOString() : null;
+      const paidAt = status === 'success' ? dbTime(new Date()) : null;
+      const confirmedAt = status === 'success' ? dbTime(new Date()) : null;
 
       await env.DB.prepare(
         `UPDATE payments SET

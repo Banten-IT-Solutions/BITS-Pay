@@ -4,6 +4,7 @@ import type { Env } from '../../config';
 import { requireAuth } from '../../middleware/auth';
 import { success, paginated } from '../../lib/response';
 import { AppError } from '../../lib/errors';
+import { validateProofFile } from '../../lib/upload';
 import { PaymentService } from '../../services/payment';
 
 const router = new Hono<{ Bindings: Env }>();
@@ -48,7 +49,7 @@ router.get('/:id', async (c) => {
 
 router.post('/:id/confirm', async (c) => {
   const user = c.get('user');
-  await PaymentService.getUserPayment(c.env, user.id, c.req.param('id'));
+  const payment = await PaymentService.getUserPayment(c.env, user.id, c.req.param('id'));
 
   const body = await c.req.parseBody();
   const amountRaw = body.amount;
@@ -64,15 +65,22 @@ router.post('/:id/confirm', async (c) => {
   let proofImage: ArrayBuffer | null = null;
   let proofMime: string | null = null;
   if (proofImageFile instanceof File) {
+    validateProofFile(proofImageFile);
     proofImage = await proofImageFile.arrayBuffer();
     proofMime = proofImageFile.type || 'image/jpeg';
   }
 
-  const result = await PaymentService.confirmPayment(c.env, c.req.param('id'), {
-    amount: amountParsed.data.amount,
-    proofImage,
-    proofMime,
-  });
+  const result = await PaymentService.confirmPayment(
+    c.env,
+    payment.workspace_id,
+    null,
+    c.req.param('id'),
+    {
+      amount: amountParsed.data.amount,
+      proofImage,
+      proofMime,
+    },
+  );
 
   const statusCode =
     result.status === 'pending_review' ? 202 : result.status === 'failed' ? 400 : 200;

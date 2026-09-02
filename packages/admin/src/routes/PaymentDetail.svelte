@@ -1,19 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
-  import { api } from '../lib/api';
+import { api, proofUrl } from '../lib/api';
   import { showToast } from '../lib/toast';
   import Card from '../components/ui/Card.svelte';
   import Badge from '../components/ui/Badge.svelte';
   import Button from '../components/ui/Button.svelte';
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
-  import type { Payment, AdminPaymentConfirmInput } from '@bits-pay/shared';
+  import type { Payment } from '@bits-pay/shared';
 
   let { params } = $props();
   let paymentId = $derived(params?.id || '');
 
   let payment = $state<Payment | null>(null);
+  let proofUrlValue = $state('');
   let loading = $state(true);
   let error = $state('');
   let acting = $state(false);
@@ -23,6 +24,13 @@
     error = '';
     try {
       payment = await api.get<Payment>(`/admin/payments/${paymentId}`);
+      if (payment?.proof_path) {
+        try {
+          proofUrlValue = await proofUrl(payment.id);
+        } catch {
+          proofUrlValue = '';
+        }
+      }
     } catch (e: any) {
       error = e.message;
     } finally {
@@ -35,7 +43,7 @@
   async function handleAction(action: 'confirm' | 'reject') {
     acting = true;
     try {
-      const result = await api.post<Payment>(`/admin/payments/${paymentId}/${action}`, { action } as AdminPaymentConfirmInput);
+      const result = await api.post<Payment>(`/admin/payments/${paymentId}/${action}`);
       payment = result;
       showToast(`Transaksi ${action === 'confirm' ? 'dikonfirmasi' : 'ditolak'}`, 'success');
     } catch (e: any) {
@@ -104,7 +112,11 @@
       {#if payment.proof_path}
         <div class="mt-3">
           <p class="mb-1 text-xs font-medium text-neutral-400">Bukti Transfer</p>
-          <img src={payment.proof_path} alt="Bukti" class="w-full rounded-lg border border-neutral-100" />
+          {#if proofUrlValue}
+            <img src={proofUrlValue} alt="Bukti" class="w-full rounded-lg border border-neutral-100" />
+          {:else}
+            <p class="py-3 text-center text-sm text-neutral-400">Memuat bukti...</p>
+          {/if}
         </div>
       {/if}
     </Card>

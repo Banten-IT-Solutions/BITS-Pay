@@ -14,18 +14,11 @@ const router = new Hono<{ Bindings: Env }>();
 router.use('*', requireAuth);
 
 router.get('/', async (c) => {
+  const user = c.get('user');
   const wid = c.req.param('wid');
   if (!wid) throw AppError.badRequest('validation_error', 'workspace_id tidak valid');
-  const { results } = await c.env.DB.prepare(
-    `SELECT wm.id, wm.workspace_id, wm.user_id, wm.role, wm.joined_at, u.email, u.name, u.avatar_url
-     FROM workspace_members wm
-     INNER JOIN users u ON u.id = wm.user_id
-     WHERE wm.workspace_id = ?
-     ORDER BY wm.joined_at ASC`,
-  )
-    .bind(wid)
-    .all();
-  return success(c, results ?? []);
+  const members = await WorkspaceService.listMembers(c.env, user.id, wid);
+  return success(c, members);
 });
 
 router.post('/', async (c) => {
@@ -53,7 +46,7 @@ router.delete('/:memberId', async (c) => {
   const memberId = c.req.param('memberId');
   if (!wid) throw AppError.badRequest('validation_error', 'workspace_id tidak valid');
   await WorkspaceService.removeMember(c.env, user.id, wid, memberId);
-  return success(c, null, 204);
+  return success(c, null, 200);
 });
 
 export { router as membersRoute };

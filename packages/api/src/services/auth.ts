@@ -177,15 +177,21 @@ export class AuthService {
       .run();
   }
 
-  static googleAuthUrl(env: Env): string {
+  static async googleAuthUrl(env: Env): Promise<string> {
     const redirectUri = env.GOOGLE_REDIRECT_URI;
     const clientId = env.GOOGLE_CLIENT_ID;
+    const state = generateToken(16);
+    await env.DB.prepare('INSERT INTO oauth_states (id, state, expires_at) VALUES (?, ?, ?)')
+      .bind(crypto.randomUUID(), state, new Date(Date.now() + 10 * 60 * 1000).toISOString())
+      .run();
+
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid email profile',
       access_type: 'offline',
+      state,
     });
     return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
   }
@@ -193,7 +199,19 @@ export class AuthService {
   static async googleCallback(
     env: Env,
     code: string,
+    state: string | undefined,
   ): Promise<{ user: UserPublic; token: string; isNew: boolean }> {
+    if (!state) throw AppError.badRequest('google_auth_failed', 'State OAuth tidak ditemukan');
+    const st = await env.DB.prepare('SELECT id, used, expires_at FROM oauth_states WHERE state = ?')
+      .bind(state)
+      .first<{ id: string; used: number; expires_at: string }>();
+    if (!st) throw AppError.badRequest('google_auth_failed', 'State OAuth tidak valid');
+    if (st.used) throw AppError.badRequest('google_auth_failed', 'State OAuth sudah dipakai');
+    if (new Date(st.expires_at) < new Date()) {
+      throw AppError.badRequest('google_auth_failed', 'State OAuth kadaluarsa');
+    }
+    await env.DB.prepare('UPDATE oauth_states SET used = 1 WHERE id = ?').bind(st.id).run();
+
     const tokenEndpoint = 'https://oauth2.googleapis.com/token';
     const tokenResp = await fetch(tokenEndpoint, {
       method: 'POST',

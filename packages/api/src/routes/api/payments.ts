@@ -4,6 +4,7 @@ import type { Env } from '../../config';
 import { requireApiKey } from '../../middleware/api-key';
 import { success } from '../../lib/response';
 import { AppError } from '../../lib/errors';
+import { validateProofFile } from '../../lib/upload';
 import { PaymentService } from '../../services/payment';
 
 const router = new Hono<{ Bindings: Env }>();
@@ -20,6 +21,7 @@ router.get('/payments/:id', async (c) => {
 });
 
 router.post('/payments/:id/confirm', async (c) => {
+  const app = c.get('app');
   const body = await c.req.parseBody();
 
   const amountRaw = body.amount;
@@ -36,15 +38,22 @@ router.post('/payments/:id/confirm', async (c) => {
   let proofMime: string | null = null;
 
   if (proofImageFile instanceof File) {
+    validateProofFile(proofImageFile);
     proofImage = await proofImageFile.arrayBuffer();
     proofMime = proofImageFile.type || 'image/jpeg';
   }
 
-  const result = await PaymentService.confirmPayment(c.env, c.req.param('id'), {
-    amount: amountParsed.data.amount,
-    proofImage,
-    proofMime,
-  });
+  const result = await PaymentService.confirmPayment(
+    c.env,
+    app.workspace_id,
+    app.id,
+    c.req.param('id'),
+    {
+      amount: amountParsed.data.amount,
+      proofImage,
+      proofMime,
+    },
+  );
 
   const statusCode =
     result.status === 'pending_review'

@@ -6,17 +6,19 @@ import { AuthService } from '../../services/auth';
 const router = new Hono<{ Bindings: Env }>();
 
 router.get('/google', async (c) => {
-  const url = AuthService.googleAuthUrl(c.env);
+  const url = await AuthService.googleAuthUrl(c.env);
   return c.redirect(url);
 });
 
 router.get('/google/callback', async (c) => {
   const code = c.req.query('code');
+  const state = c.req.query('state');
   if (!code) throw AppError.badRequest('google_auth_failed', 'Kode OAuth tidak ditemukan');
-  const { user, token } = await AuthService.googleCallback(c.env, code);
+  const { token } = await AuthService.googleCallback(c.env, code, state);
+  // ponytail: token masih di query (frontend SPA belum konsumsi one-time code).
+  // Upgrade: ganti dengan short-lived one-time code supaya tidak bocor di log/referer.
   const redirectUrl = new URL(`${c.env.APP_URL}/dashboard`);
   redirectUrl.searchParams.set('token', token);
-  redirectUrl.searchParams.set('user', JSON.stringify(user));
   return c.redirect(redirectUrl.toString());
 });
 

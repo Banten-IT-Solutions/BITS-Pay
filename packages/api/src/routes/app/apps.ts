@@ -16,7 +16,8 @@ const router = new Hono<{ Bindings: Env }>();
 router.use('*', requireAuth);
 
 router.get('/', async (c) => {
-  const apps = await AppService.list(c.env, wid(c));
+  const user = c.get('user');
+  const apps = await AppService.list(c.env, user.id, wid(c));
   return success(c, apps);
 });
 
@@ -28,21 +29,24 @@ router.post('/', async (c) => {
 });
 
 router.get('/:id', async (c) => {
+  const user = c.get('user');
   const id = c.req.param('id') ?? '';
-  const app = await AppService.get(c.env, wid(c), id);
+  const app = await AppService.get(c.env, user.id, wid(c), id);
   return success(c, app);
 });
 
 router.put('/:id', async (c) => {
+  const user = c.get('user');
   const id = c.req.param('id') ?? '';
   const input = await validateBody(c, updateAppSchema);
-  const app = await AppService.update(c.env, wid(c), id, input);
+  const app = await AppService.update(c.env, user.id, wid(c), id, input);
   return success(c, app);
 });
 
 router.post('/:id/rotate-key', async (c) => {
+  const user = c.get('user');
   const id = c.req.param('id') ?? '';
-  const app = await AppService.rotateKey(c.env, wid(c), id);
+  const app = await AppService.rotateKey(c.env, user.id, wid(c), id);
   return success(c, app);
 });
 
