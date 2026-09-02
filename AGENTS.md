@@ -83,32 +83,82 @@ Satu task → satu agent. Jangan pecah task kecil ke banyak agent. Delegasi inde
 
 **Sudah jadi:**
 
-- Shared types (`packages/shared/src/types/index.ts`)
-- Shared utils: `crypto.ts`, `unique-code.ts`
-- DB migration lengkap (`0001_initial.sql`)
-- Config root: tsconfig, eslint, prettier, husky, commitlint, vitest
-- CI/CD workflows
+- **Package Shared:**
+  - Types: `users`, `apps`, `workspaces`, `payments`, `charges`, `subscriptions`, `invoices`, `tier_features`, `audit_logs`, `callbacks`, `password_reset_tokens`, `email_verifications`, `config`, `OcrConfig`, `OcrProvider` — lengkap
+  - Utils: `crypto.ts` (hashPassword, verifyPassword, generateApiKey, hashApiKey, signJWT, verifyJWT, signCallbackPayload), `unique-code.ts` (generateUniqueCode, decomposeAmount, computeAmountDue)
+  - Barrel export `index.ts` — semua public
 
-**Belum jadi (hole besar):**
+- **Package API (Worker 1 — Hono Workers):**
+  - `src/config.ts` — type `Env` bindings + vars
+  - `src/lib/` — `errors.ts` (AppError), `response.ts` (success, paginated), `validate.ts` (validateBody, validateQuery), `time.ts` (dbTime), `upload.ts` (validateProofFile), `ssrf.ts` (validateCallbackUrl)
+  - `src/index.ts` — Hono entry, CORS, security headers, publicRateLimit, errorHandler, route mount, health check, scheduled handler (cron), queue consumer
+  - `src/middleware/` — `auth.ts` (requireAuth), `api-key.ts` (requireApiKey), `rate-limit.ts` (publicRateLimit), `admin.ts` (requireAdmin), `cors.ts`, `error-handler.ts`
+  - `src/routes/auth/` — 10 file: index, signup, login, logout, logout-all, me, google, verify, exchange, reset
+  - `src/routes/app/` — 5 file: index, workspaces, apps, members, payments
+  - `src/routes/api/` — 3 file: index, charges, payments (confirm/proof upload)
+  - `src/routes/admin/` — 9 file: index, overview, users, payments, callbacks, reports, settings, tier-features, audit-logs
+  - `src/routes/billing/` — 3 file: index, subscriptions, invoices
+  - `src/services/` — 18 file: auth, app, workspace, payment, qr, ocr (workers-ai + tesseract-vps), callback, callback-admin, email + email-template, billing, subscription, tier, tier-config, admin, report, audit
+  - `src/services/ocr/` — 3 file: index (OcrProvider interface + getOcrProvider), workers-ai.ts, tesseract-vps.ts
+  - `src/durable/` — `rate-limiter.ts` (DurableObject RateLimiter), `window.ts` (tickBucket pure)
+  - `src/db/migrations/` — 5 migrasi: `0001_initial.sql` (schema lengkap), `0002_security.sql`, `0003_payment_integrity.sql`, `0004_login_lockout.sql`, `0005_expired_callback_flag.sql`
+  - `wrangler.jsonc` — D1 (DB), R2, AI, Queue (producer+consumer), Durable Object (RateLimiter), Cron (every 5min), vars, send_email
 
-- Semua route handler API (`packages/api/src/routes/*`) — kosong
-- Semua middleware (`packages/api/src/middleware/*`) — kosong
-- Semua service (`packages/api/src/services/*`) — kosong
-- Semua frontend (web, user, admin) — kosong, cuma scaffolding
-- Semua tests — kosong
+- **Package Web (Worker 2 — Landing page statis):**
+  - `index.html` — landing page lengkap (hero, features, pricing, FAQ, modal login/signup)
+  - `src/main.ts` — JS interaksi (modal, login/signup fetch, nav toggle)
+  - `src/style.css` — 637 baris CSS custom (oklch colors, responsive, modal, animasi)
+  - `vite.config.ts` — build ke `dist/`
+  - `wrangler.jsonc` — serve `dist/` via `assets` binding
 
-## Urutan Implementasi (Sprint 1)
+- **Package User (Svelte 5 SPA):**
+  - 13 route components: Login, ForgotPassword, ResetPassword, VerifyEmail, OAuthCallback, Overview, Workspaces, WorkspaceDetail, Apps, Payments, PaymentDetail, Invoices, Subscription
+  - 3 layout components: DashboardLayout, Navbar, Sidebar
+  - 11 UI components: Badge, Button, Card, EmptyState, ErrorState, Input, Loading, Modal, Pagination, Table, Toast
+  - Stores: auth, payment, workspace
+  - Lib: api.ts, toast.ts
+  - Vite + Svelte 5 + Tailwind CSS v4
 
-1. `packages/api/src/lib/` — `errors.ts`, `response.ts`, `validate.ts`
-2. `packages/api/src/index.ts` — Hono entry + `errorHandler` + routing mount
-3. `middleware/auth.ts`, `middleware/api-key.ts`, `middleware/rate-limit.ts`
-4. `routes/auth/*` — signup, login, logout, google, verify, reset
-5. `routes/app/*` — workspaces, apps, members
-6. `routes/api/*` — charges, payments, confirm
-7. `services/*` — qr, ocr, callback, email, auth, payment
-8. `routes/admin/*`, `routes/billing/*`
-9. Frontend: web → user → admin
-10. Tests
+- **Package Admin (Svelte 5 SPA):**
+  - 11 route components: Login, Overview, Users, Payments, PaymentDetail, Callbacks, Reports, Settings, TierFeatures, AuditLogs, ReviewQueue
+  - 1 layout: AdminLayout
+  - 9 UI components: Badge, Button, Card, EmptyState, ErrorState, Loading, Modal, Pagination, Toast
+  - Stores: auth
+  - Lib: api.ts, toast.ts
+  - Vite + Svelte 5 + Tailwind CSS v4
+
+- **Tests (4 file, 20 test pass):**
+  - `packages/shared/tests/crypto.test.ts`
+  - `packages/shared/tests/unique-code.test.ts`
+  - `packages/api/tests/rate-limit.test.ts`
+  - `packages/api/tests/ocr-tesseract.test.ts`
+
+- **Config root:**
+  - tsconfig.json, eslint.config.js, prettier.config.mjs, .commitlintrc.json, .husky/, vitest.config.ts
+  - `.github/`: ci.yml, deploy-api.yml, deploy-web.yml, uptime.yml, dependabot.yml, CODEOWNERS
+
+- **Scripts:**
+  - `scripts/setup-local.mjs` — setup idempotent lokal (dev vars, .env, D1 migrations)
+
+**Belum jadi (minor):**
+
+- E2E tests (Playwright/Selenium)
+- Load test / benchmarking
+- Monitoring dashboard (Grafana / uptime)
+- Multi-worker deployment guide (draft di `docs/MULTI_WORKER.md`)
+
+## Urutan Implementasi (Sprint 1) — ✅ Selesai
+
+1. ✅ `packages/api/src/lib/` — `errors.ts`, `response.ts`, `validate.ts`
+2. ✅ `packages/api/src/index.ts` — Hono entry + `errorHandler` + routing mount
+3. ✅ `middleware/auth.ts`, `middleware/api-key.ts`, `middleware/rate-limit.ts`
+4. ✅ `routes/auth/*` — signup, login, logout, google, verify, reset
+5. ✅ `routes/app/*` — workspaces, apps, members
+6. ✅ `routes/api/*` — charges, payments, confirm
+7. ✅ `services/*` — qr, ocr, callback, email, auth, payment
+8. ✅ `routes/admin/*`, `routes/billing/*`
+9. ✅ Frontend: web → user → admin
+10. ✅ Tests
 
 ## Catatan Teknis yang Gampang Salah
 
@@ -117,6 +167,13 @@ Satu task → satu agent. Jangan pecah task kecil ke banyak agent. Delegasi inde
 - **`requireApiKey`** lookup full key via `api_key_hash`, bukan prefix.
 - **Web Worker 2 statis** — `packages/web` tidak punya `src/index.ts` logic; cuma serve `./dist` via `assets` binding. SPA user/admin dibuild lalu di-copy ke `web/dist`.
 - **API_URL di SPA** — pakai `import.meta.env.VITE_API_URL` (build-time), bukan wrangler vars runtime. Wrangler vars tidak terbaca di client SPA.
+- **`npm run dev:all`** — jalankan `scripts/setup-local.mjs` dulu, lalu `concurrently` 4 service: api (8787), web (5173), user (5174), admin (5175). Semua bind `0.0.0.0` untuk akses LAN/testing. Setiap SPA punya `.env` dengan `VITE_API_URL=http://localhost:8787`.
+- **`scripts/setup-local.mjs`** — idempotent, buat `.dev.vars` + `.env` + jalanin D1 migrations `--local`. Jangan tulis manual. File existing tidak ditimpa.
+- **`wrangler.jsonc` migrations_dir** — `"migrations_dir": "src/db/migrations"` (bukan default `migrations/`).
+- **Durable Object RateLimiter** — di-shard via `idFromName(key)`. State in-memory (DO restart reset counter). Guard memory growth di `fetch()`.
+- **Cron every 5min** — expired payment, queue callback expired, expire+downgrade subscription, kirim invoice reminder.
+- **Queue consumer** — max 3 retries, batch 10. Process callback dari `callbacks` table.
+- **OCR fallback** — `getOcrProvider()` baca config `ocr_provider` (default `workers-ai`). Alternatif `tesseract-vps` via VPS HTTP endpoint.
 
 ## Verifikasi Sebelum Selesai
 
