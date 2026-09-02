@@ -1,62 +1,65 @@
 // BITS Pay — Crypto Utilities
-// NOTE: Runtime = Cloudflare Workers (Web Crypto API, not Node crypto)
+// Runtime: Cloudflare Workers (Web Crypto API + bcryptjs ESM)
+
+import bcrypt from 'bcryptjs';
+import { SignJWT, jwtVerify } from 'jose';
+
+const SALT_ROUNDS = 10;
 
 /**
- * Hash password dengan bcrypt (via npm: bcryptjs).
- * Fallback: PBKDF2 jika bcrypt tidak available.
+ * Hash password dengan bcryptjs.
+ * bcryptjs ESM compatible via npm import.
  */
 export async function hashPassword(password: string): Promise<string> {
-  // Implementasi: gunakan bcryptjs di Worker
-  // const bcrypt = await import('bcryptjs');
-  // return bcrypt.hash(password, 10);
-  throw new Error('hashPassword: implement with bcryptjs or @node-rs/bcrypt');
+  return bcrypt.hash(password, SALT_ROUNDS);
 }
 
-export async function verifyPassword(
-  password: string,
-  hash: string,
-): Promise<boolean> {
-  throw new Error('verifyPassword: implement with bcryptjs or @node-rs/bcrypt');
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
 }
 
 /**
  * Generate API key: sk_ prefix + 32 byte random hex
  */
-export function generateApiKey(): { key: string; prefix: string; hash: string } {
-  const { randomBytes } = require('node:crypto');
-  const raw = randomBytes(32).toString('hex');
+export async function generateApiKey(): Promise<{ key: string; prefix: string; hash: string }> {
+  const raw = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
   const prefix = raw.slice(0, 8);
   const key = `sk_${raw}`;
-  const hash = hashApiKey(key);
+  const hash = await hashApiKey(key);
   return { key, prefix, hash };
 }
 
 /**
- * Hash API key untuk penyimpanan (SHA-256)
+ * Hash API key untuk penyimpanan (SHA-256 via Web Crypto)
  */
-export function hashApiKey(key: string): string {
-  const { createHash } = require('node:crypto');
-  return createHash('sha256').update(key).digest('hex');
+export async function hashApiKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**
  * Generate random token (email verification, password reset)
  */
 export function generateToken(bytes = 32): string {
-  const { randomBytes } = require('node:crypto');
-  return randomBytes(bytes).toString('hex');
+  const buf = new Uint8Array(bytes);
+  crypto.getRandomValues(buf);
+  return Array.from(buf)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**
  * Generate JWT signature (via jose)
- * @see docs/IMPLEMENTATION_GUIDE.md untuk detail
  */
 export async function signJWT(
   payload: Record<string, unknown>,
   secret: string,
   expiresIn = '7d',
 ): Promise<string> {
-  const { SignJWT } = await import('jose');
   const encoder = new TextEncoder();
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -69,7 +72,6 @@ export async function verifyJWT<T = Record<string, unknown>>(
   token: string,
   secret: string,
 ): Promise<T> {
-  const { jwtVerify } = await import('jose');
   const encoder = new TextEncoder();
   const { payload } = await jwtVerify(token, encoder.encode(secret));
   return payload as T;
@@ -78,10 +80,7 @@ export async function verifyJWT<T = Record<string, unknown>>(
 /**
  * HMAC signature untuk callback payload
  */
-export async function signCallbackPayload(
-  payload: string,
-  secret: string,
-): Promise<string> {
+export async function signCallbackPayload(payload: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',

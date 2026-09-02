@@ -3,6 +3,7 @@
 ## Tables
 
 ### users
+
 ```sql
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
@@ -24,6 +25,7 @@ CREATE TABLE users (
 ```
 
 ### email_verifications
+
 ```sql
 CREATE TABLE email_verifications (
   id TEXT PRIMARY KEY,
@@ -35,7 +37,21 @@ CREATE TABLE email_verifications (
 );
 ```
 
+### password_reset_tokens
+
+```sql
+CREATE TABLE password_reset_tokens (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT UNIQUE NOT NULL,
+  expires_at TEXT NOT NULL,
+  used INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+```
+
 ### oauth_states
+
 ```sql
 CREATE TABLE oauth_states (
   id TEXT PRIMARY KEY,
@@ -48,6 +64,7 @@ CREATE TABLE oauth_states (
 ```
 
 ### workspaces
+
 ```sql
 CREATE TABLE workspaces (
   id TEXT PRIMARY KEY,
@@ -63,6 +80,7 @@ CREATE TABLE workspaces (
 ```
 
 ### workspace_members
+
 ```sql
 CREATE TABLE workspace_members (
   id TEXT PRIMARY KEY,
@@ -75,6 +93,7 @@ CREATE TABLE workspace_members (
 ```
 
 ### apps
+
 ```sql
 CREATE TABLE apps (
   id TEXT PRIMARY KEY,
@@ -90,6 +109,7 @@ CREATE TABLE apps (
 ```
 
 ### payments
+
 ```sql
 CREATE TABLE payments (
   id TEXT PRIMARY KEY,
@@ -130,15 +150,18 @@ CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_payments_amount_due ON payments(amount_due, status);
 CREATE INDEX idx_payments_user ON payments(user_id);
 CREATE INDEX idx_payments_created ON payments(created_at);
+-- Idempotency: satu order_id unik per app (NULL order_id = invoice, skip)
+CREATE UNIQUE INDEX idx_payments_order ON payments(app_id, order_id) WHERE order_id IS NOT NULL;
 ```
 
 ### subscriptions
+
 ```sql
 CREATE TABLE subscriptions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id),
   workspace_id TEXT NOT NULL REFERENCES workspaces(id),
-  tier TEXT NOT NULL,
+  tier TEXT NOT NULL CHECK(tier IN ('premium_monthly','premium_yearly')),
   status TEXT DEFAULT 'active',
   amount INTEGER NOT NULL,
   current_period_start TEXT NOT NULL,
@@ -150,6 +173,7 @@ CREATE TABLE subscriptions (
 ```
 
 ### invoices
+
 ```sql
 CREATE TABLE invoices (
   id TEXT PRIMARY KEY,
@@ -179,6 +203,7 @@ CREATE INDEX idx_invoices_due ON invoices(due_at);
 ```
 
 ### callbacks
+
 ```sql
 CREATE TABLE callbacks (
   id TEXT PRIMARY KEY,
@@ -199,6 +224,7 @@ CREATE TABLE callbacks (
 ```
 
 ### notifications
+
 ```sql
 CREATE TABLE notifications (
   id TEXT PRIMARY KEY,
@@ -215,6 +241,7 @@ CREATE TABLE notifications (
 ```
 
 ### audit_logs
+
 ```sql
 CREATE TABLE audit_logs (
   id TEXT PRIMARY KEY,
@@ -230,9 +257,12 @@ CREATE TABLE audit_logs (
 ```
 
 ### tier_features
+
+Keyed by user tier (`free` | `premium`). Perbedaan bulanan/tahunan hanya harga (dari wrangler vars), bukan limits.
+
 ```sql
 CREATE TABLE tier_features (
-  tier TEXT PRIMARY KEY,
+  tier TEXT PRIMARY KEY CHECK(tier IN ('free','premium')),
   max_workspaces INTEGER DEFAULT 1,
   max_apps INTEGER DEFAULT 1,
   max_transactions_month INTEGER DEFAULT 100,
@@ -242,17 +272,16 @@ CREATE TABLE tier_features (
   callback_retry_count INTEGER DEFAULT 0,
   report_export INTEGER DEFAULT 0,
   priority_review INTEGER DEFAULT 0,
-  max_team_members INTEGER DEFAULT 1,
-  price_monthly INTEGER DEFAULT 0,
-  price_yearly INTEGER DEFAULT 0
+  max_team_members INTEGER DEFAULT 1
 );
 
 INSERT INTO tier_features VALUES
-  ('free', 1, 1, 100, 10, 10, 0, 0, 0, 0, 1, 0, 0),
-  ('premium', 3, 5, 10000, 500, 100, 1, 3, 1, 1, 5, 50000, 500000);
+  ('free', 1, 1, 100, 10, 10, 0, 0, 0, 0, 1),
+  ('premium', 3, 5, 10000, 500, 100, 1, 3, 1, 1, 5);
 ```
 
 ### config
+
 ```sql
 CREATE TABLE config (
   key TEXT PRIMARY KEY,

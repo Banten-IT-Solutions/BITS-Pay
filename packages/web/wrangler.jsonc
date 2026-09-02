@@ -1,14 +1,9 @@
 {
   "name": "bits-pay-web",
-  "main": "src/index.ts",
   "compatibility_date": "2025-09-01",
 
   "assets": {
     "binding": "ASSETS",
-    "directory": "./dist"
+    "directory": "./dist",
   },
-
-  "vars": {
-    "API_URL": "https://api.pay.bits.co.id"
-  }
 }

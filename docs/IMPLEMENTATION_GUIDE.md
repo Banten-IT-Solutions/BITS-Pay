@@ -7,6 +7,7 @@ Panduan untuk AI agent agar semua kode konsisten, testable, dan production-ready
 ## 1. Error Handling Pattern
 
 ### AppError Class
+
 Buat `packages/api/src/lib/errors.ts`:
 
 ```typescript
@@ -48,6 +49,7 @@ export class AppError extends Error {
 ```
 
 ### Error Handler Middleware
+
 Buat `packages/api/src/middleware/error-handler.ts`:
 
 ```typescript
@@ -56,21 +58,28 @@ import { AppError } from '../lib/errors';
 
 export async function errorHandler(err: Error, c: Context) {
   if (err instanceof AppError) {
-    return c.json({
-      success: false,
-      error: { code: err.code, message: err.message, details: err.details },
-    }, err.statusCode);
+    return c.json(
+      {
+        success: false,
+        error: { code: err.code, message: err.message, details: err.details },
+      },
+      err.statusCode,
+    );
   }
 
   console.error('Unhandled error:', err);
-  return c.json({
-    success: false,
-    error: { code: 'internal_error', message: 'Internal server error' },
-  }, 500);
+  return c.json(
+    {
+      success: false,
+      error: { code: 'internal_error', message: 'Internal server error' },
+    },
+    500,
+  );
 }
 ```
 
 ### Response Helpers
+
 Buat `packages/api/src/lib/response.ts`:
 
 ```typescript
@@ -86,6 +95,7 @@ export function paginated<T>(c: Context, data: T[], total: number, page: number,
 ```
 
 ### Validasi dengan Zod
+
 Buat `packages/api/src/lib/validate.ts`:
 
 ```typescript
@@ -114,6 +124,7 @@ export async function validateBody<T>(c: Context, schema: z.ZodSchema<T>): Promi
 ## 2. Route Handler Pattern
 
 ### Struktur File per Route
+
 ```
 routes/auth/
 ├── index.ts          # Hono router, mount semua sub-routes
@@ -124,6 +135,7 @@ routes/auth/
 ```
 
 ### Contoh Route Handler
+
 `routes/auth/signup.ts`:
 
 ```typescript
@@ -151,6 +163,7 @@ export { router as signupRoute };
 ```
 
 ### Mounting di Router Index
+
 `routes/auth/index.ts`:
 
 ```typescript
@@ -168,6 +181,7 @@ export { router as authRoutes };
 ```
 
 ### Mounting di Entry Point
+
 `src/index.ts`:
 
 ```typescript
@@ -190,6 +204,7 @@ export default app;
 ## 3. Auth Middleware Pattern
 
 ### JWT Middleware
+
 `middleware/auth.ts`:
 
 ```typescript
@@ -220,6 +235,7 @@ export const requireAuth = createMiddleware(async (c, next) => {
 ```
 
 ### API Key Middleware
+
 `middleware/api-key.ts`:
 
 ```typescript
@@ -239,11 +255,14 @@ export const requireApiKey = createMiddleware(async (c, next) => {
     throw AppError.unauthorized('API key tidak valid');
   }
   const key = header.slice(7);
-  const hash = hashApiKey(key);
-  // Cari di DB: SELECT * FROM apps WHERE api_key_hash = ?
-  // const app = await c.env.DB.prepare('SELECT ...').bind(hash).first();
-  // if (!app) throw AppError.unauthorized('API key tidak dikenal');
-  // c.set('app', app);
+  const hash = await hashApiKey(key);
+  const app = await c.env.DB.prepare(
+    'SELECT id, workspace_id, is_active FROM apps WHERE api_key_hash = ?',
+  )
+    .bind(hash)
+    .first<{ id: string; workspace_id: string; is_active: number }>();
+  if (!app || !app.is_active) throw AppError.unauthorized('API key tidak dikenal');
+  c.set('app', { id: app.id, workspace_id: app.workspace_id });
   await next();
 });
 ```
@@ -253,6 +272,7 @@ export const requireApiKey = createMiddleware(async (c, next) => {
 ## 4. Service Layer Pattern
 
 ### Struktur Service
+
 ```
 services/
 ├── auth.ts           # Signup, login, google OAuth, verify email
@@ -269,6 +289,7 @@ services/
 ```
 
 ### Contoh Service Pattern
+
 ```typescript
 // services/auth.ts
 export class AuthService {
@@ -300,19 +321,23 @@ Gunakan prepared statements, jangan string concatenation.
 
 ```typescript
 // ✅ Correct
-const user = await c.env.DB.prepare(
-  'SELECT id, email, name, tier FROM users WHERE email = ?'
-).bind(email).first<User>();
+const user = await c.env.DB.prepare('SELECT id, email, name, tier FROM users WHERE email = ?')
+  .bind(email)
+  .first<User>();
 
 // ✅ Insert with RETURNING
 const result = await c.env.DB.prepare(
-  'INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?) RETURNING id'
-).bind(id, email, hash, name).first();
+  'INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?) RETURNING id',
+)
+  .bind(id, email, hash, name)
+  .first();
 
 // ✅ Pagination
 const { results } = await c.env.DB.prepare(
-  'SELECT * FROM payments WHERE workspace_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
-).bind(workspaceId, limit, offset).all<Payment>();
+  'SELECT * FROM payments WHERE workspace_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+)
+  .bind(workspaceId, limit, offset)
+  .all<Payment>();
 
 // ❌ Wrong: jangan string interpolation
 // await c.env.DB.prepare(`SELECT * FROM users WHERE id = ${id}`).all();
@@ -323,6 +348,7 @@ const { results } = await c.env.DB.prepare(
 ## 6. Auth Flow (Token Storage)
 
 ### User Dashboard (Svelte SPA)
+
 ```
 Login → API return { token, user }
        → localStorage.setItem('token', token)
@@ -334,12 +360,14 @@ Logout → localStorage.removeItem('token')
 ```
 
 **Pertimbangan:** localStorage dipilih karena:
+
 - Sederhana untuk SPA
 - Tidak perlu CSRF protection
 - Cookie HttpOnly butuh server-side rendering
 - XSS risiko dimitigasi dengan CSP + sanitasi
 
 ### API Key (External Apps)
+
 ```
 Developer create app → dapat API key sekali (sk_...)
                      → Simpan key, tidak bisa dilihat lagi
@@ -351,6 +379,7 @@ Developer create app → dapat API key sekali (sk_...)
 ## 7. Svelte Component Pattern
 
 ### Struktur File
+
 ```
 components/
 ├── ui/               # Shared components
@@ -375,6 +404,7 @@ components/
 ```
 
 ### Contoh Component
+
 ```svelte
 <!-- components/ui/Button.svelte -->
 <script lang="ts">
@@ -409,6 +439,7 @@ components/
 ## 8. Svelte Store Pattern
 
 ### Struktur Store
+
 ```
 stores/
 ├── auth.ts           # User, token, login/logout
@@ -418,6 +449,7 @@ stores/
 ```
 
 ### Contoh Store
+
 ```typescript
 // stores/auth.ts
 import { writable } from 'svelte/store';
@@ -444,6 +476,7 @@ export function logout() {
 ## 9. API Client Pattern
 
 ### Fetch Wrapper
+
 ```typescript
 // lib/api.ts
 import { get } from 'svelte/store';
@@ -491,7 +524,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 export class ApiError extends Error {
-  constructor(public code: string, message: string, public status: number) {
+  constructor(
+    public code: string,
+    message: string,
+    public status: number,
+  ) {
     super(message);
   }
 }
@@ -507,7 +544,9 @@ export const api = {
       method: 'POST',
       headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
       body: formData,
-    }).then(r => r.json()).then(j => j.data as T);
+    })
+      .then((r) => r.json())
+      .then((j) => j.data as T);
   },
 };
 ```
@@ -517,25 +556,27 @@ export const api = {
 ## 10. Environment Variables
 
 ### Wrangler vars (Worker 1 - API)
+
 Didefinisikan di `packages/api/wrangler.jsonc`:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `APP_URL` | `https://pay.bits.co.id` | URL frontend |
-| `FROM_EMAIL` | `noreply@pay.bits.co.id` | Email pengirim |
-| `QRIS_STATIC` | `""` | QRIS static string untuk konversi |
-| `TRANSACTION_EXPIRE_MINUTES` | `15` | Expiry time dalam menit |
-| `PREMIUM_PRICE_MONTHLY` | `50000` | Harga premium bulanan |
-| `PREMIUM_PRICE_YEARLY` | `500000` | Harga premium tahunan |
-| `GOOGLE_CLIENT_ID` | `""` | Google OAuth client ID |
-| `GOOGLE_REDIRECT_URI` | `https://pay.bits.co.id/auth/google/callback` | Redirect URI |
-| `JWT_EXPIRES_IN` | `7d` | JWT expiry |
-| `JWT_SECRET` | `""` | JWT signing secret (**secret**) |
-| `OCR_CONFIDENCE_THRESHOLD` | `85` | Threshold auto-confirm |
-| `MAX_UNIQUE_CODE` | `9999` | Max unique code range |
-| `PROOF_RETENTION_DAYS` | `30` | Retention bukti bayar |
+| Variable                     | Default                                       | Description                       |
+| ---------------------------- | --------------------------------------------- | --------------------------------- |
+| `APP_URL`                    | `https://pay.bits.co.id`                      | URL frontend                      |
+| `FROM_EMAIL`                 | `noreply@pay.bits.co.id`                      | Email pengirim                    |
+| `QRIS_STATIC`                | `""`                                          | QRIS static string untuk konversi |
+| `TRANSACTION_EXPIRE_MINUTES` | `15`                                          | Expiry time dalam menit           |
+| `PREMIUM_PRICE_MONTHLY`      | `50000`                                       | Harga premium bulanan             |
+| `PREMIUM_PRICE_YEARLY`       | `500000`                                      | Harga premium tahunan             |
+| `GOOGLE_CLIENT_ID`           | `""`                                          | Google OAuth client ID            |
+| `GOOGLE_REDIRECT_URI`        | `https://pay.bits.co.id/auth/google/callback` | Redirect URI                      |
+| `JWT_EXPIRES_IN`             | `7d`                                          | JWT expiry                        |
+| `JWT_SECRET`                 | `""`                                          | JWT signing secret (**secret**)   |
+| `OCR_CONFIDENCE_THRESHOLD`   | `85`                                          | Threshold auto-confirm            |
+| `MAX_UNIQUE_CODE`            | `9999`                                        | Max unique code range             |
+| `PROOF_RETENTION_DAYS`       | `30`                                          | Retention bukti bayar             |
 
 ### Env Type Definition
+
 ```typescript
 // src/index.ts atau config.ts
 export interface Env {
@@ -564,6 +605,7 @@ export interface Env {
 ## 11. Test Pattern
 
 ### Unit Test Example (Vitest)
+
 ```typescript
 // tests/api/auth.test.ts
 import { describe, it, expect, vi, beforeAll } from 'vitest';
@@ -584,6 +626,7 @@ describe('AuthService', () => {
 ```
 
 ### Mocking Strategy
+
 - **D1**: Mock `c.env.DB.prepare().bind().first()` chain
 - **R2**: Mock `c.env.R2.put()` / `c.env.R2.get()`
 - **Email**: Mock `c.env.EMAIL.send()`
@@ -591,6 +634,7 @@ describe('AuthService', () => {
 - **Workers AI**: Mock `c.env.AI.run()`
 
 ### Test Structure
+
 ```
 tests/
 ├── api/
@@ -616,6 +660,7 @@ Service class method maksimal 30 baris.
 Jika lebih → refactor ke method/fungsi terpisah.
 
 ### Event Flow per Request
+
 ```
 Request → Hono Router → Middleware (auth, rate-limit)
   → Route Handler (validasi, parse)
@@ -624,15 +669,16 @@ Request → Hono Router → Middleware (auth, rate-limit)
 ```
 
 ### Naming Convention
-| Item | Convention | Example |
-|------|-----------|---------|
-| File route | `kebab-case.ts` | `signup.ts`, `create-charge.ts` |
-| Class | PascalCase | `AuthService`, `PaymentService` |
-| Function | camelCase | `generateUniqueCode()`, `extractAmount()` |
-| Variable | camelCase | `userInput`, `amountDue` |
-| DB Table | snake_case | `workspace_members`, `tier_features` |
-| Type | PascalCase | `User`, `PaymentStatus`, `ApiResponse<T>` |
-| Enum/file type | PascalCase | `PaymentStatus`, `MatchResult` |
+
+| Item           | Convention      | Example                                   |
+| -------------- | --------------- | ----------------------------------------- |
+| File route     | `kebab-case.ts` | `signup.ts`, `create-charge.ts`           |
+| Class          | PascalCase      | `AuthService`, `PaymentService`           |
+| Function       | camelCase       | `generateUniqueCode()`, `extractAmount()` |
+| Variable       | camelCase       | `userInput`, `amountDue`                  |
+| DB Table       | snake_case      | `workspace_members`, `tier_features`      |
+| Type           | PascalCase      | `User`, `PaymentStatus`, `ApiResponse<T>` |
+| Enum/file type | PascalCase      | `PaymentStatus`, `MatchResult`            |
 
 ---
 
@@ -683,7 +729,7 @@ export default {
 async function expireTransactions(env: Env) {
   await env.DB.prepare(
     `UPDATE payments SET status = 'expired', updated_at = datetime('now')
-     WHERE status = 'pending' AND expired_at < datetime('now')`
+     WHERE status = 'pending' AND expired_at < datetime('now')`,
   ).run();
 }
 ```
@@ -694,21 +740,21 @@ async function expireTransactions(env: Env) {
 
 Urutan implementasi berdasarkan dependencies (Sprint 1):
 
-| Urutan | Feature | Files |
-|--------|---------|-------|
-| 1 | **Shared types + utils** | `packages/shared/src/types/index.ts`, `packages/shared/src/utils/*` |
-| 2 | **DB migration** | `packages/api/src/db/migrations/0001_initial.sql` |
-| 3 | **Hono entry + middleware** | `packages/api/src/index.ts`, `middleware/`, `lib/` |
-| 4 | **Auth routes** | `routes/auth/` (signup, login, logout, google, verify, reset) |
-| 5 | **Workspace + App routes** | `routes/app/` (workspaces, apps, members) |
-| 6 | **Core Payment routes** | `routes/api/` (charges, payments, confirm) |
-| 7 | **QRIS + OCR services** | `services/qr.ts`, `services/ocr/` |
-| 8 | **Callback + Queue** | `services/callback.ts` |
-| 9 | **Landing page** | `packages/web/` |
-| 10 | **User Dashboard** | `packages/user/` |
-| 11 | **Admin Dashboard** | `packages/admin/` |
-| 12 | **Tests** | `tests/` |
-| 13 | **Deploy** | GitHub Actions |
+| Urutan | Feature                     | Files                                                               |
+| ------ | --------------------------- | ------------------------------------------------------------------- |
+| 1      | **Shared types + utils**    | `packages/shared/src/types/index.ts`, `packages/shared/src/utils/*` |
+| 2      | **DB migration**            | `packages/api/src/db/migrations/0001_initial.sql`                   |
+| 3      | **Hono entry + middleware** | `packages/api/src/index.ts`, `middleware/`, `lib/`                  |
+| 4      | **Auth routes**             | `routes/auth/` (signup, login, logout, google, verify, reset)       |
+| 5      | **Workspace + App routes**  | `routes/app/` (workspaces, apps, members)                           |
+| 6      | **Core Payment routes**     | `routes/api/` (charges, payments, confirm)                          |
+| 7      | **QRIS + OCR services**     | `services/qr.ts`, `services/ocr/`                                   |
+| 8      | **Callback + Queue**        | `services/callback.ts`                                              |
+| 9      | **Landing page**            | `packages/web/`                                                     |
+| 10     | **User Dashboard**          | `packages/user/`                                                    |
+| 11     | **Admin Dashboard**         | `packages/admin/`                                                   |
+| 12     | **Tests**                   | `tests/`                                                            |
+| 13     | **Deploy**                  | GitHub Actions                                                      |
 
 ---
 
@@ -728,6 +774,7 @@ Sebelum mulai coding, pastikan sudah baca:
 - [ ] `packages/api/wrangler.jsonc` — env vars & bindings
 
 **Rules:**
+
 - Setiap new file harus ada type yang sesuai di shared/types
 - Setiap endpoint harus ada schema Zod untuk validasi
 - Setiap service harus ada error handling dengan AppError

@@ -42,6 +42,21 @@ CREATE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(
 CREATE INDEX IF NOT EXISTS idx_email_verifications_user ON email_verifications(user_id);
 
 -- ============================================================
+-- PASSWORD RESET TOKENS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT UNIQUE NOT NULL,
+  expires_at TEXT NOT NULL,
+  used INTEGER DEFAULT 0 CHECK(used IN (0,1)),
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id);
+
+-- ============================================================
 -- OAUTH STATES
 -- ============================================================
 CREATE TABLE IF NOT EXISTS oauth_states (
@@ -147,7 +162,9 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 CREATE INDEX IF NOT EXISTS idx_payments_amount_due ON payments(amount_due, status);
 CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_created ON payments(created_at);
-CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(app_id, order_id);
+-- Idempotency: satu order_id unik per app. NULL order_id (invoice) tidak ikut.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_order ON payments(app_id, order_id)
+  WHERE order_id IS NOT NULL;
 
 -- ============================================================
 -- SUBSCRIPTIONS
@@ -156,7 +173,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-  tier TEXT NOT NULL CHECK(tier IN ('free','premium_monthly','premium_yearly')),
+  tier TEXT NOT NULL CHECK(tier IN ('premium_monthly','premium_yearly')),
   status TEXT DEFAULT 'active' CHECK(status IN ('active','canceled','expired','pending')),
   amount INTEGER NOT NULL,
   current_period_start TEXT NOT NULL,
@@ -264,8 +281,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
 -- ============================================================
 -- TIER FEATURES
 -- ============================================================
+-- Feature limits keyed by user tier (free | premium).
+-- Billing period (monthly/yearly) hanya beda harga, bukan limits.
+-- Harga dari PREMIUM_PRICE_MONTHLY / PREMIUM_PRICE_YEARLY (wrangler vars).
 CREATE TABLE IF NOT EXISTS tier_features (
-  tier TEXT PRIMARY KEY CHECK(tier IN ('free','premium','premium_monthly','premium_yearly')),
+  tier TEXT PRIMARY KEY CHECK(tier IN ('free','premium')),
   max_workspaces INTEGER DEFAULT 1,
   max_apps INTEGER DEFAULT 1,
   max_transactions_month INTEGER DEFAULT 100,
@@ -275,15 +295,13 @@ CREATE TABLE IF NOT EXISTS tier_features (
   callback_retry_count INTEGER DEFAULT 0,
   report_export INTEGER DEFAULT 0 CHECK(report_export IN (0,1)),
   priority_review INTEGER DEFAULT 0 CHECK(priority_review IN (0,1)),
-  max_team_members INTEGER DEFAULT 1,
-  price_monthly INTEGER DEFAULT 0,
-  price_yearly INTEGER DEFAULT 0
+  max_team_members INTEGER DEFAULT 1
 );
 
-INSERT INTO tier_features (tier, max_workspaces, max_apps, max_transactions_month, max_transactions_per_day, api_rate_limit, callback_allowed, callback_retry_count, report_export, priority_review, max_team_members, price_monthly, price_yearly)
+INSERT INTO tier_features (tier, max_workspaces, max_apps, max_transactions_month, max_transactions_per_day, api_rate_limit, callback_allowed, callback_retry_count, report_export, priority_review, max_team_members)
 VALUES
-  ('free', 1, 1, 100, 10, 10, 0, 0, 0, 0, 1, 0, 0),
-  ('premium', 3, 5, 10000, 500, 100, 1, 3, 1, 1, 5, 50000, 500000);
+  ('free', 1, 1, 100, 10, 10, 0, 0, 0, 0, 1),
+  ('premium', 3, 5, 10000, 500, 100, 1, 3, 1, 1, 5);
 
 -- ============================================================
 -- CONFIG

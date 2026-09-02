@@ -21,6 +21,11 @@ jobs:
       - run: npm run build -w packages/web
       - run: npm run build -w packages/user
       - run: npm run build -w packages/admin
+      # ponytail: copy SPAs into web/dist for combined serving.
+      # When traffic grows, split into separate workers.
+      - run: |
+          cp -r packages/user/dist packages/web/dist/user
+          cp -r packages/admin/dist packages/web/dist/admin
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v4.0.0
         with:

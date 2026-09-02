@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,9 +13,8 @@
     "noEmit": true,
     "declaration": true,
     "declarationMap": true,
-    "baseUrl": ".",
     "paths": {
-      "@bits-pay/shared": ["packages/shared/src/index.ts"]
+      "@bits-pay/shared": ["./packages/shared/src/index.ts"]
     }
   },
   "include": ["packages/*/src", "tests"],

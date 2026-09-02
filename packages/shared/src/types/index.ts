@@ -129,7 +129,8 @@ export interface AppCreateInput {
 // ============================================================
 export type PaymentStatus = 'pending' | 'success' | 'failed' | 'expired' | 'pending_review';
 export type PaymentType = 'payment' | 'invoice';
-export type MatchResult = 'auto_confirm' | 'low_confidence' | 'mismatch' | 'manual_confirm' | 'manual_reject';
+export type MatchResult =
+  'auto_confirm' | 'low_confidence' | 'mismatch' | 'manual_confirm' | 'manual_reject';
 
 export interface Payment {
   id: string;
@@ -188,9 +189,10 @@ export interface ChargeCreateResponse {
 }
 
 export interface PaymentConfirmInput {
-  proof_image: File | Blob;
   amount: number;
 }
+// proof_image dikirim sebagai multipart/form-data field, dibaca route handler
+// via c.req.parseBody() (bukan JSON) — tidak ada di type ini.
 
 export interface PaymentConfirmResponse {
   id: string;
@@ -240,7 +242,7 @@ export interface CallbackPayload {
 // ============================================================
 // SUBSCRIPTION
 // ============================================================
-export type SubscriptionTier = 'free' | 'premium_monthly' | 'premium_yearly';
+export type SubscriptionTier = 'premium_monthly' | 'premium_yearly';
 export type SubscriptionStatus = 'active' | 'canceled' | 'expired' | 'pending';
 
 export interface Subscription {
@@ -276,7 +278,7 @@ export interface Invoice {
   amount_due: number;
   unique_code: number;
   status: InvoiceStatus;
-  tier: string;
+  tier: SubscriptionTier;
   period_start: string;
   period_end: string;
   qris_dynamic: string | null;
@@ -324,7 +326,7 @@ export interface AuditLog {
 // TIER FEATURES
 // ============================================================
 export interface TierFeatures {
-  tier: string;
+  tier: UserTier;
   max_workspaces: number;
   max_apps: number;
   max_transactions_month: number;
@@ -335,8 +337,6 @@ export interface TierFeatures {
   report_export: number; // 0 | 1
   priority_review: number; // 0 | 1
   max_team_members: number;
-  price_monthly: number;
-  price_yearly: number;
 }
 
 // ============================================================
@@ -429,19 +429,4 @@ export interface WebhookReceiveInput {
   status: string;
   amount: number;
   signature?: string;
-}
-
-// ============================================================
-// UNIQUE CODE UTILITY
-// ============================================================
-export function extractAmount(amountDue: number): number {
-  return Math.floor(amountDue / 10000);
-}
-
-export function extractUniqueCode(amountDue: number): number {
-  return amountDue % 10000;
-}
-
-export function calculateAmountDue(amount: number, uniqueCode: number): number {
-  return amount * 10000 + uniqueCode;
 }

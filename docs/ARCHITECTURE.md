@@ -26,23 +26,23 @@
 
 ## 2. Tech Stack
 
-| Layer | Teknologi | Versi |
-|-------|-----------|-------|
-| Runtime | Cloudflare Workers | Latest |
-| Framework | Hono | 4.x |
-| Language | TypeScript | 5.x |
-| Database | Cloudflare D1 (SQLite) | - |
-| Storage | Cloudflare R2 | - |
-| Queue | Cloudflare Queues | - |
-| Email | Cloudflare Email Service | - |
-| OCR | Workers AI (`@cf/meta/llama-3.2-11b-vision-instruct`) | - |
-| QRIS | `bits-qris` (npm) | Latest |
-| Auth | Custom (bcrypt + JWT) | - |
-| JWT | `jose` | Latest |
-| Validation | `zod` | Latest |
-| Dashboard | Svelte + Vite + Tailwind | Latest |
-| Landing Page | HTML + CSS + Tailwind | - |
-| API Docs | Swagger UI (`@hono/swagger-ui`) | Latest |
+| Layer        | Teknologi                                             | Versi  |
+| ------------ | ----------------------------------------------------- | ------ |
+| Runtime      | Cloudflare Workers                                    | Latest |
+| Framework    | Hono                                                  | 4.x    |
+| Language     | TypeScript                                            | 5.x    |
+| Database     | Cloudflare D1 (SQLite)                                | -      |
+| Storage      | Cloudflare R2                                         | -      |
+| Queue        | Cloudflare Queues                                     | -      |
+| Email        | Cloudflare Email Service                              | -      |
+| OCR          | Workers AI (`@cf/meta/llama-3.2-11b-vision-instruct`) | -      |
+| QRIS         | `bits-qris` (npm)                                     | Latest |
+| Auth         | Custom (`bcryptjs` + JWT)                             | -      |
+| JWT          | `jose`                                                | Latest |
+| Validation   | `zod`                                                 | Latest |
+| Dashboard    | Svelte + Vite + Tailwind                              | Latest |
+| Landing Page | HTML + CSS + Tailwind                                 | -      |
+| API Docs     | Swagger UI (`@hono/swagger-ui`)                       | Latest |
 
 ## 3. Worker Architecture
 
@@ -63,9 +63,6 @@ Request → Hono Router
   │   ├── POST /charges
   │   ├── GET /payments/:id
   │   ├── POST /payments/:id/confirm
-  │   │
-  │   ├── /webhook/* → WebhookRoutes
-  │   │   └── POST /receive              # Callback dari external (webhook simulator)
   │   │
   │   └── /callback/* → CallbackRoutes   # BITS Pay → App callback (internal, via Queue)
   │
@@ -116,6 +113,7 @@ Extract kode:        amount_due % 10000              → 1
 Range: `0001` – `9999` (9999 transaksi pending bersamaan). Cukup untuk skala besar.
 
 ### Create Charge
+
 ```
 App → POST /v1/charges { amount, order_id }
   → QRService: generate kode unik (0001-9999, cek available)
@@ -126,6 +124,7 @@ App → POST /v1/charges { amount, order_id }
 ```
 
 ### Confirm Payment
+
 ```
 User → POST /v1/payments/:id/confirm { proof_image, amount }
   → Validasi: amount == amount_due?
@@ -139,6 +138,7 @@ User → POST /v1/payments/:id/confirm { proof_image, amount }
 ```
 
 ### Callback Delivery
+
 ```
 Queue Consumer → CallbackService
   → HTTP POST ke callback_url app
@@ -148,6 +148,7 @@ Queue Consumer → CallbackService
 ```
 
 ### Subscription Flow
+
 ```
 User → POST /subscriptions/upgrade { tier: 'premium_monthly' }
   → InvoiceService: generate invoice Rp 50.001 (kode unik)
@@ -276,55 +277,32 @@ User → POST /subscriptions/upgrade { tier: 'premium_monthly' }
     │   └── uptime.yml
     ├── CODEOWNERS
     └── dependabot.yml
-│   │   │   └── rate-limits.md
-│   │   └── changelog.md
-│   │
-│   ├── user/                         # User dashboard (Svelte)
-│   │   ├── src/
-│   │   │   ├── routes/
-│   │   │   ├── components/
-│   │   │   └── stores/
-│   │   └── package.json
-│   │
-│   └── admin/                        # Admin dashboard (Svelte)
-│       ├── src/
-│       │   ├── routes/
-│       │   ├── components/
-│       │   └── stores/
-│       └── package.json
-│
-├── migrations/                       # SQL migrations
-│   └── 001_initial.sql
-│
-├── docs/                             # Project docs
-│   ├── PRD.md
-│   ├── ARCHITECTURE.md
-│   ├── API.md
-│   ├── DATABASE.md
-│   ├── UI_DESIGN.md
-│   ├── SPRINT.md
-│   └── ROADMAP.md
-│
-└── tests/
-    └── api/
 ```
 
-## 6. Cloudflare Resources
+## 6. Multi-SPA Serving Strategy
 
-| Resource | Name | Config |
-|----------|------|--------|
-| Worker 1 | bits-pay-api | api.pay.bits.co.id |
-| Worker 2 | bits-pay-web | pay.bits.co.id |
-| D1 DB | bits-pay-db | Main database |
-| R2 Bucket | bits-pay-proofs | Bukti bayar |
-| Queue | payment-callback | Callback retry |
-| Cron | */5 * * * * | Expire + reminder |
-| Email | pay.bits.co.id | Cloudflare Email Sending |
-| Workers AI | - | OCR via binding |
+Worker 2 (pay.bits.co.id) must serve 3 apps: landing page, user dashboard, admin dashboard.
+
+**Current approach:** build all 3, copy into `web/dist/`, serve via `assets` binding.
+**ponytail:** If traffic grows, split into 3 workers (web, user, admin). For now, single worker is cheaper.
+
+## 7. Cloudflare Resources
+
+| Resource   | Name             | Config                   |
+| ---------- | ---------------- | ------------------------ |
+| Worker 1   | bits-pay-api     | api.pay.bits.co.id       |
+| Worker 2   | bits-pay-web     | pay.bits.co.id           |
+| D1 DB      | bits-pay-db      | Main database            |
+| R2 Bucket  | bits-pay-proofs  | Bukti bayar              |
+| Queue      | payment-callback | Callback retry           |
+| Cron       | */5 * * * *      | Expire + reminder        |
+| Email      | pay.bits.co.id   | Cloudflare Email Sending |
+| Workers AI | -                | OCR via binding          |
 
 ## 7. Future Migration Path
 
 ### Multi-Worker (when needed)
+
 ```
 Worker 1: api.pay.bits.co.id → API + cron
 Worker 2: pay.bits.co.id → Landing page + docs
@@ -333,12 +311,14 @@ Worker 4: admin.pay.bits.co.id → Admin dashboard
 ```
 
 ### VPS OCR (when needed)
+
 ```
 VPS: ocr.bits.co.id → Tesseract Docker container
 Worker 1 → fetch VPS → OCR result
 ```
 
 **Migrasi mudah karena:**
+
 - Kode per package sudah terpisah via monorepo
 - OCR provider abstraction (ganti via config)
 - JWT stateless — no session migration needed
