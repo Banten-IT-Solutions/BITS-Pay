@@ -13,6 +13,9 @@
   "scripts": {
     "dev": "npm run dev -w packages/api",
     "dev:web": "npm run dev -w packages/web",
+    "dev:setup": "node scripts/setup-local.mjs",
+    "dev:all:run": "concurrently -k -n api,web,user,admin -c blue,green,yellow,magenta \"npm run dev -w packages/api -- --local --port 8787 --ip 0.0.0.0\" \"npm run dev -w packages/web -- --host 0.0.0.0 --port 5173 --strictPort\" \"npm run dev -w packages/user -- --host 0.0.0.0 --port 5174 --strictPort\" \"npm run dev -w packages/admin -- --host 0.0.0.0 --port 5175 --strictPort\"",
+    "dev:all": "npm run dev:setup && npm run dev:all:run",
     "build": "npm run build -w packages/shared && npm run build -w packages/api",
     "build:all": "npm run build && npm run build -w packages/web && npm run build -w packages/user && npm run build -w packages/admin",
     "lint": "eslint --no-error-on-unmatched-pattern --pass-on-no-patterns packages/api/src packages/shared/src",
@@ -44,6 +47,7 @@
     "@semantic-release/github": "^12.0.9",
     "@semantic-release/npm": "^13.1.5",
     "@semantic-release/release-notes-generator": "^14.1.1",
+    "concurrently": "10.0.5",
     "eslint": "^10.9.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.4.1",

@@ -10,7 +10,8 @@
     {
       "binding": "DB",
       "database_name": "bits-pay-db",
-      "database_id": "",
+      "database_id": "local-bits-pay-db",
+      "migrations_dir": "src/db/migrations",
     },
   ],
 
