@@ -36,7 +36,9 @@ function createPaymentStore() {
       if (params.search) qs.set('search', params.search);
       if (params.start_date) qs.set('start_date', params.start_date);
       if (params.end_date) qs.set('end_date', params.end_date);
-      const data = await api.get<{ items: Payment[]; total: number }>(`/payments?${qs.toString()}`);
+      const data = await api.get<{ items: Payment[]; total: number }>(
+        `/app/payments?${qs.toString()}`,
+      );
       set({
         items: data.items,
         total: data.total,

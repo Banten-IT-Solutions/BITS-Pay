@@ -55,6 +55,14 @@ export class AdminService {
     };
   }
 
+  static async getPayment(env: Env, paymentId: string): Promise<Payment> {
+    const payment = await env.DB.prepare('SELECT * FROM payments WHERE id = ?')
+      .bind(paymentId)
+      .first<Payment>();
+    if (!payment) throw AppError.notFound('Payment');
+    return payment;
+  }
+
   static async listPayments(
     env: Env,
     page: number,

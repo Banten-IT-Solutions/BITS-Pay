@@ -22,7 +22,7 @@
     loading = true;
     error = '';
     try {
-      payment = await api.get<Payment>(`/payments/${paymentId}`);
+      payment = await api.get<Payment>(`/admin/payments/${paymentId}`);
     } catch (e: any) {
       error = e.message;
     } finally {

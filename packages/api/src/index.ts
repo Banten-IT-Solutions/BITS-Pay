@@ -8,9 +8,13 @@ import { adminRoutes } from './routes/admin';
 import { billingRoutes } from './routes/billing';
 import { CallbackService } from './services/callback';
 import { SubscriptionService } from './services/subscription';
+import { corsMiddleware } from './middleware/cors';
+import { rateLimit } from './middleware/rate-limit';
 
 const app = new Hono<{ Bindings: Env }>();
 
+app.use('*', corsMiddleware());
+app.use('*', rateLimit);
 app.onError(errorHandler);
 
 app.route('/auth', authRoutes);

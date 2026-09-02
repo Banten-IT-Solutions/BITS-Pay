@@ -25,8 +25,8 @@
     error = '';
     try {
       const [s, r] = await Promise.all([
-        api.get<OverviewStats>('/payments/stats'),
-        api.get<{ items: Payment[] }>('/payments?per_page=5'),
+        api.get<OverviewStats>('/app/payments/stats'),
+        api.get<{ items: Payment[] }>('/app/payments?per_page=5'),
       ]);
       stats = s;
       recent = r.items;

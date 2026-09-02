@@ -24,7 +24,7 @@
     loading = true;
     error = '';
     try {
-      payment = await api.get<Payment>(`/payments/${paymentId}`);
+      payment = await api.get<Payment>(`/app/payments/${paymentId}`);
     } catch (e: any) {
       error = e.message;
     } finally {
@@ -46,7 +46,7 @@
       const fd = new FormData();
       fd.append('proof_image', selectedFile);
       fd.append('amount', userAmount);
-      const result = await api.upload<PaymentConfirmResponse>(`/payments/${paymentId}/confirm`, fd);
+      const result = await api.upload<PaymentConfirmResponse>(`/app/payments/${paymentId}/confirm`, fd);
       showToast(result.match_result === 'auto_confirm' ? 'Pembayaran dikonfirmasi!' : 'Menunggu review admin', 'success');
       payment!.status = result.status;
       payment!.match_result = result.match_result;

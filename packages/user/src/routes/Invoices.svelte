@@ -21,7 +21,6 @@
 
   interface InvoicePayResponse {
     id: string;
-    payment_id: string;
     qr_image: string;
     amount_due: number;
     amount: number;
@@ -94,7 +93,7 @@
     const formData = new FormData(form);
     formData.set('amount', String(payData.amount_due));
     try {
-      const res = await api.upload<PaymentConfirmResponse>(`/v1/payments/${payData.payment_id}/confirm`, formData);
+      const res = await api.upload<PaymentConfirmResponse>(`/app/payments/${payData.id}/confirm`, formData);
       confirmResult = res;
       showToast('Pembayaran berhasil dikonfirmasi', 'success');
       await load(currentPage);

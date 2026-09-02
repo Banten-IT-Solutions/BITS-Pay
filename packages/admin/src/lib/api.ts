@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@bits-pay/shared';
 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.pay.bits.co.id/v1';
+export const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.pay.bits.co.id';
 
 export class ApiError extends Error {
   code: string;

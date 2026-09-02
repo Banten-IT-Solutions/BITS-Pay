@@ -12,10 +12,11 @@
   import type { Subscription, SubscriptionTier } from '@bits-pay/shared';
 
   interface UpgradeResponse {
-    payment_id: string;
-    qr_image: string;
-    amount_due: number;
-    amount: number;
+    qr: {
+      qris_dynamic: string;
+      qr_image: string;
+      amount_due: number;
+    };
   }
 
   let sub = $state<Subscription | null>(null);
@@ -177,10 +178,10 @@
 <Modal open={showQr} title="Bayar Langganan" onClose={() => showQr = false}>
   {#if qrData}
     <div class="flex flex-col items-center gap-4">
-      <img src={qrData.qr_image} alt="QRIS" class="w-64 rounded-lg border" />
+      <img src={qrData.qr.qr_image} alt="QRIS" class="w-64 rounded-lg border" />
       <div class="text-center">
         <p class="text-sm text-neutral-400">Total Pembayaran</p>
-        <p class="text-2xl font-bold text-neutral-900">Rp {qrData.amount_due.toLocaleString('id-ID')}</p>
+        <p class="text-2xl font-bold text-neutral-900">Rp {qrData.qr.amount_due.toLocaleString('id-ID')}</p>
         <p class="text-xs text-neutral-400">(termasuk kode unik)</p>
       </div>
       <p class="text-center text-sm text-neutral-400">Scan QRIS di atas menggunakan aplikasi pembayaran untuk menyelesaikan pembayaran.</p>

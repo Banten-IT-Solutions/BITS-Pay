@@ -6,11 +6,13 @@ import {
   type ChargeCreateResponse,
   type PaymentConfirmResponse,
   type MatchResult,
+  type UserTier,
 } from '@bits-pay/shared';
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { QrService } from './qr';
 import { getOcrProvider } from './ocr';
+import { TierService } from './tier';
 import { SubscriptionService } from './subscription';
 
 export const chargeSchema = z.object({
@@ -35,6 +37,8 @@ export class PaymentService {
     if (existing) {
       throw AppError.conflict('duplicate_order', 'order_id sudah digunakan untuk transaksi aktif');
     }
+
+    await this.checkQuota(env, app.workspace_id);
 
     const { results: usedCodes } = await env.DB.prepare(
       `SELECT unique_code FROM payments WHERE status = 'pending' AND expired_at > datetime('now')`,
@@ -96,6 +100,33 @@ export class PaymentService {
       .first<Payment>();
     if (!payment) throw AppError.notFound('Payment');
     return payment;
+  }
+
+  private static async checkQuota(env: Env, workspaceId: string): Promise<void> {
+    const owner = await env.DB.prepare(
+      'SELECT u.tier FROM workspaces w JOIN users u ON u.id = w.user_id WHERE w.id = ?',
+    )
+      .bind(workspaceId)
+      .first<{ tier: UserTier }>();
+    const features = await TierService.getTierFeatures(env, owner?.tier ?? 'free');
+
+    const today = await env.DB.prepare(
+      "SELECT COUNT(*) as c FROM payments WHERE workspace_id = ? AND date(created_at) = date('now')",
+    )
+      .bind(workspaceId)
+      .first<{ c: number }>();
+    const month = await env.DB.prepare(
+      "SELECT COUNT(*) as c FROM payments WHERE workspace_id = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m','now')",
+    )
+      .bind(workspaceId)
+      .first<{ c: number }>();
+
+    if ((today?.c ?? 0) >= features.max_transactions_per_day) {
+      throw AppError.tooMany('Batas transaksi harian tercapai, upgrade ke premium');
+    }
+    if ((month?.c ?? 0) >= features.max_transactions_month) {
+      throw AppError.tooMany('Batas transaksi bulanan tercapai, upgrade ke premium');
+    }
   }
 
   static async confirmPayment(
@@ -257,6 +288,87 @@ export class PaymentService {
       .all<Payment>();
 
     return { data: results ?? [], total: countResult?.total ?? 0 };
+  }
+
+  static async listUserPayments(
+    env: Env,
+    userId: string,
+    page: number,
+    perPage: number,
+    status?: string,
+    search?: string,
+  ): Promise<{ data: Payment[]; total: number }> {
+    const offset = (page - 1) * perPage;
+    let where = `WHERE wm.user_id = ?`;
+    const params: unknown[] = [userId];
+    if (status) {
+      where += ' AND p.status = ?';
+      params.push(status);
+    }
+    if (search) {
+      where += ' AND (p.order_id LIKE ? OR p.id LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    const count = await env.DB.prepare(
+      `SELECT COUNT(*) as total FROM payments p INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id ${where}`,
+    )
+      .bind(...params)
+      .first<{ total: number }>();
+    const { results } = await env.DB.prepare(
+      `SELECT p.* FROM payments p INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
+    )
+      .bind(...params, perPage, offset)
+      .all<Payment>();
+
+    return { data: results ?? [], total: count?.total ?? 0 };
+  }
+
+  static async userStats(
+    env: Env,
+    userId: string,
+  ): Promise<{
+    total_payments: number;
+    today_payments: number;
+    pending_count: number;
+    success_count: number;
+  }> {
+    const row = await env.DB.prepare(
+      `SELECT
+         COUNT(*) as total_payments,
+         SUM(CASE WHEN p.status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+         SUM(CASE WHEN p.status = 'success' THEN 1 ELSE 0 END) as success_count,
+         SUM(CASE WHEN p.status = 'success' AND date(p.paid_at) = date('now') THEN 1 ELSE 0 END) as today_payments
+       FROM payments p
+       INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+       WHERE wm.user_id = ?`,
+    )
+      .bind(userId)
+      .first<{
+        total_payments: number;
+        today_payments: number;
+        pending_count: number;
+        success_count: number;
+      }>();
+
+    return {
+      total_payments: row?.total_payments ?? 0,
+      today_payments: row?.today_payments ?? 0,
+      pending_count: row?.pending_count ?? 0,
+      success_count: row?.success_count ?? 0,
+    };
+  }
+
+  static async getUserPayment(env: Env, userId: string, paymentId: string): Promise<Payment> {
+    const payment = await env.DB.prepare(
+      `SELECT p.* FROM payments p
+       INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+       WHERE p.id = ? AND wm.user_id = ?`,
+    )
+      .bind(paymentId, userId)
+      .first<Payment>();
+    if (!payment) throw AppError.notFound('Payment');
+    return payment;
   }
 }
 

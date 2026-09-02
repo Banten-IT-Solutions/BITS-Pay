@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BITS Pay Status</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: oklch(0.985 0.002 247.8);
+        --card: oklch(1 0 0);
+        --border: oklch(0.92 0.004 247.8);
+        --text: oklch(0.21 0.02 247.8);
+        --muted: oklch(0.55 0.02 247.8);
+        --ok: oklch(0.63 0.19 152.5);
+        --bad: oklch(0.63 0.23 27.5);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px 40px;
+        text-align: center;
+        min-width: 280px;
+        box-shadow: 0 1px 3px oklch(0 0 0 / 0.06);
+      }
+      h1 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 0.875rem;
+        margin: 0 0 24px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.875rem;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .ok {
+        color: var(--ok);
+        background: oklch(0.63 0.19 152.5 / 0.12);
+      }
+      .bad {
+        color: var(--bad);
+        background: oklch(0.63 0.23 27.5 / 0.12);
+      }
+      .hint {
+        margin-top: 20px;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>BITS Pay Status</h1>
+      <p class="sub" id="sub">Memeriksa API&hellip;</p>
+      <span class="badge" id="badge">
+        <span class="dot"></span><span id="label">Checking</span>
+      </span>
+      <p class="hint">api.pay.bits.co.id</p>
+    </main>
+    <script>
+      (async () => {
+        const sub = document.getElementById('sub');
+        const badge = document.getElementById('badge');
+        const label = document.getElementById('label');
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        try {
+          const res = await fetch('https://api.pay.bits.co.id/health', { signal: ctrl.signal });
+          const json = await res.json();
+          const ok =
+            res.ok && json && json.success === true && json.data && json.data.status === 'ok';
+          if (ok) {
+            badge.className = 'badge ok';
+            label.textContent = 'API online';
+            sub.textContent = 'Semua sistem beroperasi normal';
+          } else {
+            badge.className = 'badge bad';
+            label.textContent = 'API degraded';
+            sub.textContent = 'Respons tidak sesuai ekspektasi';
+          }
+        } catch (e) {
+          badge.className = 'badge bad';
+          label.textContent = 'API degraded';
+          sub.textContent =
+            e.name === 'AbortError' ? 'Timeout terhubung ke API' : 'Tidak dapat terhubung ke API';
+        } finally {
+          clearTimeout(timer);
+        }
+      })();
+    </script>
+  </body>
+</html>

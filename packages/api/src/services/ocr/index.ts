@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import type { Env } from '../../config';
 import type { OcrConfig } from '@bits-pay/shared';
-import { AppError } from '../../lib/errors';
 import { WorkersAiOcr } from './workers-ai';
+import { TesseractVpsOcr } from './tesseract-vps';
 
 export interface OcrResult {
   amount: number | null;
@@ -28,11 +28,17 @@ export async function getOcrProvider(env: Env): Promise<OcrProvider> {
     value: string;
   }>();
   const provider = (row?.value ?? 'workers-ai') as OcrConfig['ocr_provider'];
-  switch (provider) {
-    case 'workers-ai':
-      return new WorkersAiOcr(env);
-    default:
-      // ponytail: tesseract-vps provider belum ada — add saat VPS OCR disetup
-      throw AppError.internal(`OCR provider tidak didukung: ${provider}`);
+  if (provider === 'tesseract-vps') {
+    const url = await readConfig(env, 'vps_ocr_url');
+    const apiKey = await readConfig(env, 'vps_ocr_api_key');
+    return new TesseractVpsOcr(url, apiKey);
   }
+  return new WorkersAiOcr(env);
+}
+
+async function readConfig(env: Env, key: string): Promise<string> {
+  const row = await env.DB.prepare('SELECT value FROM config WHERE key = ?').bind(key).first<{
+    value: string;
+  }>();
+  return row?.value ?? '';
 }

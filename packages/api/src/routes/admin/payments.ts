@@ -34,6 +34,11 @@ router.get('/review', async (c) => {
   return paginated(c, result.data, result.total, query.page, query.per_page);
 });
 
+router.get('/:id', async (c) => {
+  const payment = await AdminService.getPayment(c.env, c.req.param('id'));
+  return success(c, payment);
+});
+
 router.post('/:id/confirm', async (c) => {
   const user = c.get('user');
   const payment = await AdminService.confirmPayment(c.env, c.req.param('id'), user.id);
