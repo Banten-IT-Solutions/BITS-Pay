@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary-50: oklch(0.97 0.02 250);
+  --color-primary-100: oklch(0.93 0.04 250);
+  --color-primary-200: oklch(0.87 0.06 250);
+  --color-primary-400: oklch(0.68 0.12 250);
+  --color-primary-500: oklch(0.55 0.15 250);
+  --color-primary-600: oklch(0.45 0.13 250);
+  --color-primary-700: oklch(0.35 0.1 250);
+  --color-primary-900: oklch(0.2 0.06 250);
+  --color-accent-500: oklch(0.62 0.16 165);
+  --color-accent-600: oklch(0.52 0.14 165);
+  --color-neutral-50: oklch(0.99 0.005 80);
+  --color-neutral-100: oklch(0.97 0.005 80);
+  --color-neutral-200: oklch(0.93 0.005 80);
+  --color-neutral-400: oklch(0.8 0.01 80);
+  --color-neutral-600: oklch(0.55 0.01 80);
+  --color-neutral-900: oklch(0.2 0.01 80);
+  --color-success: oklch(0.62 0.16 165);
+  --color-warning: oklch(0.75 0.15 80);
+  --color-error: oklch(0.55 0.2 30);
+  --color-info: oklch(0.6 0.1 250);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+html,
+body {
+  @apply m-0 p-0;
+  font-family: var(--font-sans);
+}
+body {
+  @apply bg-neutral-50 text-neutral-900 antialiased;
+}

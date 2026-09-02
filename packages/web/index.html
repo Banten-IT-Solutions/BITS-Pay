@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BITS Pay — QRIS Payment Gateway untuk Aplikasi Kamu</title>
+    <meta
+      name="description"
+      content="BITS Pay adalah QRIS payment gateway yang mengubah QRIS static menjadi dinamis dengan kode unik per transaksi. Dilengkapi OCR untuk auto-confirm pembayaran. Gratis untuk mulai."
+    />
+    <meta property="og:title" content="BITS Pay — QRIS Payment Gateway" />
+    <meta
+      property="og:description"
+      content="QRIS payment gateway untuk aplikasi kamu. Mudah diintegrasi, auto-confirm via OCR."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pay.bits.co.id" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="container nav-container">
+        <a href="/" class="nav-logo">BITS Pay</a>
+        <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div id="nav-menu" class="nav-menu">
+          <a href="#cara-kerja" class="nav-link">Cara Kerja</a>
+          <a href="#fitur" class="nav-link">Fitur</a>
+          <a href="#harga" class="nav-link">Harga</a>
+          <a href="https://docs.pay.bits.co.id" class="nav-link">Docs</a>
+          <div class="nav-actions">
+            <a href="/login" class="btn btn-ghost">Masuk</a>
+            <a href="/signup" class="btn btn-primary">Daftar</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-text">
+          <h1 class="hero-title">QRIS payment gateway<br />untuk aplikasi kamu</h1>
+          <p class="hero-subtitle">
+            Integrasi QRIS dinamis dengan kode unik per transaksi. OCR otomatis konfirmasi
+            pembayaran. Satu API untuk semua aplikasi.
+          </p>
+          <div class="hero-actions">
+            <a href="/signup" class="btn btn-primary btn-lg">Mulai Gratis</a>
+            <a href="https://docs.pay.bits.co.id" class="btn btn-secondary btn-lg">Lihat Docs</a>
+          </div>
+          <p class="hero-footnote">No card required. Gratis selamanya untuk 100 transaksi/bulan.</p>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-card">
+            <div class="hero-card-header">QRIS Dinamis</div>
+            <div class="hero-card-body">
+              <div class="hero-qr-placeholder">QR</div>
+              <div class="hero-amount">Rp150.000.001</div>
+              <div class="hero-status"><span class="status-dot"></span> Menunggu pembayaran</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cara Kerja -->
+    <section id="cara-kerja" class="section">
+      <div class="container">
+        <h2 class="section-title">Cara Kerja</h2>
+        <p class="section-desc">Empat langkah mudah untuk menerima pembayaran QRIS</p>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <h3>Buat Akun</h3>
+            <p>Daftar gratis, buat workspace dan app. Dapatkan API key.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <h3>Create Charge</h3>
+            <p>Panggil API untuk membuat transaksi dengan amount dan order_id.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <h3>QRIS Dinamis</h3>
+            <p>Dapatkan QRIS dinamis dengan kode unik. Pelanggan scan dan bayar.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">4</div>
+            <h3>Auto Confirm</h3>
+            <p>Upload bukti transfer, OCR verifikasi nominal. Transaksi auto-confirm.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fitur -->
+    <section id="fitur" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Fitur Lengkap</h2>
+        <p class="section-desc">Semua yang kamu butuh untuk menerima pembayaran digital</p>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">&#9889;</div>
+            <h3>QRIS Dinamis</h3>
+            <p>QRIS static jadi dinamis dengan kode unik. Aman, tidak bisa dipakai ulang.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">&#128083;</div>
+            <h3>OCR Otomatis</h3>
+            <p>Upload bukti transfer, AI baca nominal. Auto-confirm tanpa review manual.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">&#128274;</div>
+            <h3>API & Webhook</h3>
+            <p>REST API sederhana + callback webhook. Integrasi 3 endpoint aja.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">&#128202;</div>
+            <h3>Dashboard Realtime</h3>
+            <p>Pantau transaksi, filter status, export laporan. Semua realtime.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">&#128736;</div>
+            <h3>Multi-Tenant</h3>
+            <p>Buat workspace dan app terpisah. API key berbeda per aplikasi.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">&#128179;</div>
+            <h3>Subscription</h3>
+            <p>Tagih premium user via QRIS invoice. Otomatis reminder email.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Harga -->
+    <section id="harga" class="section">
+      <div class="container">
+        <h2 class="section-title">Harga Sederhana</h2>
+        <p class="section-desc">Mulai gratis. Upgrade kapan pun kamu butuh lebih.</p>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3 class="pricing-name">Free</h3>
+            <div class="pricing-amount">Gratis</div>
+            <p class="pricing-desc">Untuk cobain dan proyek kecil</p>
+            <ul class="pricing-features">
+              <li><span class="check">&#10003;</span> 1 Workspace</li>
+              <li><span class="check">&#10003;</span> 1 App per workspace</li>
+              <li><span class="check">&#10003;</span> 100 Transaksi/bulan</li>
+              <li><span class="check">&#10003;</span> 10 req/s rate limit</li>
+              <li><span class="cross">&#10007;</span> Callback URL</li>
+              <li><span class="cross">&#10007;</span> Export Report</li>
+              <li><span class="cross">&#10007;</span> Team Members</li>
+            </ul>
+            <a href="/signup" class="btn btn-primary btn-block">Mulai Gratis</a>
+          </div>
+          <div class="pricing-card pricing-featured">
+            <div class="pricing-badge">Populer</div>
+            <h3 class="pricing-name">Premium</h3>
+            <div class="pricing-amount">Rp50k<span class="pricing-period">/bulan</span></div>
+            <p class="pricing-desc">Untuk bisnis yang serius</p>
+            <ul class="pricing-features">
+              <li><span class="check">&#10003;</span> 3 Workspace</li>
+              <li><span class="check">&#10003;</span> 5 App per workspace</li>
+              <li><span class="check">&#10003;</span> 10.000 Transaksi/bulan</li>
+              <li><span class="check">&#10003;</span> 100 req/s rate limit</li>
+              <li><span class="check">&#10003;</span> Callback URL + Retry 3x</li>
+              <li><span class="check">&#10003;</span> Export Report CSV</li>
+              <li><span class="check">&#10003;</span> 5 Team Members</li>
+            </ul>
+            <a href="/signup" class="btn btn-primary btn-block">Mulai Gratis</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section section-cta">
+      <div class="container cta-inner">
+        <h2 class="cta-title">Siap mulai?</h2>
+        <p class="cta-desc">
+          Daftar gratis, tidak perlu kartu kredit. 100 transaksi pertama gratis.
+        </p>
+        <a href="/signup" class="btn btn-primary btn-lg">Daftar Sekarang</a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <strong>BITS Pay</strong>
+          <p>QRIS payment gateway untuk aplikasi kamu.</p>
+          <p class="footer-copyright">&copy; 2025 Banten IT Solutions. All rights reserved.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Produk</h4>
+            <a href="#fitur">Fitur</a>
+            <a href="#harga">Harga</a>
+            <a href="https://docs.pay.bits.co.id">Dokumentasi</a>
+          </div>
+          <div class="footer-col">
+            <h4>Perusahaan</h4>
+            <a href="https://bits.co.id">Banten IT Solutions</a>
+            <a href="mailto:hello@bits.co.id">Kontak</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="/privacy">Kebijakan Privasi</a>
+            <a href="/terms">Syarat & Ketentuan</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal-overlay" style="display: none">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('login-modal')">&times;</button>
+        <h2>Masuk</h2>
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="nama@email.com" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Password" required />
+          </div>
+          <div id="login-error" class="form-error" style="display: none"></div>
+          <button type="submit" class="btn btn-primary btn-block">Masuk</button>
+          <p class="form-footer">
+            Belum punya akun?
+            <a
+              href="#"
+              onclick="
+                openModal('signup-modal');
+                return false;
+              "
+              >Daftar</a
+            >
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signup-modal" class="modal-overlay" style="display: none">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('signup-modal')">&times;</button>
+        <h2>Daftar</h2>
+        <form id="signup-form" onsubmit="handleSignup(event)">
+          <div class="form-group">
+            <label for="signup-name">Nama</label>
+            <input type="text" id="signup-name" placeholder="Nama lengkap" required />
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" placeholder="nama@email.com" required />
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input
+              type="password"
+              id="signup-password"
+              placeholder="Minimal 8 karakter"
+              required
+              minlength="8"
+            />
+          </div>
+          <div id="signup-error" class="form-error" style="display: none"></div>
+          <button type="submit" class="btn btn-primary btn-block">Daftar</button>
+          <p class="form-footer">
+            Sudah punya akun?
+            <a
+              href="#"
+              onclick="
+                openModal('login-modal');
+                return false;
+              "
+              >Masuk</a
+            >
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

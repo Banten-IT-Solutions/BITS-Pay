@@ -13,10 +13,11 @@
     "noEmit": true,
     "declaration": true,
     "declarationMap": true,
+    "types": ["@cloudflare/workers-types"],
     "paths": {
       "@bits-pay/shared": ["./packages/shared/src/index.ts"]
     }
   },
-  "include": ["packages/*/src", "tests"],
+  "include": ["packages/api/src", "packages/shared/src", "tests"],
   "exclude": ["node_modules", "dist", ".wrangler"]
 }
