@@ -11,7 +11,14 @@
 
   let initialized = $state(false);
 
-  const PUBLIC_PATHS = ['/login', '/', '/auth/callback'];
+  const PUBLIC_PATHS = [
+    '/login',
+    '/',
+    '/auth/callback',
+    '/verify-email',
+    '/reset-password',
+    '/forgot-password',
+  ];
 
   onMount(async () => {
     await auth.init();

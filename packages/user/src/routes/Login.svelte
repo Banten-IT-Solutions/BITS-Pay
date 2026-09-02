@@ -57,6 +57,8 @@
 
       <p class="mt-4 text-center text-sm text-neutral-400">
         {#if mode === 'login'}
+          <button class="font-medium text-primary-500 hover:underline" onclick={() => push('/forgot-password')}>Lupa password?</button>
+          <span class="mx-2">·</span>
           Belum punya akun?
           <button class="font-medium text-primary-500 hover:underline" onclick={() => { mode = 'signup'; error = ''; }}>Daftar</button>
         {:else}

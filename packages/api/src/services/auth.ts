@@ -59,7 +59,8 @@ export class AuthService {
       .bind(crypto.randomUUID(), id, token, expiresAt)
       .run();
 
-    const verifyUrl = `${env.APP_URL}/verify-email?token=${token}`;
+    // ponytail: user SPA diserve di /user/ (deploy-web). Hash route biar SPA router baca rute.
+    const verifyUrl = `${env.APP_URL}/user/?token=${encodeURIComponent(token)}#/verify-email`;
     const tpl = await EmailTemplateService.get(env, 'email_template_verify');
     const defaultText = `Halo ${input.name}, verifikasi email kamu: ${verifyUrl}`;
     const text =
@@ -155,7 +156,7 @@ export class AuthService {
       .bind(crypto.randomUUID(), user.id, token, expiresAt)
       .run();
 
-    const resetUrl = `${env.APP_URL}/reset-password?token=${token}`;
+    const resetUrl = `${env.APP_URL}/user/?token=${encodeURIComponent(token)}#/reset-password`;
     const tpl = await EmailTemplateService.get(env, 'email_template_reset');
     const defaultText = `Halo ${user.name}, reset password kamu: ${resetUrl}`;
     const text =
