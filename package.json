@@ -48,7 +48,7 @@
     "@semantic-release/npm": "^13.1.5",
     "@semantic-release/release-notes-generator": "^14.1.1",
     "concurrently": "10.0.5",
-    "eslint": "^10.9.1",
+    "eslint": "^10.10.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.4.1",
     "prettier": "^3.9.6",
