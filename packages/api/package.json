@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@bits-pay/shared": "*",
-    "hono": "^4.13.5",
+    "hono": "^4.13.7",
     "zod": "^4.5.4",
     "jose": "^6.2.12",
     "bcryptjs": "^3.0.3",
