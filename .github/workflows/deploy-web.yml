@@ -1,12 +1,6 @@
 name: Deploy Web
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/web/**'
-      - 'packages/user/**'
-      - 'packages/admin/**'
-      - 'packages/web/wrangler.jsonc'
+  workflow_dispatch:
 
 jobs:
   deploy:

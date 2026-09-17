@@ -1,11 +1,6 @@
 name: Deploy API
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/api/**'
-      - 'packages/shared/**'
-      - 'packages/api/wrangler.jsonc'
+  workflow_dispatch:
 
 jobs:
   deploy:
