@@ -56,9 +56,20 @@ router.post('/payments/:id/confirm', async (c) => {
   const app = c.get('app');
 
   // Gate sebelum parseBody: tolak payload oversize sebelum masuk memory.
+  // 413 dicek duluan: oversize ditolak apa pun Content-Type-nya.
   const contentLength = Number(c.req.header('content-length') ?? 0);
   if (contentLength > MAX_CONFIRM_BODY) {
     throw AppError.payloadTooLarge('Payload maksimal 6MB');
+  }
+
+  // parseBody menerima multipart ATAU urlencoded — keduanya boleh.
+  const contentType = c.req.header('content-type');
+  if (
+    contentType &&
+    !contentType.includes('multipart/form-data') &&
+    !contentType.includes('application/x-www-form-urlencoded')
+  ) {
+    throw AppError.unsupportedMediaType('Content-Type harus multipart/form-data');
   }
 
   const body = await c.req.parseBody();

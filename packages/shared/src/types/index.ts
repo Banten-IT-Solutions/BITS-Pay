@@ -260,6 +260,24 @@ export interface Callback {
   next_retry_at: string | null;
   last_error: string | null;
   created_at: string;
+  updated_at: string | null;
+}
+
+// DTO callback untuk PUBLIC API (/v1/callbacks). payload, response_body, dan
+// last_error sengaja tidak diekspos (bisa memuat data internal/integrator).
+// Semua timestamp ISO-8601 (UTC, suffix Z).
+export interface PublicCallback {
+  id: string;
+  payment_id: string;
+  event: CallbackEvent;
+  url: string;
+  status: CallbackStatus;
+  attempts: number;
+  max_attempts: number;
+  response_code: number | null;
+  next_retry_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CallbackPayload {

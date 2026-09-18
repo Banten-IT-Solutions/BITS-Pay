@@ -46,7 +46,7 @@ export class CallbackAdminService {
     if (!RETRYABLE.has(callback.status)) return;
 
     await env.DB.prepare(
-      "UPDATE callbacks SET attempt = 0, status = 'pending', last_error = NULL, next_retry_at = NULL WHERE id = ?",
+      "UPDATE callbacks SET attempt = 0, status = 'pending', last_error = NULL, next_retry_at = NULL, updated_at = datetime('now') WHERE id = ?",
     )
       .bind(callbackId)
       .run();

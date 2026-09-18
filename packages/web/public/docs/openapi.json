@@ -9,6 +9,7 @@
   "tags": [
     { "name": "Charges", "description": "Buat transaksi QRIS dinamis" },
     { "name": "Payments", "description": "Cek status & konfirmasi pembayaran" },
+    { "name": "Callbacks", "description": "Status delivery webhook per app" },
     { "name": "Health", "description": "Status API" }
   ],
   "paths": {
@@ -60,8 +61,176 @@
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
             }
           },
+          "415": {
+            "description": "Content-Type bukan application/json (`unsupported_media_type`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
           "429": {
             "description": "Rate limit / kuota transaksi harian/bulanan tercapai (`rate_limited`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/v1/charges/{id}/cancel": {
+      "post": {
+        "tags": ["Charges"],
+        "summary": "Cancel Charge",
+        "description": "Batalkan transaksi yang masih `pending`. Cancel = expire-now: status menjadi `expired` (tidak ada status khusus cancel) dan webhook `payment.expired` dikirim bila tier mengizinkan callback.",
+        "operationId": "cancelCharge",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID transaksi (UUID)",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaksi berhasil dibatalkan (status `expired`)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaymentResponseWrapper" }
+              }
+            }
+          },
+          "401": {
+            "description": "API key tidak valid (`unauthorized`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "404": {
+            "description": "Transaksi tidak ditemukan / bukan milik app (`not_found`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "409": {
+            "description": "Transaksi sudah final (bukan `pending`) (`invalid_status`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "429": {
+            "description": "Rate limit tercapai (`rate_limited`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/v1/callbacks": {
+      "get": {
+        "tags": ["Callbacks"],
+        "summary": "List Callbacks",
+        "description": "Daftar delivery webhook milik app (scoped dari API key). Filter via `payment_id` & `status`. Pagination via `page` & `per_page`.",
+        "operationId": "listCallbacks",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "query",
+            "required": false,
+            "description": "Filter per ID transaksi",
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "#/components/schemas/CallbackStatus" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar callback (terbaru dulu)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CallbackListResponseWrapper" }
+              }
+            }
+          },
+          "401": {
+            "description": "API key tidak valid (`unauthorized`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "429": {
+            "description": "Rate limit tercapai (`rate_limited`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/v1/callbacks/{id}/retry": {
+      "post": {
+        "tags": ["Callbacks"],
+        "summary": "Retry Callback",
+        "description": "Kirim ulang webhook yang berstatus `failed` secara manual. `attempt` tidak direset — retry manual tetap menghitung terhadap `max_attempts`.",
+        "operationId": "retryCallback",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID callback (UUID)",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Callback di-requeue (status `pending`)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CallbackResponseWrapper" }
+              }
+            }
+          },
+          "401": {
+            "description": "API key tidak valid (`unauthorized`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "404": {
+            "description": "Callback tidak ditemukan / bukan milik app (`not_found`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "409": {
+            "description": "Callback bukan status `failed` (`invalid_status`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "429": {
+            "description": "Rate limit tercapai (`rate_limited`)",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
             }
@@ -238,6 +407,12 @@
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
             }
           },
+          "415": {
+            "description": "Content-Type bukan multipart/form-data atau application/x-www-form-urlencoded (`unsupported_media_type`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
           "429": {
             "description": "Rate limit tercapai (`rate_limited`)",
             "content": {
@@ -401,6 +576,63 @@
         "type": "string",
         "enum": ["pending", "success", "failed", "expired", "pending_review"]
       },
+      "CallbackStatus": {
+        "type": "string",
+        "enum": ["pending", "success", "failed", "dead"]
+      },
+      "Callback": {
+        "type": "object",
+        "description": "Objek delivery webhook publik (curated — payload & response body tidak diekspos). Semua timestamp ISO-8601 UTC.",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "payment_id": { "type": "string", "format": "uuid" },
+          "event": {
+            "type": "string",
+            "enum": ["payment.success", "payment.failed", "payment.expired"]
+          },
+          "url": { "type": "string", "format": "uri", "description": "URL tujuan webhook" },
+          "status": { "$ref": "#/components/schemas/CallbackStatus" },
+          "attempts": { "type": "integer", "example": 2 },
+          "max_attempts": { "type": "integer", "example": 3 },
+          "response_code": {
+            "type": ["integer", "null"],
+            "description": "HTTP status dari endpoint kamu (null bila network error)",
+            "example": 200
+          },
+          "next_retry_at": {
+            "type": ["string", "null"],
+            "format": "date-time",
+            "description": "Jadwal retry otomatis berikutnya (null bila tidak ada)"
+          },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CallbackResponseWrapper": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": { "$ref": "#/components/schemas/Callback" }
+        }
+      },
+      "CallbackListResponseWrapper": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Callback" }
+              },
+              "page": { "type": "integer", "example": 1 },
+              "per_page": { "type": "integer", "example": 20 },
+              "total": { "type": "integer", "example": 42 }
+            }
+          }
+        }
+      },
       "MatchResult": {
         "type": ["string", "null"],
         "enum": [
@@ -484,6 +716,7 @@
                   "proof_too_large",
                   "invalid_proof",
                   "payload_too_large",
+                  "unsupported_media_type",
                   "rate_limited",
                   "internal_error"
                 ],

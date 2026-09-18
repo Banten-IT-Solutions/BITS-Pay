@@ -173,6 +173,35 @@ export class PaymentService {
     return payment;
   }
 
+  // Cancel = expire-now: TIDAK ada status 'canceled' baru di enum — payment
+  // pending dibatalkan dengan mengubah status ke 'expired' (sama seperti cron
+  // expire), sehingga webhook payment.expired & lifecycle lain tetap konsisten.
+  // SELECT dulu untuk bedakan 404 (bukan milik app) vs 409 (status sudah final),
+  // lalu UPDATE atomik guard status='pending' untuk race dengan confirm/cron.
+  static async cancelCharge(
+    env: Env,
+    workspaceId: string,
+    appId: string,
+    paymentId: string,
+  ): Promise<Payment> {
+    const payment = await this.getPayment(env, workspaceId, appId, paymentId);
+
+    const res = await env.DB.prepare(
+      "UPDATE payments SET status = 'expired', updated_at = datetime('now') WHERE id = ? AND status = 'pending'",
+    )
+      .bind(payment.id)
+      .run();
+    if (res.meta.changes === 0) {
+      throw AppError.conflict('invalid_status', `Status transaksi: ${payment.status}`);
+    }
+
+    // Webhook payment.expired (gated by tier) — helper sama dengan cron.
+    // Gagal enqueue → propagate 500; payment tetap expired, cron retry.
+    await CallbackService.enqueueExpiredForPayment(env, payment.id);
+
+    return { ...payment, status: 'expired' };
+  }
+
   // Kuota transaksi milik AKUN (flat sharing semua workspace + apps milik user),
   // bukan per workspace / per app. Unit billing = akun.
   private static async checkQuota(env: Env, workspaceId: string): Promise<void> {

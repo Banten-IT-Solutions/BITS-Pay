@@ -57,47 +57,15 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
          WHERE status = 'pending' AND expired_at < datetime('now')`,
       ).run();
 
+      // Gate (app aktif + callback_url + tier) & claim atomik ada di helper —
+      // dipakai bersama route cancel /v1/charges/:id/cancel.
       const { results: expiredPayments } = await env.DB.prepare(
-        `SELECT p.id, p.app_id, a.callback_url, p.order_id, p.amount, p.amount_due
-         FROM payments p
-         JOIN apps a ON a.id = p.app_id
-         JOIN workspaces w ON w.id = a.workspace_id
-         JOIN users u ON u.id = w.user_id
-         JOIN tier_features tf ON tf.tier = u.tier
-         WHERE p.status = 'expired' AND p.callback_queued = 0
-         AND p.app_id IS NOT NULL AND a.callback_url IS NOT NULL
-         AND a.is_active = 1 AND tf.callback_allowed = 1`,
-      ).all<{
-        id: string;
-        app_id: string;
-        callback_url: string;
-        order_id: string | null;
-        amount: number;
-        amount_due: number;
-      }>();
+        `SELECT id FROM payments
+         WHERE status = 'expired' AND callback_queued = 0 AND app_id IS NOT NULL`,
+      ).all<{ id: string }>();
 
       for (const p of expiredPayments ?? []) {
-        await CallbackService.enqueueCallback(
-          env,
-          p.id,
-          p.app_id,
-          p.callback_url,
-          'payment.expired',
-          {
-            event: 'payment.expired',
-            transaction: {
-              id: p.id,
-              order_id: p.order_id,
-              amount: p.amount,
-              amount_due: p.amount_due,
-              status: 'expired',
-              paid_at: null,
-            },
-          },
-        );
-        await env.DB.prepare('UPDATE payments SET callback_queued = 1 WHERE id = ?')
-          .bind(p.id)
-          .run();
+        await CallbackService.enqueueExpiredForPayment(env, p.id);
       }
 
       await SubscriptionService.expireAndDowngrade(env);
@@ -114,7 +82,7 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
       ).all<{ id: string }>();
       for (const cb of retryCallbacks ?? []) {
         const claimed = await env.DB.prepare(
-          "UPDATE callbacks SET status = 'pending', next_retry_at = NULL WHERE id = ? AND status = 'failed'",
+          "UPDATE callbacks SET status = 'pending', next_retry_at = NULL, updated_at = datetime('now') WHERE id = ? AND status = 'failed'",
         )
           .bind(cb.id)
           .run();

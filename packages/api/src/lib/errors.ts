@@ -33,6 +33,10 @@ export class AppError extends Error {
     return new AppError(413, 'payload_too_large', message);
   }
 
+  static unsupportedMediaType(message = 'Content-Type tidak didukung') {
+    return new AppError(415, 'unsupported_media_type', message);
+  }
+
   static internal(message = 'Internal server error') {
     return new AppError(500, 'internal_error', message);
   }
