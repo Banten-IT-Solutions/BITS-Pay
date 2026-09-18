@@ -1,29 +1,91 @@
-name: Deploy Web
+name: '🌐 Deploy Web'
+
 on:
   workflow_dispatch:
 
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  NODE_NO_WARNINGS: 1
+  WORKER_NAME: ${{ vars.WORKER_NAME || secrets.WORKER_NAME }}
+  WEB_DOMAIN: ${{ vars.WEB_DOMAIN || secrets.WEB_DOMAIN }}
+  APP_URL: ${{ vars.APP_URL || secrets.APP_URL }}
+  VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+
+concurrency:
+  group: deploy-web-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
+    name: '☁️ Deploy Web Worker'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v7.0.0
+      - name: '📥 Checkout'
+        uses: actions/checkout@v7.0.1
+
+      - name: '📦 Setup pnpm'
+        uses: pnpm/action-setup@v4
+
+      - name: '☕ Setup Node'
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
           cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @bits-pay/web build
-      - run: pnpm --filter @bits-pay/user build
-      - run: pnpm --filter @bits-pay/admin build
+
+      - name: '📦 Install dependencies'
+        run: pnpm install --frozen-lockfile
+
+      - name: '🔧 Generate Wrangler config'
+        working-directory: packages/web
+        run: pnpm cf:config
+
+      - name: '🔍 Show resolved deploy targets'
+        working-directory: packages/web
+        run: |
+          set -euo pipefail
+          echo "WORKER_NAME  = ${WORKER_NAME:-(default: bits-pay-web)}"
+          echo "WEB_DOMAIN   = ${WEB_DOMAIN:-(default: pay.bits.co.id)}"
+          echo "VITE_API_URL = ${VITE_API_URL}"
+          test -n "${VITE_API_URL}" || { echo "✗ VITE_API_URL is empty (SPA akan menunjuk localhost!)"; exit 1; }
+          echo "--- wrangler.jsonc (name + domain) ---"
+          grep -E '"name"|"pattern"' wrangler.jsonc || true
+
+      - name: '🏗️ Build'
+        run: |
+          pnpm --filter @bits-pay/shared build
+          pnpm --filter @bits-pay/web build
+          pnpm --filter @bits-pay/user build
+          pnpm --filter @bits-pay/admin build
+
       # ponytail: copy SPAs into web/dist for combined serving.
       # When traffic grows, split into separate workers.
-      - run: |
+      - name: '📂 Bundle SPAs'
+        run: |
           cp -r packages/user/dist packages/web/dist/user
           cp -r packages/admin/dist packages/web/dist/admin
-      - name: Deploy to Cloudflare
+
+      - name: '🚀 Deploy Worker'
         uses: cloudflare/wrangler-action@v4.0.0
         with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          command: deploy
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: packages/web
+
+      - name: '✅ Smoke test'
+        run: |
+          url="${APP_URL:-https://pay.bits.co.id}"
+          echo "Checking $url..."
+          for i in 1 2 3 4 5; do
+            if curl -fsS -o /dev/null "$url"; then
+              echo "✓ Web check passed at $url"
+              exit 0
+            fi
+            echo "Retry $i/5..."
+            sleep 10
+          done
+          echo "✗ Smoke test failed at $url"
+          curl -v "$url" || true
+          exit 1

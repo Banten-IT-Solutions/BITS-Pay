@@ -1,0 +1,12 @@
+{
+  "name": "${WORKER_NAME}",
+  "compatibility_date": "2025-09-01",
+
+  // Custom domain — di-set via GitHub variable WEB_DOMAIN.
+  "routes": [{ "pattern": "${WEB_DOMAIN}", "custom_domain": true }],
+
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist",
+  },
+}

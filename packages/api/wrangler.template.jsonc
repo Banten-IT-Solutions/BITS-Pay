@@ -1,0 +1,65 @@
+{
+  "name": "${WORKER_NAME}",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Custom domain — di-set via GitHub variable API_DOMAIN.
+  "routes": [{ "pattern": "${API_DOMAIN}", "custom_domain": true }],
+
+  "send_email": [{ "name": "EMAIL" }],
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "${D1_DATABASE_NAME}",
+      "database_id": "${D1_DATABASE_ID}",
+      "migrations_dir": "src/db/migrations",
+    },
+  ],
+
+  "ai": {
+    "binding": "AI",
+  },
+
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "${R2_BUCKET_NAME}",
+    },
+  ],
+
+  "queues": {
+    "producers": [{ "binding": "CALLBACK_QUEUE", "queue": "${CALLBACK_QUEUE_NAME}" }],
+    "consumers": [{ "queue": "${CALLBACK_QUEUE_NAME}", "max_retries": 3, "max_batch_size": 10 }],
+  },
+
+  "durable_objects": {
+    "bindings": [{ "name": "RATE_LIMITER", "class_name": "RateLimiter" }],
+  },
+
+  "migrations": [{ "tag": "v1", "new_classes": ["RateLimiter"] }],
+
+  "triggers": {
+    "crons": ["*/5 * * * *"],
+  },
+
+  // Placeholder diganti oleh scripts/gen-wrangler.mjs (pnpm cf:config).
+  // CI: nilai dari GitHub Variables. Lokal: default di gen-wrangler.mjs.
+  // Secret (JWT_SECRET, GOOGLE_CLIENT_SECRET, QRIS_STATIC) TIDAK di sini —
+  // diset via `wrangler secret bulk` di workflow, atau .dev.vars untuk lokal.
+  "vars": {
+    "APP_URL": "${APP_URL}",
+    "FROM_EMAIL": "${FROM_EMAIL}",
+    "TRANSACTION_EXPIRE_MINUTES": "${TRANSACTION_EXPIRE_MINUTES}",
+    "PREMIUM_PRICE_MONTHLY": "${PREMIUM_PRICE_MONTHLY}",
+    "PREMIUM_PRICE_YEARLY": "${PREMIUM_PRICE_YEARLY}",
+    "GOOGLE_CLIENT_ID": "${GOOGLE_CLIENT_ID}",
+    "GOOGLE_REDIRECT_URI": "${GOOGLE_REDIRECT_URI}",
+    "JWT_EXPIRES_IN": "${JWT_EXPIRES_IN}",
+    "ADMIN_EMAILS": "${ADMIN_EMAILS}",
+    "OCR_CONFIDENCE_THRESHOLD": "${OCR_CONFIDENCE_THRESHOLD}",
+    "MAX_UNIQUE_CODE": "${MAX_UNIQUE_CODE}",
+    "PROOF_RETENTION_DAYS": "${PROOF_RETENTION_DAYS}",
+  },
+}

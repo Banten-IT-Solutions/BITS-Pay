@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "cf:config": "node ../../scripts/gen-wrangler.mjs web",
+    "deploy": "pnpm cf:config && wrangler deploy",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",

@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "build": "wrangler deploy --dry-run",
-    "deploy": "wrangler deploy",
+    "cf:config": "node ../../scripts/gen-wrangler.mjs api",
+    "dev": "pnpm cf:config && wrangler dev",
+    "build": "pnpm cf:config && wrangler deploy --dry-run",
+    "deploy": "pnpm cf:config && wrangler deploy",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
