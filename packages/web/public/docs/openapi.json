@@ -37,7 +37,7 @@
             }
           },
           "400": {
-            "description": "Request tidak valid (`validation_error`, `invalid_amount`, `no_unique_code`)",
+            "description": "Request tidak valid (`validation_error`, `no_unique_code`)",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
             }
@@ -54,8 +54,72 @@
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
             }
           },
+          "413": {
+            "description": "Body melebihi batas (`payload_too_large`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
           "429": {
             "description": "Rate limit / kuota transaksi harian/bulanan tercapai (`rate_limited`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payments": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "List Payments",
+        "description": "Daftar transaksi milik app (scoped dari API key). `order_id` untuk lookup exact, `status` untuk filter. Pagination via `page` & `per_page`.",
+        "operationId": "listPayments",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "query",
+            "required": false,
+            "description": "Lookup exact order_id",
+            "schema": { "type": "string", "example": "ORD-001" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "#/components/schemas/PaymentStatus" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar transaksi (terbaru dulu)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaymentListResponseWrapper" }
+              }
+            }
+          },
+          "401": {
+            "description": "API key tidak valid (`unauthorized`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "429": {
+            "description": "Rate limit tercapai (`rate_limited`)",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
             }
@@ -113,7 +177,7 @@
       "post": {
         "tags": ["Payments"],
         "summary": "Confirm Payment",
-        "description": "Konfirmasi pembayaran dengan nominal yang dibayar (`amount` harus sama persis dengan `amount_due`) dan opsional bukti bayar untuk OCR. Hasil: `200` sukses (auto_confirm), `202` pending review (confidence rendah), `400` gagal (mismatch).",
+        "description": "Konfirmasi pembayaran dengan nominal yang dibayar (`amount` harus sama persis dengan `amount_due`) dan opsional bukti bayar untuk OCR. Request yang valid selalu dijawab `200` — cek `data.status` (`success` | `pending_review` | `failed`) dan `data.match_result`.",
         "operationId": "confirmPayment",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -135,15 +199,7 @@
         },
         "responses": {
           "200": {
-            "description": "Pembayaran berhasil dikonfirmasi (`auto_confirm`)",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/PaymentConfirmResponseWrapper" }
-              }
-            }
-          },
-          "202": {
-            "description": "OCR confidence rendah, masuk antrian review admin (`low_confidence`)",
+            "description": "Hasil konfirmasi — `data.status`: `success` (auto_confirm), `pending_review` (low_confidence), `failed` (mismatch / bukti tidak ada)",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/PaymentConfirmResponseWrapper" }
@@ -151,15 +207,10 @@
             }
           },
           "400": {
-            "description": "Nominal tidak cocok / bukti tidak ada / transaksi expired / status tidak valid (`mismatch`, `expired`, `invalid_status`, `validation_error`, `proof_too_large`, `invalid_proof`)",
+            "description": "Transaksi expired / status tidak valid / amount tidak valid / bukti bukan JPG-PNG (`expired`, `invalid_status`, `validation_error`, `invalid_proof`, `proof_too_large`)",
             "content": {
               "application/json": {
-                "schema": {
-                  "oneOf": [
-                    { "$ref": "#/components/schemas/PaymentConfirmResponseWrapper" },
-                    { "$ref": "#/components/schemas/ErrorResponse" }
-                  ]
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
               }
             }
           },
@@ -177,6 +228,12 @@
           },
           "409": {
             "description": "Bukti bayar sudah dipakai transaksi lain (`duplicate_hash`)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          },
+          "413": {
+            "description": "Payload melebihi batas (`payload_too_large`)",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
             }
@@ -288,39 +345,24 @@
       },
       "Payment": {
         "type": "object",
-        "description": "Objek transaksi lengkap (row tabel `payments`).",
+        "description": "Objek transaksi publik (curated — field internal seperti proof/OCR tidak diekspos). Semua timestamp ISO-8601 UTC.",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "workspace_id": { "type": "string", "format": "uuid" },
-          "app_id": { "type": ["string", "null"], "format": "uuid" },
-          "user_id": { "type": ["string", "null"], "format": "uuid" },
           "order_id": { "type": ["string", "null"], "example": "ORD-001" },
-          "type": { "type": "string", "enum": ["payment", "invoice"] },
           "amount": { "type": "integer", "example": 150000 },
-          "amount_due": { "type": "integer", "example": 150001 },
           "unique_code": { "type": "integer", "example": 1 },
+          "amount_due": { "type": "integer", "example": 150001 },
           "currency": { "type": "string", "example": "IDR" },
           "status": { "$ref": "#/components/schemas/PaymentStatus" },
-          "qris_dynamic": { "type": ["string", "null"] },
-          "qr_image": { "type": ["string", "null"] },
-          "proof_hash": { "type": ["string", "null"], "description": "SHA-256 hex bukti bayar" },
-          "proof_path": { "type": ["string", "null"] },
-          "proof_mime": { "type": ["string", "null"] },
-          "user_input_amount": { "type": ["integer", "null"] },
-          "ocr_amount": { "type": ["integer", "null"] },
-          "ocr_confidence": { "type": ["integer", "null"], "example": 91 },
-          "ocr_merchant": { "type": ["string", "null"] },
-          "ocr_raw_text": { "type": ["string", "null"] },
-          "ocr_provider": { "type": ["string", "null"] },
-          "match_result": { "$ref": "#/components/schemas/MatchResult" },
-          "metadata": { "type": ["string", "null"], "description": "JSON string" },
           "description": { "type": ["string", "null"] },
-          "created_at": { "type": "string", "format": "date-time" },
+          "metadata": {
+            "type": ["object", "null"],
+            "additionalProperties": true,
+            "description": "Metadata yang dikirim saat create charge (object, bukan JSON string)."
+          },
           "paid_at": { "type": ["string", "null"], "format": "date-time" },
           "expired_at": { "type": ["string", "null"], "format": "date-time" },
-          "confirmed_at": { "type": ["string", "null"], "format": "date-time" },
-          "confirmed_by": { "type": ["string", "null"] },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
       "PaymentConfirmRequest": {
@@ -396,6 +438,24 @@
           "data": { "$ref": "#/components/schemas/Payment" }
         }
       },
+      "PaymentListResponseWrapper": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Payment" }
+              },
+              "page": { "type": "integer", "example": 1 },
+              "per_page": { "type": "integer", "example": 20 },
+              "total": { "type": "integer", "example": 42 }
+            }
+          }
+        }
+      },
       "PaymentConfirmResponseWrapper": {
         "type": "object",
         "properties": {
@@ -414,7 +474,6 @@
                 "type": "string",
                 "enum": [
                   "validation_error",
-                  "invalid_amount",
                   "invalid_status",
                   "no_unique_code",
                   "unauthorized",
@@ -424,10 +483,11 @@
                   "duplicate_hash",
                   "proof_too_large",
                   "invalid_proof",
+                  "payload_too_large",
                   "rate_limited",
                   "internal_error"
                 ],
-                "example": "invalid_amount"
+                "example": "validation_error"
               },
               "message": { "type": "string", "example": "Amount minimal 100" },
               "details": {

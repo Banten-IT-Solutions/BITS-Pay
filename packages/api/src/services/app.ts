@@ -3,6 +3,7 @@ import {
   generateApiKey,
   generateToken,
   type AppPublic,
+  type AppWithSecrets,
   type MemberRole,
   type UserTier,
 } from '@bits-pay/shared';
@@ -56,7 +57,7 @@ export class AppService {
     userId: string,
     workspaceId: string,
     input: z.infer<typeof createAppSchema>,
-  ): Promise<AppPublic & { api_key: string }> {
+  ): Promise<AppWithSecrets> {
     await this.requireMember(env, workspaceId, userId, true);
 
     const callbackUrl = input.callback_url || null;
@@ -84,7 +85,7 @@ export class AppService {
       .first<AppPublic>();
     if (!app) throw AppError.internal('Gagal membuat app');
 
-    return { ...app, api_key: key };
+    return { ...app, api_key: key, callback_secret: callbackSecret };
   }
 
   static async get(
@@ -133,7 +134,7 @@ export class AppService {
     userId: string,
     workspaceId: string,
     appId: string,
-  ): Promise<AppPublic & { api_key: string }> {
+  ): Promise<AppWithSecrets> {
     await this.requireMember(env, workspaceId, userId, true);
     await this.get(env, userId, workspaceId, appId);
 
@@ -145,6 +146,12 @@ export class AppService {
       .first<AppPublic>();
     if (!updated) throw AppError.internal('Gagal rotate key');
 
-    return { ...updated, api_key: key };
+    // Secret tidak ikut RETURNING (dipakai list/detail) — ambil eksplisit di sini
+    // supaya bisa ditampilkan sekali bersama api_key baru.
+    const secret = await env.DB.prepare('SELECT callback_secret FROM apps WHERE id = ?')
+      .bind(appId)
+      .first<{ callback_secret: string | null }>();
+
+    return { ...updated, api_key: key, callback_secret: secret?.callback_secret ?? '' };
   }
 }

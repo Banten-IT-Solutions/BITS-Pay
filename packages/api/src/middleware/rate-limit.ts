@@ -39,6 +39,9 @@ function build(keyFn: (c: Context) => { key: string; limit: number }) {
     c.header('X-RateLimit-Remaining', String(result.remaining));
     c.header('X-RateLimit-Reset', String(Math.ceil(result.reset / 1000)));
     if (!result.allowed) {
+      // Detik sampai window reset (reset = epoch ms).
+      const retryAfter = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
+      c.header('Retry-After', String(retryAfter));
       throw AppError.tooMany(`Rate limit ${limit} req/s tercapai, coba lagi sesaat`);
     }
     await next();

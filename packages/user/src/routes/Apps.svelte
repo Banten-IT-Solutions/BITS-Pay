@@ -11,7 +11,7 @@
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
-  import type { WorkspaceWithMemberCount, AppPublic } from '@bits-pay/shared';
+  import type { WorkspaceWithMemberCount, AppPublic, AppWithSecrets } from '@bits-pay/shared';
 
   let workspaces = $state<WorkspaceWithMemberCount[]>([]);
   let selectedWid = $state('');
@@ -51,7 +51,7 @@
     if (!newName || !selectedWid) return;
     submitting = true;
     try {
-      const app = await api.post<AppPublic>(`/app/workspaces/${selectedWid}/apps`, {
+      const app = await api.post<AppWithSecrets>(`/app/workspaces/${selectedWid}/apps`, {
         name: newName,
         callback_url: newCallback || undefined,
       });
@@ -63,6 +63,9 @@
       if (app.api_key) {
         showToast(`API Key: ${app.api_key} — simpan!`, 'info');
       }
+      if (app.callback_secret) {
+        showToast(`Callback Secret: ${app.callback_secret} — simpan untuk verifikasi webhook!`, 'info');
+      }
     } catch (e) {
       showToast((e as Error).message, 'error');
     } finally {
@@ -73,8 +76,11 @@
   async function rotateKey(appId: string) {
     if (!confirm('Rotate API key? Key lama tidak bisa dipakai lagi.')) return;
     try {
-      const app = await api.post<AppPublic>(`/app/workspaces/${selectedWid}/apps/${appId}/rotate-key`);
+      const app = await api.post<AppWithSecrets>(`/app/workspaces/${selectedWid}/apps/${appId}/rotate-key`);
       showToast(`API Key baru: ${app.api_key} — simpan!`, 'success');
+      if (app.callback_secret) {
+        showToast(`Callback Secret: ${app.callback_secret} — simpan untuk verifikasi webhook!`, 'info');
+      }
     } catch (e) {
       showToast((e as Error).message, 'error');
     }

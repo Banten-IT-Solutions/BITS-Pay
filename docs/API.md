@@ -1,16 +1,47 @@
 # BITS Pay — API Documentation
 
-**Base URL:** `https://api.pay.bits.co.id/v1`
+**Base URL:** `https://api.pay.bits.co.id`
+
+> Path di dokumen ini sudah termasuk prefix `/v1` untuk public API (mis. `POST /v1/charges`
+> → `https://api.pay.bits.co.id/v1/charges`). Jangan gandakan prefix.
+
+## Format Response
+
+Semua response JSON dibungkus envelope yang sama:
+
+```json
+// Sukses
+{ "success": true, "data": { ... } }
+
+// Error
+{ "success": false, "error": { "code": "validation_error", "message": "...", "details": {} } }
+```
+
+- `details` opsional — map `field → string[]` untuk `validation_error`.
+- Response paginated: `data` berisi `{ "items": [...], "page", "per_page", "total" }`.
+
+**Timestamp:** semua field waktu di public API (`/v1/*`) berformat ISO-8601 UTC,
+mis. `2026-09-02T12:45:00Z`.
+
+**Batas ukuran request:**
+
+| Request                            | Batas                                  |
+| ---------------------------------- | -------------------------------------- |
+| Body JSON `POST /v1/charges`       | 64 KB (`metadata` maks 4 KB)           |
+| `proof_image` (confirm)            | 5 MB, JPG/PNG                          |
+| Total multipart `POST .../confirm` | 6 MB — lebih → `413 payload_too_large` |
 
 ## Authentication
 
-### API Key (untuk external apps)
+### API Key (untuk external apps, semua endpoint `/v1/*`)
 
 ```
 Header: Authorization: Bearer sk_xxxxxxxxxxxxxxxx
 ```
 
-> API key full (`sk_...`) hanya ditampilkan sekali saat create/rotate. DB hanya simpan `api_key_hash` (SHA-256) + `api_key_prefix`. Lookup app via `api_key_hash`, bukan prefix.
+> API key full (`sk_...`) hanya ditampilkan sekali saat create/rotate. DB hanya simpan
+> `api_key_hash` (SHA-256) + `api_key_prefix`. Lookup app via `api_key_hash`, bukan prefix.
+> Response `401` selalu menyertakan header `WWW-Authenticate: Bearer`.
 
 ### JWT (untuk user dashboard)
 
@@ -28,7 +59,7 @@ Header: Authorization: Bearer eyJhbGci...
 POST /v1/charges
 ```
 
-**Request:**
+**Request (application/json):**
 
 ```json
 {
@@ -40,22 +71,30 @@ POST /v1/charges
 }
 ```
 
+- `order_id` — wajib, unik per app untuk transaksi aktif (idempotency).
+- `amount` — wajib, integer, min `100`, max `1_000_000_000`.
+- `currency` — opsional, default `"IDR"`.
+- `metadata` — opsional, object bebas, maks 4 KB (disimpan sebagai JSON string).
+
 > `app_id` tidak ada di body. App diidentifikasi dari API key (`Authorization: Bearer sk_...`).
 
 **Response (201):**
 
 ```json
 {
-  "id": "uuid-trx",
-  "amount": 150000,
-  "amount_due": 150001,
-  "unique_code": 1,
-  "currency": "IDR",
-  "status": "pending",
-  "qr_image": "data:image/png;base64,...",
-  "qris_dynamic": "000201010212...",
-  "expired_at": "2025-09-01T12:45:00Z",
-  "created_at": "2025-09-01T12:30:00Z"
+  "success": true,
+  "data": {
+    "id": "9b1f2c3e-...",
+    "amount": 150000,
+    "amount_due": 150001,
+    "unique_code": 1,
+    "currency": "IDR",
+    "status": "pending",
+    "qr_image": "data:image/png;base64,...",
+    "qris_dynamic": "000201010212...",
+    "expired_at": "2026-09-02T12:45:00Z",
+    "created_at": "2026-09-02T12:30:00Z"
+  }
 }
 ```
 
@@ -66,22 +105,83 @@ amount_due = amount + unique_code
 Contoh: 150000 + 1 = 150001
 ```
 
-Range: `001` – `999`. Kode dicek available dari transaksi pending yang belum expired.
-`amount_due` tidak bisa di-decompose balik — `amount` dan `unique_code` selalu tersimpan sebagai kolom terpisah.
+Range: `001` – `999` (env `MAX_UNIQUE_CODE`). Kode dicek available dari transaksi pending
+yang belum expired. `amount_due` tidak bisa di-decompose balik — `amount` dan `unique_code`
+selalu tersimpan sebagai kolom terpisah.
 
 **Error:**
+
+| HTTP | Code              | Penyebab                                                |
+| ---- | ----------------- | ------------------------------------------------------- |
+| 400  | validation_error  | Field tidak valid (cek `error.details`), metadata > 4KB |
+| 400  | no_unique_code    | Semua kode unik terpakai                                |
+| 401  | unauthorized      | API key salah / app nonaktif                            |
+| 409  | duplicate_order   | `order_id` sudah dipakai transaksi aktif                |
+| 409  | no_unique_code    | Gagal mengalokasikan kode unik (race) — coba lagi       |
+| 413  | payload_too_large | Body > 64KB                                             |
+| 429  | rate_limited      | Rate limit / kuota transaksi harian / bulanan tercapai  |
+
+Contoh body error:
 
 ```json
 {
   "success": false,
   "error": {
-    "code": "invalid_amount",
-    "message": "Amount harus minimal Rp 100"
+    "code": "validation_error",
+    "message": "Validasi gagal",
+    "details": { "amount": ["Amount minimal 100"] }
   }
 }
 ```
 
 ### 2. Payments
+
+#### List Payments
+
+```
+GET /v1/payments
+```
+
+Daftar transaksi milik app (scope dari API key), urut `created_at` terbaru dulu.
+Berguna untuk rekonsiliasi (mis. lookup `order_id` setelah webhook terlewat).
+
+**Query params:**
+
+| Param    | Tipe    | Default | Keterangan                                                          |
+| -------- | ------- | ------- | ------------------------------------------------------------------- |
+| order_id | string  | —       | Lookup exact                                                        |
+| status   | enum    | —       | `pending` \| `success` \| `failed` \| `expired` \| `pending_review` |
+| page     | integer | 1       | Min 1                                                               |
+| per_page | integer | 20      | Min 1, maks 100                                                     |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "9b1f2c3e-...",
+        "order_id": "ORD-001",
+        "amount": 150000,
+        "unique_code": 1,
+        "amount_due": 150001,
+        "currency": "IDR",
+        "status": "pending",
+        "description": "Pembayaran invoice #001",
+        "metadata": {},
+        "paid_at": null,
+        "expired_at": "2026-09-02T12:45:00Z",
+        "created_at": "2026-09-02T12:30:00Z"
+      }
+    ],
+    "page": 1,
+    "per_page": 20,
+    "total": 42
+  }
+}
+```
 
 #### Get Payment Status
 
@@ -89,21 +189,30 @@ Range: `001` – `999`. Kode dicek available dari transaksi pending yang belum e
 GET /v1/payments/:id
 ```
 
-**Response:**
+**Response (200):**
 
 ```json
 {
-  "id": "uuid-trx",
-  "app_id": "uuid-app",
-  "order_id": "ORD-001",
-  "amount": 150000,
-  "amount_due": 150001,
-  "status": "pending",
-  "created_at": "2025-09-01T12:30:00Z",
-  "paid_at": null,
-  "expired_at": "2025-09-01T12:45:00Z"
+  "success": true,
+  "data": {
+    "id": "9b1f2c3e-...",
+    "order_id": "ORD-001",
+    "amount": 150000,
+    "unique_code": 1,
+    "amount_due": 150001,
+    "currency": "IDR",
+    "status": "pending",
+    "description": "Pembayaran invoice #001",
+    "metadata": {},
+    "paid_at": null,
+    "expired_at": "2026-09-02T12:45:00Z",
+    "created_at": "2026-09-02T12:30:00Z"
+  }
 }
 ```
+
+> Objek payment publik hanya berisi field di atas — field internal (proof, OCR, hash)
+> tidak diekspos. `metadata` dikembalikan sebagai object (atau `null`).
 
 #### Confirm Payment
 
@@ -114,46 +223,82 @@ POST /v1/payments/:id/confirm
 **Request (multipart/form-data):**
 
 ```
-proof_image: File (jpg/png, max 5MB)
-amount: 150001
+proof_image: File (JPG/PNG, maks 5MB) — opsional
+amount: 150001  — wajib, harus sama persis dengan amount_due
 ```
 
-**Response (200):**
+**Request valid SELALU dijawab HTTP 200.** Hasil konfirmasi ada di `data.status` —
+jangan andalkan status code HTTP:
+
+| `data.status`    | `data.match_result` | Arti                                            |
+| ---------------- | ------------------- | ----------------------------------------------- |
+| `success`        | `auto_confirm`      | OCR cocok + confidence ≥ threshold — lunas      |
+| `pending_review` | `low_confidence`    | Nominal cocok, confidence rendah — review admin |
+| `failed`         | `mismatch`          | Nominal tidak cocok / bukti tidak disertakan    |
+
+**Response (200) — sukses:**
 
 ```json
 {
-  "id": "uuid-trx",
-  "status": "success",
-  "match_result": "auto_confirm",
-  "ocr_amount": 150001,
-  "ocr_confidence": 91,
-  "paid_at": "2025-09-01T12:32:00Z"
+  "success": true,
+  "data": {
+    "id": "9b1f2c3e-...",
+    "status": "success",
+    "match_result": "auto_confirm",
+    "ocr_amount": 150001,
+    "ocr_confidence": 91,
+    "paid_at": "2026-09-02T12:32:00Z"
+  }
 }
 ```
 
-**Response (202 — pending review):**
+**Response (200) — pending review:**
 
 ```json
 {
-  "id": "uuid-trx",
-  "status": "pending_review",
-  "match_result": "low_confidence",
-  "ocr_amount": 150000,
-  "ocr_confidence": 72,
-  "message": "OCR confidence rendah, perlu review admin"
+  "success": true,
+  "data": {
+    "id": "9b1f2c3e-...",
+    "status": "pending_review",
+    "match_result": "low_confidence",
+    "ocr_amount": 150001,
+    "ocr_confidence": 72,
+    "paid_at": null,
+    "message": "OCR confidence rendah, perlu review admin"
+  }
 }
 ```
 
-**Response (400 — mismatch):**
+**Response (200) — gagal:**
 
 ```json
 {
-  "id": "uuid-trx",
-  "status": "failed",
-  "match_result": "mismatch",
-  "message": "Nominal tidak cocok"
+  "success": true,
+  "data": {
+    "id": "9b1f2c3e-...",
+    "status": "failed",
+    "match_result": "mismatch",
+    "ocr_amount": null,
+    "ocr_confidence": null,
+    "paid_at": null,
+    "message": "Nominal tidak cocok"
+  }
 }
 ```
+
+**Error (request tidak valid):**
+
+| HTTP | Code              | Penyebab                                             |
+| ---- | ----------------- | ---------------------------------------------------- |
+| 400  | validation_error  | `amount` tidak disertakan / tidak valid              |
+| 400  | invalid_status    | Transaksi bukan `pending` (sudah success/failed/...) |
+| 400  | expired           | Transaksi sudah kedaluwarsa — buat charge baru       |
+| 400  | invalid_proof     | Bukti bukan JPG/PNG valid (cek magic bytes)          |
+| 400  | proof_too_large   | Bukti > 5MB                                          |
+| 404  | not_found         | Transaksi tidak ditemukan                            |
+| 409  | duplicate_hash    | Bukti bayar sudah dipakai transaksi lain             |
+| 409  | invalid_status    | Race: transaksi sudah diproses request lain          |
+| 413  | payload_too_large | Total multipart > 6MB                                |
 
 ### 3. Webhook / Callback
 
@@ -182,7 +327,7 @@ X-BITS-Event: payment.success
     "amount": 150000,
     "amount_due": 150001,
     "status": "success",
-    "paid_at": "2025-09-01T12:32:00Z"
+    "paid_at": "2026-09-02T12:32:00Z"
   }
 }
 ```
@@ -221,9 +366,32 @@ signature = HMAC-SHA256(secret, raw_body_string) → hex lowercase (64 karakter)
 
 **Mendapatkan `callback_secret`:**
 
-`callback_secret` di-generate otomatis saat app dibuat (`POST /app/workspaces/:wid/apps`). Nilainya 64 karakter hex random. **Secret hanya ditampilkan sekali saat create app** (field ini tidak di-expose di response `GET` atau `UPDATE` app). Simpan di environment variable / secret manager sisi Anda.
+`callback_secret` di-generate otomatis saat app dibuat (`POST /app/workspaces/:wid/apps`).
+Nilainya 64 karakter hex random. Response **create** dan **rotate-key**
+(`POST /app/workspaces/:wid/apps/:id/rotate-key`) sama-sama mengembalikan
+`api_key` DAN `callback_secret` — **hanya sekali** di response tersebut:
 
-> Jika Anda tidak menyimpan `callback_secret` saat create, Anda perlu rotate atau buat app baru.
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid-app",
+    "name": "Toko Saya",
+    "api_key_prefix": "sk_ab12",
+    "callback_url": "https://toko.id/webhook",
+    "is_active": 1,
+    "api_key": "sk_xxxxxxxxxxxxxxxx",
+    "callback_secret": "64-karakter-hex..."
+  }
+}
+```
+
+Field `api_key` dan `callback_secret` tidak pernah di-expose di response `GET`/`UPDATE`.
+Simpan di environment variable / secret manager sisi Anda.
+
+> Rotate-key **tidak** mengubah `callback_secret` — ia menampilkan kembali secret yang sama
+> bersama `api_key` BARU (key lama langsung tidak berlaku). Jika `callback_secret` hilang,
+> panggil rotate-key untuk melihatnya lagi.
 
 **Langkah verifikasi (di sisi Anda):**
 
@@ -256,6 +424,32 @@ function verifySignature(rawBody: string, signatureHeader: string | null, secret
 }
 ```
 
+**Contoh verifikasi — Web Crypto (Cloudflare Workers, browser, Node ≥ 18 tanpa `node:crypto`):**
+
+```typescript
+async function verifySignature(
+  rawBody: string,
+  signatureHeader: string | null,
+  secret: string,
+): Promise<boolean> {
+  if (!signatureHeader || !/^[0-9a-f]{64}$/.test(signatureHeader)) return false;
+
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify'],
+  );
+  const sigBytes = new Uint8Array(signatureHeader.match(/.{2}/g)!.map((h) => parseInt(h, 16)));
+
+  // crypto.subtle.verify membandingkan MAC secara constant-time di dalam engine —
+  // tidak ada early-exit, aman dari timing attack.
+  return crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(rawBody));
+}
+```
+
 **Contoh handler — Hono / Cloudflare Worker:**
 
 ```typescript
@@ -268,7 +462,7 @@ app.post('/webhook/bits-pay', async (c) => {
   const rawBody = await c.req.text();
 
   // 2. Verifikasi signature
-  if (!verifySignature(rawBody, signature, secret)) {
+  if (!(await verifySignature(rawBody, signature ?? null, secret))) {
     return c.json({ error: 'Invalid signature' }, 403);
   }
 
@@ -286,7 +480,7 @@ app.post('/webhook/bits-pay', async (c) => {
 **Catatan keamanan:**
 
 - **Jangan log raw body** di production. Body berisi data transaksi, logging berlebihan melanggar keamanan data.
-- **Selalu pakai constant-time comparison** (`crypto.timingSafeEqual` di Node.js, `crypto.subtle.timingSafeEqual` atau manual XOR di Web Crypto). `===` biasa bocor via timing side-channel.
+- **Selalu pakai constant-time comparison** (`crypto.timingSafeEqual` di Node.js, `crypto.subtle.verify` di Web Crypto). `===` biasa bocor via timing side-channel.
 - **Reject jika header `X-BITS-Signature` tidak ada.** Jangan skip verifikasi "untuk testing".
 - **Simpan `callback_secret` di secret manager** (Cloudflare Secrets, Vault, env var), bukan di kode sumber atau database yang di-log.
 - **URL callback harus HTTPS.** BITS Pay menolak HTTP URLs saat create/update app (SSRF defense).
@@ -361,6 +555,9 @@ GET /app/workspaces/:wid/apps
 POST /app/workspaces/:wid/apps
 ```
 
+Response (201) menyertakan `api_key` dan `callback_secret` — **hanya sekali**,
+lihat [Mendapatkan `callback_secret`](#verifikasi-signature).
+
 #### Get App
 
 ```
@@ -378,6 +575,9 @@ PUT /app/workspaces/:wid/apps/:id
 ```
 POST /app/workspaces/:wid/apps/:id/rotate-key
 ```
+
+Response (200) menyertakan `api_key` baru dan `callback_secret` — hanya sekali.
+Key lama langsung tidak berlaku.
 
 ### 6. Subscriptions
 
@@ -474,6 +674,7 @@ POST /admin/settings/ocr/test
 ### 9. Admin Tools (Sprint 3)
 
 > Semua endpoint butuh `Authorization: Bearer <admin JWT>`. Admin diidentifikasi via `ADMIN_EMAILS` (wrangler vars).
+> Response list paginated: `data` berisi `{ "items": [...], "page", "per_page", "total" }`.
 
 #### List Callbacks
 
@@ -481,9 +682,7 @@ POST /admin/settings/ocr/test
 GET /admin/callbacks
 ```
 
-**Query:** `page`, `per_page`, `status`
-
-> Response paginated `callbacks` dengan meta `{ page, per_page, total }`.
+**Query:** `page`, `per_page` (maks 100), `status` (`pending` | `success` | `failed` | `dead`)
 
 #### Retry Callback
 
@@ -496,10 +695,7 @@ POST /admin/callbacks/:id/retry
 ```json
 {
   "success": true,
-  "data": {
-    "status": "pending",
-    "attempt": 1
-  }
+  "data": { "ok": true }
 }
 ```
 
@@ -513,9 +709,12 @@ GET /admin/settings/ocr
 
 ```json
 {
-  "ocr_provider": "workers-ai",
-  "vps_ocr_url": "",
-  "vps_ocr_api_key": ""
+  "success": true,
+  "data": {
+    "ocr_provider": "workers-ai",
+    "vps_ocr_url": "",
+    "vps_ocr_api_key": ""
+  }
 }
 ```
 
@@ -555,11 +754,14 @@ proof_image: File
 
 ```json
 {
-  "amount": 150000,
-  "confidence": 91,
-  "merchant": "Toko X",
-  "rawText": "...",
-  "provider": "workers-ai"
+  "success": true,
+  "data": {
+    "amount": 150000,
+    "confidence": 91,
+    "merchant": "Toko X",
+    "rawText": "...",
+    "provider": "workers-ai"
+  }
 }
 ```
 
@@ -573,9 +775,12 @@ GET /admin/settings/email-templates
 
 ```json
 {
-  "verify": "...",
-  "reset": "...",
-  "invoice_reminder": "..."
+  "success": true,
+  "data": {
+    "verify": "...",
+    "reset": "...",
+    "invoice_reminder": "..."
+  }
 }
 ```
 
@@ -595,8 +800,6 @@ GET /admin/audit-logs
 
 **Query:** `page`, `per_page`
 
-> Response paginated `audit_logs`.
-
 #### Transaction Report
 
 ```
@@ -608,10 +811,13 @@ GET /admin/reports/transactions
 **Response (200):**
 
 ```json
-[
-  { "day": "2025-08-02", "count": 12, "revenue": 1500000 },
-  { "day": "2025-08-03", "count": 8, "revenue": 900000 }
-]
+{
+  "success": true,
+  "data": [
+    { "day": "2026-08-02", "count": 12, "revenue": 1500000 },
+    { "day": "2026-08-03", "count": 8, "revenue": 900000 }
+  ]
+}
 ```
 
 #### Export Report (CSV)
@@ -634,8 +840,11 @@ GET /admin/tier-features
 
 ```json
 {
-  "free": { "max_workspaces": 1, "max_apps": 1 },
-  "premium": { "max_workspaces": 3, "max_apps": 5 }
+  "success": true,
+  "data": {
+    "free": { "max_workspaces": 1, "max_apps": 1 },
+    "premium": { "max_workspaces": 1, "max_apps": 3 }
+  }
 }
 ```
 
@@ -658,21 +867,38 @@ PUT /admin/tier-features
 
 ## Error Codes
 
-| Code           | HTTP | Arti                   | Solusi                   |
-| -------------- | ---- | ---------------------- | ------------------------ |
-| invalid_amount | 400  | Amount tidak valid     | Minimal Rp 100           |
-| invalid_app    | 400  | App ID tidak ditemukan | Cek app_id               |
-| unauthorized   | 401  | API key salah          | Cek API key              |
-| expired        | 410  | Transaksi expired      | Buat baru                |
-| duplicate_hash | 409  | Bukti sudah dipakai    | Upload bukti lain        |
-| rate_limited   | 429  | Limit tercapai         | Tunggu, cek tier         |
-| internal_error | 500  | Error server           | Coba lagi, hubungi admin |
+Semua error: `{ "success": false, "error": { "code", "message", "details?" } }`.
+
+| Code              | HTTP    | Arti                                         | Solusi                                   |
+| ----------------- | ------- | -------------------------------------------- | ---------------------------------------- |
+| validation_error  | 400     | Body/query tidak valid (cek `error.details`) | Perbaiki field yang disebut di `details` |
+| invalid_status    | 400/409 | Transaksi bukan `pending` / sudah diproses   | Cek status via `GET /v1/payments/:id`    |
+| expired           | 400     | Transaksi kedaluwarsa                        | Buat charge baru                         |
+| invalid_proof     | 400     | Bukti bukan JPG/PNG valid                    | Upload file gambar asli                  |
+| proof_too_large   | 400     | Bukti bayar > 5MB                            | Kompres gambar                           |
+| unauthorized      | 401     | API key salah / app nonaktif                 | Cek API key (header `WWW-Authenticate`)  |
+| not_found         | 404     | Resource tidak ditemukan                     | Cek ID                                   |
+| duplicate_order   | 409     | `order_id` sudah dipakai transaksi aktif     | Pakai `order_id` lain / tunggu expired   |
+| duplicate_hash    | 409     | Bukti bayar sudah dipakai                    | Upload bukti lain                        |
+| no_unique_code    | 400/409 | Kode unik habis / gagal alokasi              | Coba lagi sesaat                         |
+| payload_too_large | 413     | Body charge > 64KB / multipart confirm > 6MB | Kecilkan payload                         |
+| rate_limited      | 429     | Rate limit / kuota transaksi tercapai        | Tunggu sesuai header `Retry-After`       |
+| internal_error    | 500     | Error server                                 | Coba lagi, hubungi admin                 |
 
 ## Rate Limits
+
+Limit endpoint `/v1/*` per app, dari `tier_features.api_rate_limit` milik pemilik app:
 
 | Tier    | Limit     |
 | ------- | --------- |
 | Free    | 10 req/s  |
 | Premium | 100 req/s |
 
-Header response: `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+Header response (selalu ada):
+
+| Header                  | Isi                               |
+| ----------------------- | --------------------------------- |
+| `X-RateLimit-Limit`     | Limit req/s untuk app             |
+| `X-RateLimit-Remaining` | Sisa request di window berjalan   |
+| `X-RateLimit-Reset`     | Epoch detik saat window reset     |
+| `Retry-After`           | Detik tunggu — **hanya pada 429** |

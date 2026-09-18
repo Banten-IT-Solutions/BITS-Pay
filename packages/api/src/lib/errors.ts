@@ -29,6 +29,10 @@ export class AppError extends Error {
     return new AppError(429, 'rate_limited', message);
   }
 
+  static payloadTooLarge(message = 'Payload terlalu besar') {
+    return new AppError(413, 'payload_too_large', message);
+  }
+
   static internal(message = 'Internal server error') {
     return new AppError(500, 'internal_error', message);
   }

@@ -28,6 +28,14 @@ app.use('*', async (c, next) => {
 });
 app.use('/auth/*', publicRateLimit);
 app.onError(errorHandler);
+app.notFound((c) => {
+  const res = c.json(
+    { success: false, error: { code: 'not_found', message: 'Endpoint tidak ditemukan' } },
+    404,
+  );
+  setSecurityHeaders(res.headers);
+  return res;
+});
 
 app.route('/auth', authRoutes);
 app.route('/app', appRoutes);
@@ -94,6 +102,26 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
 
       await SubscriptionService.expireAndDowngrade(env);
       await SubscriptionService.sendInvoiceReminders(env);
+
+      // Safety net retry webhook: queue delay bisa hilang (pesan expired dsb.).
+      // Scan next_retry_at, claim atomik (status failed → pending) supaya tidak
+      // dobel enqueue, lalu push queue.
+      const { results: retryCallbacks } = await env.DB.prepare(
+        `SELECT id FROM callbacks
+         WHERE status = 'failed' AND next_retry_at IS NOT NULL
+         AND next_retry_at <= datetime('now') AND attempt < max_attempts
+         LIMIT 50`,
+      ).all<{ id: string }>();
+      for (const cb of retryCallbacks ?? []) {
+        const claimed = await env.DB.prepare(
+          "UPDATE callbacks SET status = 'pending', next_retry_at = NULL WHERE id = ? AND status = 'failed'",
+        )
+          .bind(cb.id)
+          .run();
+        if (claimed.meta.changes > 0) {
+          await env.CALLBACK_QUEUE.send({ callbackId: cb.id });
+        }
+      }
 
       // Retensi bukti transfer: hapus file R2 lebih tua dari PROOF_RETENTION_DAYS
       // (default 30 hari). proof_hash dibiarkan untuk deteksi duplikat.

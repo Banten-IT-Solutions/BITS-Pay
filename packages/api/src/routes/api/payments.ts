@@ -3,16 +3,42 @@ import { z } from 'zod';
 import type { Env } from '../../config';
 import { requireApiKey } from '../../middleware/api-key';
 import { apiRateLimit } from '../../middleware/rate-limit';
-import { success } from '../../lib/response';
+import { success, paginated } from '../../lib/response';
 import { AppError } from '../../lib/errors';
-import { validateProofFile } from '../../lib/upload';
-import { PaymentService } from '../../services/payment';
+import { validateQuery } from '../../lib/validate';
+import { validateProofFile, MAX_PROOF_BYTES } from '../../lib/upload';
+import { PaymentService, toPublicPayment } from '../../services/payment';
 
 const router = new Hono<{ Bindings: Env }>();
 router.use('*', requireApiKey, apiRateLimit);
 
 const confirmAmountSchema = z.object({
   amount: z.coerce.number().int().min(100).max(1_000_000_000),
+});
+
+const listQuerySchema = z.object({
+  order_id: z.string().optional(),
+  status: z.enum(['pending', 'success', 'failed', 'expired', 'pending_review']).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+// Batas payload multipart: bukti maks 5MB + overhead form/field.
+const MAX_CONFIRM_BODY = MAX_PROOF_BYTES + 1024 * 1024;
+
+router.get('/payments', async (c) => {
+  const app = c.get('app');
+  const query = validateQuery(c, listQuerySchema);
+  const result = await PaymentService.listAppPayments(
+    c.env,
+    app.workspace_id,
+    app.id,
+    query.page,
+    query.per_page,
+    query.status,
+    query.order_id,
+  );
+  return paginated(c, result.data.map(toPublicPayment), result.total, query.page, query.per_page);
 });
 
 router.get('/payments/:id', async (c) => {
@@ -23,11 +49,18 @@ router.get('/payments/:id', async (c) => {
     app.id,
     c.req.param('id'),
   );
-  return success(c, payment);
+  return success(c, toPublicPayment(payment));
 });
 
 router.post('/payments/:id/confirm', async (c) => {
   const app = c.get('app');
+
+  // Gate sebelum parseBody: tolak payload oversize sebelum masuk memory.
+  const contentLength = Number(c.req.header('content-length') ?? 0);
+  if (contentLength > MAX_CONFIRM_BODY) {
+    throw AppError.payloadTooLarge('Payload maksimal 6MB');
+  }
+
   const body = await c.req.parseBody();
 
   const amountRaw = body.amount;
@@ -61,15 +94,9 @@ router.post('/payments/:id/confirm', async (c) => {
     },
   );
 
-  const statusCode =
-    result.status === 'pending_review'
-      ? 202
-      : result.status === 'success'
-        ? 200
-        : result.status === 'failed'
-          ? 400
-          : 200;
-  return success(c, result, statusCode);
+  // Selalu 200 untuk request valid — hasil konfirmasi ada di data.status
+  // ('success' | 'pending_review' | 'failed').
+  return success(c, result);
 });
 
 export { router as paymentsRoute };

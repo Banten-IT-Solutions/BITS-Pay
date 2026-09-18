@@ -148,7 +148,7 @@ if (!success) throw new Error(`${error.code}: ${error.message}`);
 
 console.log(data.amount_due);  // 150001
 console.log(data.qr_image);    // data:image/png;base64,...
-console.log(data.expired_at);  // batas bayar (default 15 menit)</code></pre>
+console.log(data.expired_at);  // batas bayar, ISO-8601 UTC: "2026-09-02T12:45:00Z"</code></pre>
       <p>
         Tampilkan <code>data.qr_image</code> sebagai <code>&lt;img src&gt;</code> ke pelanggan.
         Pelanggan bayar nominal <strong>persis</strong> <code>amount_due</code>.
@@ -159,7 +159,9 @@ console.log(data.expired_at);  // batas bayar (default 15 menit)</code></pre>
         <h3><span class="num">2</span>GET /v1/payments/:id</h3>
         <p>
           Poll status transaksi, atau terima update real-time via
-          <a href="/docs/guides/webhook.html">webhook</a>.
+          <a href="/docs/guides/webhook.html">webhook</a>. Untuk rekonsiliasi massal pakai
+          <code>GET /v1/payments</code> (filter <code>order_id</code>/<code>status</code>,
+          paginated).
         </p>
       </div>
       <pre><code>const res = await fetch(`https://api.pay.bits.co.id/v1/payments/${id}`, {
@@ -187,9 +189,10 @@ const res = await fetch(`https://api.pay.bits.co.id/v1/payments/${id}/confirm`, 
   body: form,
 });
 const { data } = await res.json();
-// HTTP 200 → data.status 'success' (auto_confirm)
-// HTTP 202 → 'pending_review' (OCR confidence rendah, direview admin)
-// HTTP 400 → 'failed' (nominal tidak cocok)</code></pre>
+// Request valid SELALU HTTP 200 — cek data.status:
+// 'success'        → auto_confirm (lunas)
+// 'pending_review' → OCR confidence rendah, direview admin
+// 'failed'         → nominal tidak cocok / bukti tidak disertakan</code></pre>
 
       <h2>Error handling</h2>
       <table>
@@ -205,11 +208,6 @@ const { data } = await res.json();
             <td><code>validation_error</code></td>
             <td>400</td>
             <td>Body tidak valid (cek <code>error.details</code>)</td>
-          </tr>
-          <tr>
-            <td><code>invalid_amount</code></td>
-            <td>400</td>
-            <td>Amount di bawah 100</td>
           </tr>
           <tr>
             <td><code>unauthorized</code></td>

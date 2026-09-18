@@ -11,6 +11,7 @@ declare module 'hono' {
 export const requireApiKey = createMiddleware(async (c, next) => {
   const header = c.req.header('Authorization');
   if (!header?.startsWith('Bearer sk_')) {
+    c.header('WWW-Authenticate', 'Bearer');
     throw AppError.unauthorized('API key tidak valid');
   }
   const key = header.slice(7);
@@ -30,7 +31,10 @@ export const requireApiKey = createMiddleware(async (c, next) => {
     is_active: number;
     api_rate_limit: number;
   } | null;
-  if (!app || !app.is_active) throw AppError.unauthorized('API key tidak dikenal');
+  if (!app || !app.is_active) {
+    c.header('WWW-Authenticate', 'Bearer');
+    throw AppError.unauthorized('API key tidak dikenal');
+  }
   c.set('app', { id: app.id, workspace_id: app.workspace_id, api_rate_limit: app.api_rate_limit });
   await next();
 });

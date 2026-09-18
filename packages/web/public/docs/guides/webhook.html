@@ -168,18 +168,21 @@ X-BITS-Event: payment.success</code></pre>
         dengan key <code>callback_secret</code> app kamu. Selalu verifikasi sebelum memproses
         payload.
       </p>
-      <pre><code>// Node.js / Workers (Web Crypto)
+      <pre><code>// Node.js 18+ / Cloudflare Workers (Web Crypto)
 async function verify(rawBody, signature, secret) {
+  if (!signature || !/^[0-9a-f]{64}$/.test(signature)) return false;
+  const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(secret),
+    enc.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['sign'],
+    ['verify'],
   );
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody));
-  const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
-  return hex === signature;
+  const sigBytes = new Uint8Array(signature.match(/.{2}/g).map((h) => parseInt(h, 16)));
+  // crypto.subtle.verify membandingkan MAC secara constant-time — aman dari
+  // timing attack. Jangan bandingkan hex dengan === (bocor via timing).
+  return crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(rawBody));
 }
 
 // Di handler webhook:

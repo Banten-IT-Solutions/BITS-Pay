@@ -5,14 +5,16 @@ import {
   type Payment,
   type ChargeCreateResponse,
   type PaymentConfirmResponse,
+  type PaymentStatus,
+  type PublicPayment,
   type MatchResult,
   type UserTier,
 } from '@bits-pay/shared';
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
-import { dbTime } from '../lib/time';
+import { dbTime, toIso } from '../lib/time';
 import { QrService } from './qr';
-import { getOcrProvider } from './ocr';
+import { getOcrProvider, type OcrResult } from './ocr';
 import { TierService } from './tier';
 import { SubscriptionService } from './subscription';
 import { CallbackService } from './callback';
@@ -26,8 +28,41 @@ export const chargeSchema = z.object({
     .max(1_000_000_000, 'Amount maksimal 1.000.000.000'),
   currency: z.string().default('IDR'),
   description: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  metadata: z
+    .record(z.string(), z.unknown())
+    .refine((m) => JSON.stringify(m).length <= 4096, 'metadata maksimal 4KB')
+    .optional(),
 });
+
+// DTO public API (/v1/*): hanya field yang aman diekspos ke integrator.
+// Timestamp dikonversi ke ISO-8601; format penyimpanan DB tidak berubah.
+export function toPublicPayment(p: Payment): PublicPayment {
+  let metadata: Record<string, unknown> | null = null;
+  if (p.metadata) {
+    try {
+      const parsed: unknown = JSON.parse(p.metadata);
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        metadata = parsed as Record<string, unknown>;
+      }
+    } catch {
+      // metadata korup/legacy non-JSON → null, jangan gagalkan response
+    }
+  }
+  return {
+    id: p.id,
+    order_id: p.order_id,
+    amount: p.amount,
+    unique_code: p.unique_code,
+    amount_due: p.amount_due,
+    currency: p.currency,
+    status: p.status,
+    description: p.description,
+    metadata,
+    paid_at: toIso(p.paid_at),
+    expired_at: toIso(p.expired_at),
+    created_at: toIso(p.created_at),
+  };
+}
 
 export class PaymentService {
   static async createCharge(
@@ -118,8 +153,8 @@ export class PaymentService {
       status: payment.status as ChargeCreateResponse['status'],
       qr_image: payment.qr_image!,
       qris_dynamic: payment.qris_dynamic!,
-      expired_at: payment.expired_at!,
-      created_at: payment.created_at,
+      expired_at: toIso(payment.expired_at!),
+      created_at: toIso(payment.created_at),
     };
   }
 
@@ -232,7 +267,14 @@ export class PaymentService {
 
       const base64 = arrayBufferToBase64(formData.proofImage);
       const ocrProvider = await getOcrProvider(env);
-      const ocrResult = await ocrProvider.extractReceipt(base64);
+      let ocrResult: OcrResult;
+      try {
+        ocrResult = await ocrProvider.extractReceipt(base64);
+      } catch (err) {
+        // OCR gagal setelah R2.put → hapus file supaya tidak jadi yatim.
+        await env.R2.delete(proofPath);
+        throw err;
+      }
 
       const threshold = parseInt(env.OCR_CONFIDENCE_THRESHOLD, 10) || 85;
       let status: Payment['status'];
@@ -310,7 +352,7 @@ export class PaymentService {
         match_result: matchResult,
         ocr_amount: ocrResult.amount,
         ocr_confidence: ocrResult.confidence,
-        paid_at: paidAt,
+        paid_at: toIso(paidAt),
         ...(status === 'pending_review'
           ? { message: 'OCR confidence rendah, perlu review admin' }
           : {}),
@@ -392,6 +434,41 @@ export class PaymentService {
       .all<Payment>();
 
     return { data: results ?? [], total: countResult?.total ?? 0 };
+  }
+
+  // List transaksi untuk PUBLIC API (/v1/payments) — scope ke app pemilik key.
+  // order_id = lookup exact; status = filter enum.
+  static async listAppPayments(
+    env: Env,
+    workspaceId: string,
+    appId: string,
+    page: number,
+    perPage: number,
+    status?: PaymentStatus,
+    orderId?: string,
+  ): Promise<{ data: Payment[]; total: number }> {
+    const offset = (page - 1) * perPage;
+    let where = 'WHERE workspace_id = ? AND app_id = ?';
+    const params: unknown[] = [workspaceId, appId];
+    if (status) {
+      where += ' AND status = ?';
+      params.push(status);
+    }
+    if (orderId) {
+      where += ' AND order_id = ?';
+      params.push(orderId);
+    }
+
+    const count = await env.DB.prepare(`SELECT COUNT(*) as total FROM payments ${where}`)
+      .bind(...params)
+      .first<{ total: number }>();
+    const { results } = await env.DB.prepare(
+      `SELECT * FROM payments ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    )
+      .bind(...params, perPage, offset)
+      .all<Payment>();
+
+    return { data: results ?? [], total: count?.total ?? 0 };
   }
 
   static async listUserPayments(

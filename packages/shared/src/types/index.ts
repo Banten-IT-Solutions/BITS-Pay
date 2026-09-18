@@ -128,6 +128,14 @@ export interface AppPublic extends Omit<App, 'api_key_hash' | 'callback_secret'>
   api_key?: string; // hanya muncul saat create/rotate
 }
 
+// Response create app & rotate key: secret ditampilkan SEKALI, tidak pernah
+// muncul di list/detail. callback_secret dipakai integrator untuk verifikasi
+// signature webhook (X-BITS-Signature).
+export interface AppWithSecrets extends AppPublic {
+  api_key: string;
+  callback_secret: string;
+}
+
 export interface AppCreateInput {
   name: string;
   callback_url?: string;
@@ -202,6 +210,24 @@ export interface PaymentConfirmInput {
 }
 // proof_image dikirim sebagai multipart/form-data field, dibaca route handler
 // via c.req.parseBody() (bukan JSON) — tidak ada di type ini.
+
+// DTO transaksi untuk PUBLIC API (/v1/*). Field internal (proof_path,
+// ocr_raw_text, user_input_amount, dll.) sengaja tidak diekspos.
+// Semua timestamp ISO-8601 (UTC, suffix Z).
+export interface PublicPayment {
+  id: string;
+  order_id: string | null;
+  amount: number;
+  unique_code: number;
+  amount_due: number;
+  currency: string;
+  status: PaymentStatus;
+  description: string | null;
+  metadata: Record<string, unknown> | null;
+  paid_at: string | null;
+  expired_at: string | null;
+  created_at: string;
+}
 
 export interface PaymentConfirmResponse {
   id: string;

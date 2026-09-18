@@ -162,7 +162,8 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 CREATE INDEX IF NOT EXISTS idx_payments_amount_due ON payments(amount_due, status);
 CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_created ON payments(created_at);
--- Idempotency: satu order_id unik per app. NULL order_id (invoice) tidak ikut.
+-- Idempotency: satu order_id unik per app untuk transaksi AKTIF.
+-- NULL order_id (invoice) tidak ikut. Dibuat partial (status != 'expired') di 0009.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_order ON payments(app_id, order_id)
   WHERE order_id IS NOT NULL;
 
