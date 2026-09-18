@@ -32,7 +32,7 @@ const DEFAULTS = {
     PROOF_RETENTION_DAYS: '30',
   },
   web: {
-    WORKER_NAME: 'bits-pay-web',
+    WORKER_NAME: 'bits-pay',
     WEB_DOMAIN: 'pay.bits.co.id',
   },
 };

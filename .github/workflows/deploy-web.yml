@@ -46,7 +46,7 @@ jobs:
         working-directory: packages/web
         run: |
           set -euo pipefail
-          echo "WORKER_NAME  = ${WORKER_NAME:-(default: bits-pay-web)}"
+          echo "WORKER_NAME  = ${WORKER_NAME:-(default: bits-pay)}"
           echo "WEB_DOMAIN   = ${WEB_DOMAIN:-(default: pay.bits.co.id)}"
           echo "VITE_API_URL = ${VITE_API_URL}"
           test -n "${VITE_API_URL}" || { echo "✗ VITE_API_URL is empty (SPA akan menunjuk localhost!)"; exit 1; }
