@@ -10,7 +10,7 @@
     { "name": "Charges", "description": "Buat transaksi QRIS dinamis" },
     { "name": "Payments", "description": "Cek status & konfirmasi pembayaran" },
     { "name": "Callbacks", "description": "Status delivery webhook per app" },
-    { "name": "Health", "description": "Status API" }
+    { "name": "Health", "description": "Monitoring internal — bukan untuk integrasi merchant" }
   ],
   "paths": {
     "/v1/charges": {
@@ -426,6 +426,7 @@
       "get": {
         "tags": ["Health"],
         "summary": "Health Check",
+        "description": "Liveness check untuk monitoring (uptime, smoke test deploy). Tidak butuh auth, tidak menyentuh database. Bukan bagian API integrasi merchant.",
         "operationId": "healthCheck",
         "security": [],
         "responses": {
