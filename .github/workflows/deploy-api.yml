@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           echo "WORKER_NAME      = ${WORKER_NAME:-(default: bits-pay-api)}"
           echo "API_DOMAIN       = ${API_DOMAIN:-(default: api.pay.bits.co.id)}"
-          echo "D1_DATABASE_NAME = ${D1_DATABASE_NAME:-(default: bits-pay-db)}"
+          echo "D1_DATABASE_NAME = ${D1_DATABASE_NAME:-(default: bits-pay)}"
           echo "D1_DATABASE_ID   = ${D1_DATABASE_ID:-(default: local)}"
           echo "APP_URL          = ${APP_URL:-(default)}"
           test -n "${JWT_SECRET}" || { echo "✗ JWT_SECRET is empty (GitHub secret wajib diisi)"; exit 1; }
@@ -82,7 +82,7 @@ jobs:
 
       - name: '🗄️ Apply D1 migrations'
         working-directory: packages/api
-        run: npx wrangler d1 migrations apply "${D1_DATABASE_NAME:-bits-pay-db}" --remote
+        run: npx wrangler d1 migrations apply "${D1_DATABASE_NAME:-bits-pay}" --remote
 
       # Sync secrets SEBELUM deploy: worker tanpa JWT_SECRET akan error saat
       # sign/verify token. Sync dulu menutup jendela itu.

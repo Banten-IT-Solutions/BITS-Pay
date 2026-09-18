@@ -14,7 +14,7 @@ const DEFAULTS = {
   api: {
     WORKER_NAME: 'bits-pay-api',
     API_DOMAIN: 'api.pay.bits.co.id',
-    D1_DATABASE_NAME: 'bits-pay-db',
+    D1_DATABASE_NAME: 'bits-pay',
     D1_DATABASE_ID: 'local-bits-pay-db',
     R2_BUCKET_NAME: 'bits-pay-proofs',
     CALLBACK_QUEUE_NAME: 'payment-callback',
