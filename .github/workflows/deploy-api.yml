@@ -27,6 +27,7 @@ env:
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
   GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
   QRIS_STATIC: ${{ secrets.QRIS_STATIC }}
+  RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
 concurrency:
   group: deploy-api-${{ github.ref }}
@@ -93,7 +94,7 @@ jobs:
           node -e '
             const fs=require("fs");
             const secrets={};
-            for (const k of ["JWT_SECRET","GOOGLE_CLIENT_SECRET","QRIS_STATIC"]) {
+            for (const k of ["JWT_SECRET","GOOGLE_CLIENT_SECRET","QRIS_STATIC","RESEND_API_KEY"]) {
               if (process.env[k]) secrets[k]=process.env[k];
             }
             if (Object.keys(secrets).length) {

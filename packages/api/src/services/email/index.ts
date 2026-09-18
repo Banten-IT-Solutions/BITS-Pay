@@ -9,16 +9,40 @@ export interface SendEmailInput {
 
 export class EmailService {
   static async send(env: Env, input: SendEmailInput): Promise<void> {
-    const { EmailMessage } = await import('cloudflare:email');
-    const mime = buildMime(env.FROM_EMAIL, input);
-    const message = new EmailMessage(env.FROM_EMAIL, input.to, mime);
     try {
+      if (env.RESEND_API_KEY) {
+        await sendViaResend(env, input);
+        return;
+      }
+      const { EmailMessage } = await import('cloudflare:email');
+      const mime = buildMime(env.FROM_EMAIL, input);
+      const message = new EmailMessage(env.FROM_EMAIL, input.to, mime);
       await env.EMAIL.send(message);
     } catch (err) {
       // Jangan bocorkan detail internal ke caller.
       console.error('Email send failed:', err);
       throw err;
     }
+  }
+}
+
+async function sendViaResend(env: Env, input: SendEmailInput): Promise<void> {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: env.FROM_EMAIL,
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+      ...(input.html ? { html: input.html } : {}),
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Resend API ${res.status}`);
   }
 }
 

@@ -25,4 +25,7 @@ export interface Env {
   ADMIN_EMAILS: string;
   // Origin tambahan untuk CORS (comma-separated, opsional). APP_URL selalu diizinkan.
   CORS_ORIGINS?: string;
+  // ponytail: secret opsional — jika diisi, email dikirim via Resend (free tier)
+  // menggantikan binding EMAIL (Cloudflare Email Sending butuh Workers Paid).
+  RESEND_API_KEY?: string;
 }
