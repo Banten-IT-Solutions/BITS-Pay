@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateAmountDue, findAvailableCode } from '@bits-pay/shared';
+import { calculateAmountDue, findAvailableCode } from '../src/index';
 
 describe('unique-code utils', () => {
   it('calculateAmountDue = amount + uniqueCode', () => {

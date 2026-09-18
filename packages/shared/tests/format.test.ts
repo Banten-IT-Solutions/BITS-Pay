@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatAmount } from '@bits-pay/shared';
+import { formatAmount } from '../src/index';
 
 describe('formatAmount', () => {
   it('format dengan pemisah ribuan titik, tanpa prefix', () => {

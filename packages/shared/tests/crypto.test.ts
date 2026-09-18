@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { signCallbackPayload } from '@bits-pay/shared';
+import { signCallbackPayload } from '../src/index';
 
 const HEX_64 = /^[0-9a-f]{64}$/;
 
