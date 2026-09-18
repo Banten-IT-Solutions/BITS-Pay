@@ -273,7 +273,7 @@ User → POST /subscriptions/upgrade { tier: 'premium_monthly' }
     │   ├── ci.yml
     │   ├── deploy-api.yml
     │   ├── deploy-web.yml
-    │   └── uptime.yml
+    │   └── dependabot-auto-merge.yml
     ├── CODEOWNERS
     └── dependabot.yml
 ```

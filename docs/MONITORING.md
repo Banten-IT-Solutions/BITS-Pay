@@ -11,7 +11,7 @@ Runbook observability produksi. Stack: Cloudflare Workers (api + web), D1, R2, Q
 | Cron safety net      | Cron `*/5 * * * *` re-claim callback `failed` → `pending` via `next_retry_at` (lihat `src/index.ts`).  |
 | CI + deploy workflow | `.github/workflows/ci.yml`, `deploy-api.yml`, `deploy-web.yml`.                                        |
 
-**Catatan jujur:** `docs/DEVOPS.md` menyebut `.github/workflows/uptime.yml`, tapi file itu **belum ada** di repo. Belum ada uptime check eksternal maupun halaman `/status` publik. Keduanya masuk rekomendasi di bawah.
+**Uptime check:** via Uptime Kuma (eksternal, self-hosted) — lihat bagian 3. Halaman `/status` publik ada di `packages/web/public/status.html`.
 
 ## 2. Aktifkan Workers Logs (tanpa infrastruktur baru)
 
@@ -26,25 +26,17 @@ Tambah di `packages/api/wrangler.jsonc`:
 
 Efek: Workers Logs (log request + `console.*` + exception, persist, bisa difilter di dashboard) dan binding ke Analytics/Logpush. Tanpa ini, log hilang begitu request selesai kecuali `wrangler tail` sedang jalan.
 
-## 3. Uptime Check Eksternal (rekomendasi)
+## 3. Uptime Check Eksternal — Uptime Kuma
 
-Butuh monitor di luar Cloudflare supaya tahu saat worker/edge down total. Opsi termurah: workflow GitHub Actions terjadwal (buat `.github/workflows/uptime.yml` — sekaligus menutup gap dengan DEVOPS.md):
+Uptime dimonitor via Uptime Kuma (self-hosted, di luar repo/Cloudflare). Monitor minimal:
 
-```yaml
-name: uptime
-on:
-  schedule: [{ cron: '*/5 * * * *' }]
-  workflow_dispatch:
-jobs:
-  ping:
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://api.pay.bits.co.id/health)
-          [ "$code" = "200" ] || { echo "health check gagal: $code"; exit 1; }
-```
+| Monitor     | URL                                  | Tipe                |
+| ----------- | ------------------------------------ | ------------------- |
+| API health  | `https://api.pay.bits.co.id/health`  | HTTP(s), expect 200 |
+| Landing     | `https://pay.bits.co.id/`            | HTTP(s), expect 200 |
+| Status page | `https://pay.bits.co.id/status.html` | HTTP(s), expect 200 |
 
-Notifikasi kegagalan via GitHub (email ke watcher / CODEOWNERS). Alternatif gratis: Better Stack, UptimeRobot. **Belum diimplementasikan** — buat saat go-live.
+Interval 60 dtk cukup. Alert: Telegram/email bawaan Kuma. Workflow `uptime.yml` GitHub Actions sudah dihapus — cron GitHub tidak reliable (telat/diskip) dan Kuma lebih akurat.
 
 ## 4. Alert via Cloudflare Notifications
 

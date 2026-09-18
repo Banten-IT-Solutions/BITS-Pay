@@ -20,8 +20,7 @@
 ├── workflows/
 │   ├── ci.yml               # Test + Lint tiap push
 │   ├── deploy-api.yml        # Deploy Worker 1 (api)
-│   ├── deploy-web.yml        # Deploy Worker 2 (static)
-│   └── uptime.yml            # Uptime monitor
+│   └── deploy-web.yml        # Deploy Worker 2 (static)
 ├── CODEOWNERS
 └── dependabot.yml
 
@@ -259,30 +258,9 @@ jobs:
           workingDirectory: packages/web
 ```
 
-### Uptime Monitor — uptime.yml (tiap 5 menit)
+### Uptime Monitor — Uptime Kuma (eksternal)
 
-Ping tiga surface; exit 1 saat gagal → notifikasi GitHub Actions.
-
-```yaml
-name: uptime
-on:
-  schedule: [{ cron: '*/5 * * * *' }]
-  workflow_dispatch:
-
-jobs:
-  ping:
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://api.pay.bits.co.id/health)
-          [ "$code" = "200" ] || exit 1
-      - run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://pay.bits.co.id/)
-          [ "$code" = "200" ] || exit 1
-      - run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://pay.bits.co.id/status.html)
-          [ "$code" = "200" ] || exit 1
-```
+Uptime dimonitor via Uptime Kuma (self-hosted, di luar repo ini). Target: `https://api.pay.bits.co.id/health`, `https://pay.bits.co.id/`, `https://pay.bits.co.id/status.html`.
 
 ## 10. Dependabot
 
