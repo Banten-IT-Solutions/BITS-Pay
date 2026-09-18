@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kebijakan Privasi — BITS Pay</title>
+    <meta name="description" content="Kebijakan privasi BITS Pay — QRIS payment gateway." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/common.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="nav-row">
+          <a href="/" class="nav-logo">BITS Pay</a>
+          <div class="nav-links">
+            <a href="/docs/">API Docs</a>
+            <a href="/privacy" class="active">Kebijakan Privasi</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="page">
+      <h1>Kebijakan Privasi</h1>
+      <p class="updated">Terakhir diperbarui: [TANGGAL]</p>
+      <div class="callout warn">
+        <strong>Draft internal.</strong> Konten di bawah menunggu persetujuan tim legal sebelum
+        rilis publik.
+      </div>
+
+      <h2>1. Data yang Kami Kumpulkan</h2>
+      <p>BITS Pay mengumpulkan data yang kamu berikan saat mendaftar dan memakai layanan:</p>
+      <ul>
+        <li>Identitas akun: nama, email, dan (opsional) nomor telepon.</li>
+        <li>
+          Data aplikasi &amp; integrasi: workspace, nama app, <code>callback_url</code>, dan API key
+          kamu.
+        </li>
+        <li>
+          Data transaksi: jumlah, <code>order_id</code>, status pembayaran QRIS, dan bukti transfer
+          yang kamu unggah untuk verifikasi OCR.
+        </li>
+        <li>Data langganan &amp; invoice: tier, periode bayar, dan riwayat invoice.</li>
+        <li>
+          Log teknis: alamat IP, waktu akses, dan endpoint yang dipanggil, untuk keamanan &amp;
+          audit.
+        </li>
+      </ul>
+
+      <h2>2. Bagaimana Kami Memakai Data</h2>
+      <ul>
+        <li>
+          Menjalankan layanan: membuat payment, verifikasi OCR, mengirim callback/webhook ke
+          <code>callback_url</code> milikmu.
+        </li>
+        <li>Memproses langganan premium dan invoice.</li>
+        <li>Keamanan: mencegah penyalahgunaan, rate-limit, dan audit log.</li>
+        <li>Kepatuhan hukum bila diwajibkan.</li>
+      </ul>
+      <p>Kami <strong>tidak menjual</strong> data pribadimu ke pihak ketiga.</p>
+
+      <h2>3. Penyimpanan &amp; Keamanan</h2>
+      <p>
+        Data disimpan di infrastruktur Cloudflare (D1/SQLite). Password di-hash (bcrypt), API key
+        di-hash (SHA-256). Kami menerapkan enkripsi dan akses terbatas untuk melindungi data.
+      </p>
+
+      <h2>4. Bukti Transfer (OCR)</h2>
+      <p>
+        Bukti transfer yang kamu unggah untuk verifikasi pembayaran digunakan untuk konfirmasi OCR
+        dan disimpan sesuai <code>PROOF_RETENTION_DAYS</code>.
+      </p>
+
+      <h2>5. Cookie &amp; Local Storage</h2>
+      <p>
+        Dashboard memakai token JWT yang disimpan di <code>localStorage</code> browser kamu untuk
+        sesi login. Landing tidak memakai cookie pelacak pihak ketiga.
+      </p>
+
+      <h2>6. Hak Anda</h2>
+      <p>
+        Kamu dapat mengakses dan memperbarui data melalui dashboard, meminta penghapusan data, atau
+        menghubungi kami via email di bawah.
+      </p>
+
+      <h2>7. Kontak</h2>
+      <p>Pertanyaan tentang privasi: <a href="mailto:hello@bits.co.id">hello@bits.co.id</a></p>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <strong>BITS Pay</strong>
+            <p>QRIS payment gateway untuk aplikasi kamu.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Produk</h4>
+            <a href="/docs/">Dokumentasi</a>
+            <a href="/privacy">Kebijakan Privasi</a>
+            <a href="/terms">Syarat &amp; Ketentuan</a>
+          </div>
+          <div class="footer-col">
+            <h4>Perusahaan</h4>
+            <a href="https://bits.co.id">Banten IT Solutions</a>
+            <a href="mailto:hello@bits.co.id">Kontak</a>
+          </div>
+        </div>
+        <p class="footer-copyright">&copy; 2026 Banten IT Solutions. All rights reserved.</p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -8,17 +8,31 @@
       name="description"
       content="Webhook BITS Pay: event payment.success/failed/expired, verifikasi signature HMAC-SHA256."
     />
-    <link rel="stylesheet" href="/docs/guides/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/common.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
-    <div class="topbar">
-      <a class="logo" href="/">BITS Pay</a>
-      <a href="/docs/">API Docs</a>
-      <span class="spacer"></span>
-      <a class="guide" href="/docs/guides/quickstart.html">Quickstart</a>
-      <a class="guide" href="/docs/guides/webhook.html">Webhook</a>
-    </div>
-    <main>
+    <nav class="navbar">
+      <div class="container">
+        <div class="nav-row">
+          <a href="/" class="nav-logo">BITS Pay</a>
+          <div class="nav-links">
+            <a href="/docs/">API Docs</a>
+            <a href="/docs/guides/quickstart.html">Quickstart</a>
+            <a href="/docs/guides/webhook.html" class="active">Webhook</a>
+            <a href="/privacy">Kebijakan Privasi</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="page">
       <h1>Webhook / Callback</h1>
       <p class="lead">
         BITS Pay mengirim HTTP POST ke <code>callback_url</code> app kamu setiap status pembayaran
@@ -30,9 +44,9 @@
         Isi <code>callback_url</code> saat membuat App di dashboard. BITS Pay menyimpan
         <code>callback_secret</code> per app untuk menandatangani setiap payload.
       </p>
-      <div class="note">
+      <div class="callout">
         Fitur callback tunduk pada tier (<code>callback_allowed</code> di tier features). Tier free
-        bisa saja tidak mendapat callback — cek tier kamu di dashboard.
+        tidak mendapat callback — cek tier kamu di dashboard.
       </div>
 
       <h2>Request yang dikirim</h2>
@@ -104,7 +118,7 @@ if (!(await verify(rawBody, signature, CALLBACK_SECRET))) {
   return new Response('invalid signature', { status: 401 });
 }
 const payload = JSON.parse(rawBody);</code></pre>
-      <div class="note">
+      <div class="callout warn">
         Signature dihitung dari body mentah apa adanya. Jangan re-serialize JSON sebelum verifikasi
         — urutan key/spasi berbeda akan mengubah hash.
       </div>
@@ -121,5 +135,28 @@ const payload = JSON.parse(rawBody);</code></pre>
         <a href="/docs/">Referensi API (Swagger)</a>
       </p>
     </main>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <strong>BITS Pay</strong>
+            <p>QRIS payment gateway untuk aplikasi kamu.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Dokumentasi</h4>
+            <a href="/docs/">API Reference</a>
+            <a href="/docs/guides/quickstart.html">Quickstart</a>
+            <a href="/docs/guides/webhook.html">Webhook</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="/privacy">Kebijakan Privasi</a>
+            <a href="/terms">Syarat &amp; Ketentuan</a>
+          </div>
+        </div>
+        <p class="footer-copyright">&copy; 2026 Banten IT Solutions. All rights reserved.</p>
+      </div>
+    </footer>
   </body>
 </html>

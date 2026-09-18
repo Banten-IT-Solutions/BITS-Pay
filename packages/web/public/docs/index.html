@@ -8,66 +8,47 @@
       name="description"
       content="Dokumentasi API BITS Pay — QRIS payment gateway. Create charge, cek status, konfirmasi pembayaran."
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/common.css" />
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <style>
-      :root {
-        --brand: oklch(0.45 0.13 250);
-        --bg: oklch(0.99 0.005 80);
-        --text: oklch(0.2 0.01 80);
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        font-family: Inter, system-ui, sans-serif;
-      }
-      .topbar {
-        background: var(--brand);
-        padding: 0.9rem 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-      }
-      .topbar a {
-        color: #fff;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 0.95rem;
-      }
-      .topbar .logo {
-        font-size: 1.15rem;
-        font-weight: 700;
-      }
-      .topbar .spacer {
-        flex: 1;
-      }
-      .topbar a.guide {
-        opacity: 0.9;
-        font-weight: 500;
-      }
-      .topbar a.guide:hover {
-        opacity: 1;
-        text-decoration: underline;
-      }
       .swagger-ui .topbar {
         display: none;
       }
       .swagger-ui {
-        color: var(--text);
+        color: var(--text-body);
       }
       .swagger-ui .info .title {
-        font-family: Inter, system-ui, sans-serif;
+        font-family: var(--font-sans);
+      }
+      #swagger-ui {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 4rem;
       }
     </style>
   </head>
   <body>
-    <div class="topbar">
-      <a class="logo" href="/">BITS Pay</a>
-      <span style="color: #fff; opacity: 0.85; font-weight: 600">API Docs</span>
-      <span class="spacer"></span>
-      <a class="guide" href="/docs/guides/quickstart.html">Quickstart</a>
-      <a class="guide" href="/docs/guides/webhook.html">Webhook</a>
-    </div>
+    <nav class="navbar">
+      <div class="container">
+        <div class="nav-row">
+          <a href="/" class="nav-logo">BITS Pay</a>
+          <div class="nav-links">
+            <a href="/docs/" class="active">API Docs</a>
+            <a href="/docs/guides/quickstart.html">Quickstart</a>
+            <a href="/docs/guides/webhook.html">Webhook</a>
+            <a href="/privacy">Kebijakan Privasi</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
     <div id="swagger-ui"></div>
     <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" crossorigin></script>
     <script>

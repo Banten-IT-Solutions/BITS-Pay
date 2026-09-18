@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Syarat &amp; Ketentuan — BITS Pay</title>
+    <meta name="description" content="Syarat & ketentuan BITS Pay — QRIS payment gateway." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/common.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="nav-row">
+          <a href="/" class="nav-logo">BITS Pay</a>
+          <div class="nav-links">
+            <a href="/docs/">API Docs</a>
+            <a href="/terms" class="active">Syarat &amp; Ketentuan</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="page">
+      <h1>Syarat &amp; Ketentuan</h1>
+      <p class="updated">Terakhir diperbarui: [TANGGAL]</p>
+      <div class="callout warn">
+        <strong>Draft internal.</strong> Konten di bawah menunggu persetujuan tim legal sebelum
+        rilis publik.
+      </div>
+
+      <h2>1. Layanan</h2>
+      <p>
+        BITS Pay menyediakan payment gateway QRIS dinamis dengan verifikasi OCR. Kamu berhak memakai
+        layanan sesuai akun, workspace, dan tier yang kamu miliki.
+      </p>
+
+      <h2>2. Akun, Workspace &amp; Application</h2>
+      <ul>
+        <li>
+          Satu akun = satu akun bisnis. Batas workspace, aplikasi (app), dan anggota tim ditentukan
+          oleh tier (<code>free</code> vs <code>premium</code>).
+        </li>
+        <li>
+          API key (<code>sk_...</code>) bersifat rahasia &amp; hanya tampil sekali. Rotasi key wajib
+          jika dicurigai bocor.
+        </li>
+        <li>
+          Akun yang turun tier akan <strong>membekukan</strong> workspace/aplikasi berlebih (tidak
+          dihapus), dan API key-nya tidak aktif.
+        </li>
+      </ul>
+
+      <h2>3. Trial &amp; Langganan</h2>
+      <ul>
+        <li>Akun baru mendapat <strong>trial premium 14 hari</strong> tanpa kartu kredit.</li>
+        <li><code>free</code>: 300 transaksi/bulan, 1 workspace, 1 app, tanpa callback webhook.</li>
+        <li>
+          <code>premium</code>: 3.000 transaksi/bulan, 1 workspace, 3 app, callback + retry 3x, 5
+          anggota tim.
+        </li>
+        <li>
+          Langganan premium <code>premium_monthly</code>/<code>premium_yearly</code> ditagih dulu,
+          masa layanan berjalan sesuai periode terbayar.
+        </li>
+      </ul>
+
+      <h2>4. Pembayaran &amp; Transaksi</h2>
+      <ul>
+        <li>
+          <code>amount_due = amount × 10000 + kode_unik</code>; kode unik dipakai membedakan
+          pembayaran.
+        </li>
+        <li>
+          Kuota transaksi dihitung flat per akun (sharing semua workspace/app), reset tiap bulan.
+        </li>
+        <li>Verifikasi transfer memakai OCR; jika ragu, transaksi masuk <em>review manual</em>.</li>
+        <li>
+          Kami tidak menampung dana: BITS Pay hanya menjembatani verifikasi &amp; notifikasi
+          pembayaran ke aplikasimu.
+        </li>
+      </ul>
+
+      <h2>5. Penggunaan yang Dilarang</h2>
+      <ul>
+        <li>Aktivitas ilegal, penipuan, atau melanggar hukum yang berlaku.</li>
+        <li>Menyalahgunakan API rate limit atau mencoba menerobos keamanan sistem.</li>
+        <li>Memakai layanan untuk merugikan pihak lain.</li>
+      </ul>
+
+      <h2>6. Batasan Tanggung Jawab</h2>
+      <p>
+        BITS Pay berusaha menjaga ketersediaan layanan, namun tidak menjamin bebas gangguan. Kamu
+        bertanggung jawab atas integrasi dan kebenaran data yang kamu kirim.
+      </p>
+
+      <h2>7. Penghentian</h2>
+      <p>
+        Kami dapat menunda atau menutup akun atas pelanggaran syarat ini. Kamu dapat menghapus akun
+        kapan pun.
+      </p>
+
+      <h2>8. Kontak</h2>
+      <p>Pertanyaan: <a href="mailto:hello@bits.co.id">hello@bits.co.id</a></p>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <strong>BITS Pay</strong>
+            <p>QRIS payment gateway untuk aplikasi kamu.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Produk</h4>
+            <a href="/docs/">Dokumentasi</a>
+            <a href="/privacy">Kebijakan Privasi</a>
+            <a href="/terms">Syarat &amp; Ketentuan</a>
+          </div>
+          <div class="footer-col">
+            <h4>Perusahaan</h4>
+            <a href="https://bits.co.id">Banten IT Solutions</a>
+            <a href="mailto:hello@bits.co.id">Kontak</a>
+          </div>
+        </div>
+        <p class="footer-copyright">&copy; 2026 Banten IT Solutions. All rights reserved.</p>
+      </div>
+    </footer>
+  </body>
+</html>
