@@ -1,286 +1,266 @@
-# BITS Pay — Multi-Worker Separation Design
+# BITS Pay — Panduan Deploy Production (Multi-Worker)
 
-> Status: **DESAIN + RUNBOOK** (belum implementasi). Monolith `bits-pay-api` tidak dipecah sekarang.
-> Tujuan: antisipasi traffic > 100k req/hari tanpa merusak kontrak publik.
-> Sumber kebenaran konteks: `docs/ARCHITECTURE.md`, `docs/DEVOPS.md`, `docs/DATABASE.md`, `docs/PRD.md` NFR, `packages/api/wrangler.jsonc`, `packages/api/src/index.ts`.
-
----
-
-## 1. Kapan Trigger Split
-
-NFR PRD (`docs/PRD.md` §6): 1 Worker cukup 100k req/hari, uptime 99.9%, API < 500ms.
-100k req/hari ≈ 1.16 req/s rata-rata. Trigger split BUKAN di angka rata-rata, tapi di **headroom + tail latency + kontensi tulis D1**.
-
-| Metric                                                | Threshold trigger                          | Sumber                     |
-| ----------------------------------------------------- | ------------------------------------------ | -------------------------- |
-| Req/hari total (`/v1/*` utama)                        | sustained > 70k req/hari (70% dari 100k)   | Workers Metrics            |
-| RPS puncak `/v1/charges` + `/v1/payments/:id/confirm` | p95 > 20 req/s burst berulang              | Workers Metrics / Logpush  |
-| Latency p95 non-OCR                                   | > 350ms sustained (NFR 500ms)              | Workers Metrics — duration |
-| Latency OCR (`confirm`)                               | > 2.5s sustained (NFR 3s)                  | Workers Metrics — duration |
-| CPU time per invocation                               | mendekati limit plan Worker (cek plan)     | Workers Metrics — CPU time |
-| D1 write contention / `SQLITE_BUSY`                   | error rate D1 naik, query duration > 100ms | D1 Analytics               |
-| Queue backlog `payment-callback`                      | backlog ratusan + retry naik tajam         | Queues Metrics             |
-
-**Kesimpulan penting:** bottleneck nyata di skenario ini bukan CPU Worker, melainkan **D1 single-writer** (SQLite). Split worker TIDAK menaikkan kapasitas tulis D1. Split berguna untuk: isolasi hot path (`/v1`), isolasi letupan OCR/callback, dan fault blast radius — bukan untuk scale D1. (Lihat §7.)
+> Runbook deployment untuk arsitektur **2 worker yang berjalan sekarang**:
+>
+> | Worker         | Domain               | Isi                                                                     |
+> | -------------- | -------------------- | ----------------------------------------------------------------------- |
+> | `bits-pay-api` | `api.pay.bits.co.id` | Hono API + D1 + R2 + Queue + Durable Object + Workers AI + Cron + Email |
+> | `bits-pay-web` | `pay.bits.co.id`     | Static assets: landing page + SPA `user` + SPA `admin` (via `assets`)   |
+>
+> Sumber kebenaran: `packages/api/wrangler.template.jsonc`, `packages/web/wrangler.template.jsonc`,
+> `scripts/gen-wrangler.mjs`, `.github/workflows/deploy-api.yml`, `.github/workflows/deploy-web.yml`.
+>
+> **PENTING:** `wrangler.jsonc` di kedua package adalah file **generated** (gitignored) dari
+> `wrangler.template.jsonc` oleh `scripts/gen-wrangler.mjs`. Jangan edit langsung — ubah template
+> atau set env lalu jalankan `pnpm cf:config`.
 
 ---
 
-## 2. Strategi Split
+## 1. Prasyarat
 
-Usulan: **3 worker API internal + 1 gateway publik**. Worker static `bits-pay-web` (pay.bits.co.id) TIDAK diubah.
+| Kebutuhan           | Detail                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------- |
+| Akun Cloudflare     | Zone `bits.co.id` aktif (nameserver mengarah ke Cloudflare) di akun yang sama — wajib untuk custom domain |
+| Node + pnpm         | Node >= 24, pnpm 12.4.2 (`packageManager` di root `package.json`)                                         |
+| Wrangler auth lokal | `npx wrangler login` (deploy manual), atau CI pakai `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`      |
+| API token (CI)      | Scope akun, minimal: Workers Scripts Edit, D1 Edit, Workers R2 Storage Edit, Queues Edit                  |
+| Email               | Domain `FROM_EMAIL` diverifikasi di Cloudflare Email Routing (binding `send_email`)                       |
 
-```
-                          internet
-                              │
-              api.pay.bits.co.id  (custom domain)
-                              │
-                    ┌─────────▼──────────┐
-                    │ bits-pay-router     │  gateway publik (satu-satunya yang kena request)
-                    │ (service bindings) │  — tidak berisi business logic
-                    └──┬──────┬──────┬───┘
-        env.AUTH.fetch │      │      │ env.BILLING.fetch
-                       │      │      │
-      ┌────────────────▼┐ ┌───▼────────┐ ┌──────────────────┐
-      │ bits-pay-auth    │ │bits-pay-   │ │ bits-pay-billing  │
-      │ /auth, /app      │ │payment     │ │ /billing, /admin, │
-      └──────────────────┘ │/v1         │ │ queue consumer,   │
-                           └────────────┘ │ cron billing      │
-                                          └──────────────────┘
+Provisioning resource (satu kali, dari `packages/api`):
+
+```bash
+cd packages/api
+npx wrangler d1 create bits-pay-db            # catat database_id dari output
+npx wrangler r2 bucket create bits-pay-proofs
+npx wrangler queues create payment-callback
 ```
 
-### 2.1 Batas & justifikasi tiap worker
+Tidak perlu provisioning manual untuk:
 
-| Worker                 | Tanggung jawab                                                                                                  | Kenapa batas ini                                                                                                                                                                             |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`bits-pay-auth`**    | `/auth/*` (signup, login, logout, google, verify, reset) + `/app/*` (workspaces, apps, members). Isu JWT.       | Auth+tenant saling bergandengan (apps & member = konteks tenant). Traffic rendah, tapi sensitif (credential). Masalah di sini tidak boleh menjatuhkan hot path.                              |
-| **`bits-pay-payment`** | `/v1/*` (charges, payments, confirm). QRIS, unique-code, OCR (Workers AI), upload bukti (R2), enqueue callback. | Ini hot path (>90% request). Miliki latensi paling ketat + dependensi berat (AI, R2). Isolasi agar bug/burst OCR tidak mengganggu auth/admin.                                                |
-| **`bits-pay-billing`** | `/billing/*`, `/admin/*`, **consumer queue `payment-callback`**, **cron subscription/reminder**.                | Billing+admin+callback = lalu lintas "back-office" rendah frekuensi tapi penting. Consumer callback dipisah biar pengiriman webhook (retry 3x, bisa lambat/timeout) tidak memblok `confirm`. |
-| **`bits-pay-router`**  | Route request masuk ke 3 worker internal via service binding. `/health` sendiri.                                | Preservasi kontrak publik: client tetap 1 base URL `api.pay.bits.co.id/v1`. Service binding same-thread, overhead ~0.                                                                        |
-
-Runtime `index.ts` sekarang punya `scheduled` + `queue` di file yang sama. Setelah split:
-
-- `scheduled` **payment-expire** → pindah ke `bits-pay-payment` (dia yang miliki tabel `payments`).
-- `scheduled` **subscription-expire + invoice-reminder** → pindah ke `bits-pay-billing` (dia yang miliki `subscriptions`, `invoices`).
-- `queue` (callback) → pindah ke `bits-pay-billing`.
-
-### 2.2 State bersama
-
-- **D1 `bits-pay-db`** — SATU database, di-bind ke 4 worker. Batas worker adalah batas _kode_, bukan _data_; semua baca/tulis tabel yang sama.
-- **Queues `payment-callback`** — producer: `bits-pay-payment`; consumer: SATU (`bits-pay-billing`). Satu consumer = satu pemilik retry.
-- **R2 `bits-pay-proofs`** — dipakai `bits-pay-payment` (upload bukti). Billing/admin cuma baca `proof_path`, tidak butuh binding R2 kecuali endpoint admin butuh render ulang bukti (ralat: JANGAN bind kecuali endpoint nyata butuh object body).
-- **DO `RATE_LIMITER`** — namespace DO ter-scope per worker. Lihat §7.
+- **Durable Object `RateLimiter`** — dibuat saat deploy via `migrations: [{ tag: "v1", new_classes: ["RateLimiter"] }]`.
+- **Cron `*/5 * * * *`** — otomatis dari `triggers`.
+- **Workers AI** — binding `AI` otomatis aktif.
+- **Custom domain** — wrangler attach otomatis saat deploy (entri `routes` dengan `custom_domain: true`).
 
 ---
 
-## 3. Routing (pola yang benar untuk Workers)
+## 2. Secrets & Vars
 
-**Koreksi istilah:** `sozu` BUKAN mekanisme Cloudflare Workers (itu reverse-proxy Rust). Cloudflare punya dua konsep routing berbeda dan wajib tidak ketuker:
+Aturan: **kredensial → secret** (`wrangler secret`), **konfigurasi non-sensitif → `vars`** di template.
 
-1. **Custom Domains** — pakai saat **Worker = origin** (kasus BITS Pay). Ini yang dipakai.
-2. **`routes`** — pakai saat Worker hanya proxy di depan origin server eksternal (origin punya DNS sendiri). **Tidak relevan di sini.**
+### Secrets API (`wrangler secret put` / `secret bulk`)
 
-Karena Custom Domain memetakan **host penuh → satu Worker** (tanpa path split), memecah satu `api.pay.bits.co.id` ke banyak worker harus lewat **gateway + service bindings**. Inilah alasan `bits-pay-router` ada.
+| Secret                 | Isi                                  | Cara generate                      |
+| ---------------------- | ------------------------------------ | ---------------------------------- |
+| `JWT_SECRET`           | Kunci sign/verify JWT (>= 32 char)   | `openssl rand -hex 32`             |
+| `GOOGLE_CLIENT_SECRET` | Secret OAuth Google Cloud Console    | Google Cloud Console → Credentials |
+| `QRIS_STATIC`          | QRIS static string merchant produksi | Dari penyedia QRIS merchant        |
 
-### 3.1 Mapping
+Set manual (dari `packages/api`):
 
-| Host/path publik               | Worker tujuan             | Mekanisme             |
-| ------------------------------ | ------------------------- | --------------------- |
-| `api.pay.bits.co.id/*`         | `bits-pay-router`         | custom domain         |
-| `api.pay.bits.co.id/auth/*`    | → `bits-pay-auth`         | service binding       |
-| `api.pay.bits.co.id/app/*`     | → `bits-pay-auth`         | service binding       |
-| `api.pay.bits.co.id/v1/*`      | → `bits-pay-payment`      | service binding       |
-| `api.pay.bits.co.id/billing/*` | → `bits-pay-billing`      | service binding       |
-| `api.pay.bits.co.id/admin/*`   | → `bits-pay-billing`      | service binding       |
-| `api.pay.bits.co.id/health`    | `bits-pay-router` sendiri | local handler         |
-| `pay.bits.co.id/*`             | `bits-pay-web`            | tetap, tidak disentuh |
-
-Worker internal (`auth`/`payment`/`billing`) **tidak boleh reachable publik**: tanpa custom domain, tanpa `routes`, `workers_dev: false`.
-
-### 3.2 Ilustrasi konfig urasi (bukan kode produksi)
-
-`bits-pay-router/wrangler.jsonc` — caller yang deklarasi service binding:
-
-```jsonc
-{
-  "name": "bits-pay-router",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-09-01",
-  "workers_dev": false,
-  "services": [
-    { "binding": "AUTH", "service": "bits-pay-auth" },
-    { "binding": "PAYMENT", "service": "bits-pay-payment" },
-    { "binding": "BILLING", "service": "bits-pay-billing" },
-  ],
-}
+```bash
+npx wrangler secret put JWT_SECRET
+# atau sekaligus:
+echo '{"JWT_SECRET":"...","GOOGLE_CLIENT_SECRET":"...","QRIS_STATIC":"..."}' > .worker-secrets.json
+npx wrangler secret bulk .worker-secrets.json && rm .worker-secrets.json
 ```
 
-Interface pakai **HTTP** (paling sedikit perubahan — tiap worker internal tetap Hono router):
+CI (`deploy-api.yml`) melakukan `wrangler secret bulk` dari GitHub Secrets dengan nama yang sama.
 
-```ts
-// bits-pay-router/src/index.ts (ilustrasi)
-const app = new Hono<{ Bindings: Env }>();
-app.route('/auth', (c) => c.env.AUTH.fetch(c.req.raw));
-app.route('/app', (c) => c.env.AUTH.fetch(c.req.raw));
-app.route('/v1', (c) => c.env.PAYMENT.fetch(c.req.raw));
-app.route('/billing', (c) => c.env.BILLING.fetch(c.req.raw));
-app.route('/admin', (c) => c.env.BILLING.fetch(c.req.raw));
+### Vars API (di `wrangler.template.jsonc`, non-secret)
+
+| Var                          | Default                                           | Keterangan                                                                                                                 |
+| ---------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `APP_URL`                    | `https://pay.bits.co.id`                          | Origin web; selalu diizinkan CORS                                                                                          |
+| `FROM_EMAIL`                 | `noreply@pay.bits.co.id`                          | Pengirim email (harus terverifikasi)                                                                                       |
+| `TRANSACTION_EXPIRE_MINUTES` | `15`                                              | Masa berlaku charge                                                                                                        |
+| `PREMIUM_PRICE_MONTHLY`      | `50000`                                           | Harga premium bulanan (Rp)                                                                                                 |
+| `PREMIUM_PRICE_YEARLY`       | `500000`                                          | Harga premium tahunan (Rp)                                                                                                 |
+| `GOOGLE_CLIENT_ID`           | `""`                                              | Kosong = OAuth Google nonaktif                                                                                             |
+| `GOOGLE_REDIRECT_URI`        | `https://api.pay.bits.co.id/auth/google/callback` | Harus match di Google Cloud Console                                                                                        |
+| `JWT_EXPIRES_IN`             | `7d`                                              | Masa berlaku token                                                                                                         |
+| `ADMIN_EMAILS`               | `""`                                              | Comma-separated email admin                                                                                                |
+| `OCR_CONFIDENCE_THRESHOLD`   | `85`                                              | Ambang auto-approve OCR (%)                                                                                                |
+| `MAX_UNIQUE_CODE`            | `999`                                             | Range kode unik 001–999                                                                                                    |
+| `PROOF_RETENTION_DAYS`       | `30`                                              | Retensi bukti bayar di R2                                                                                                  |
+| `CORS_ORIGINS`               | _(tidak di template)_                             | Opsional. Origin tambahan, comma-separated. Ada di `Env` (`config.ts`) — set via `wrangler secret`/var tambahan bila perlu |
+
+### Vars/Secrets CI (GitHub repo settings)
+
+Workflow membaca `vars.X || secrets.X` — set sebagai **Variable** (non-sensitif) atau **Secret**.
+
+| Workflow     | Nama                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| Keduanya     | `CLOUDFLARE_API_TOKEN` (secret, wajib), `CLOUDFLARE_ACCOUNT_ID` (secret, wajib)                                          |
+| `deploy-api` | Semua vars §2 di atas + `WORKER_NAME`, `API_DOMAIN`, `D1_DATABASE_NAME`, `D1_DATABASE_ID`, `API_URL` + 3 secrets di atas |
+| `deploy-web` | `WORKER_NAME`, `WEB_DOMAIN`, `APP_URL`, `VITE_API_URL` (wajib diisi — workflow gagal kalau kosong)                       |
+
+> ⚠️ `WORKER_NAME` dibaca oleh **kedua** workflow. Kalau diset sebagai repo Variable, nilainya
+> menimpa default `bits-pay-api` **dan** `bits-pay-web` sekaligus → nama worker tabrakan.
+> Biarkan kosong (pakai default di `gen-wrangler.mjs`) atau pisah per-environment.
+
+### Build-time SPA (bukan wrangler)
+
+`VITE_API_URL` dibaca saat `vite build` (bukan runtime). Production: `https://api.pay.bits.co.id`.
+Lokal: `.env` per package berisi `VITE_API_URL=http://localhost:7001` (dibuat `scripts/setup-local.mjs`).
+
+---
+
+## 3. Urutan Deploy (aman)
+
+Prinsip urutan: **shared → migrasi D1 → secrets → API → SPA build → web**.
+
+Alasan: API import `@bits-pay/shared` hasil build; kode API baru bisa bergantung kolom migrasi baru
+(migrasi diapply duluan); worker tanpa `JWT_SECRET` error saat sign/verify token; SPA menanam
+`VITE_API_URL` saat build sehingga API harus sudah hidup.
+
+### Via CI (cara utama)
+
+Kedua workflow trigger manual (`workflow_dispatch`), urutan:
+
+1. Actions → **Deploy API** → Run workflow. Langkah di dalamnya: `cf:config` → build shared →
+   type-check → test → `wrangler d1 migrations apply <db> --remote` → `wrangler secret bulk` →
+   `wrangler deploy` → smoke test `GET /health`.
+2. Actions → **Deploy Web** → Run workflow. Langkah: `cf:config` → build shared/web/user/admin →
+   copy `packages/user/dist` → `packages/web/dist/user` dan `packages/admin/dist` →
+   `packages/web/dist/admin` → `wrangler deploy` → smoke test `GET /`.
+
+### Manual (mirror CI)
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter @bits-pay/shared build
+pnpm type-check && pnpm test
+
+# ── Worker 1: API ──
+cd packages/api
+# Wajib: override database_id placeholder default ('local-bits-pay-db')
+export D1_DATABASE_ID=<database_id dari wrangler d1 create>
+pnpm cf:config                                     # generate wrangler.jsonc
+npx wrangler d1 migrations apply bits-pay-db --remote
+npx wrangler secret bulk .worker-secrets.json      # atau secret put per key (lihat §2)
+pnpm deploy                                        # cf:config + wrangler deploy
+cd ../..
+
+# ── Worker 2: Web (+SPA) ──
+export VITE_API_URL=https://api.pay.bits.co.id     # build-time untuk SPA
+pnpm --filter @bits-pay/web build
+pnpm --filter @bits-pay/user build
+pnpm --filter @bits-pay/admin build
+cp -r packages/user/dist packages/web/dist/user
+cp -r packages/admin/dist packages/web/dist/admin
+pnpm --filter @bits-pay/web deploy                 # cf:config + wrangler deploy
 ```
 
-> Custom domain `api.pay.bits.co.id` dipasang via dashboard/API ke `bits-pay-router`. Urutan deploy: **worker target dulu, baru caller** (service binding gagal deploy kalau target belum ada).
+Catatan script root (beda dengan versi package):
+
+| Script root       | Perilaku sebenarnya                                                                                                                          |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm deploy:api` | = `packages/api`: `cf:config` + `wrangler deploy`. **Tidak** menjalankan migrasi D1 maupun sync secrets — jalankan manual dulu               |
+| `pnpm deploy:web` | = `wrangler deploy` polos di `packages/web`. **Tanpa** `cf:config` dan **tanpa** build — gagal di fresh checkout (wrangler.jsonc gitignored) |
+
+Untuk web, lebih aman pakai `pnpm --filter @bits-pay/web deploy` setelah build + copy SPA.
 
 ---
 
-## 4. Shared State & Binding per Worker
+## 4. Domain Routing & CORS
 
-### 4.1 D1 tabel per worker (baca/tulis)
+| Host                     | Worker         | Mekanisme                                                           |
+| ------------------------ | -------------- | ------------------------------------------------------------------- |
+| `api.pay.bits.co.id`     | `bits-pay-api` | `routes: [{ pattern, custom_domain: true }]` di template            |
+| `pay.bits.co.id`         | `bits-pay-web` | Sama — custom domain                                                |
+| `pay.bits.co.id/user/*`  | `bits-pay-web` | Assets `web/dist/user/` (SPA user, hash router `svelte-spa-router`) |
+| `pay.bits.co.id/admin/*` | `bits-pay-web` | Assets `web/dist/admin/` (SPA admin)                                |
+| `pay.bits.co.id/*`       | `bits-pay-web` | Landing page statis                                                 |
 
-Full schema: `docs/DATABASE.md`.
+Custom domain dipasang otomatis oleh `wrangler deploy`; syaratnya zone `bits.co.id` ada di akun.
 
-| Worker             | Baca                                                                                                                                | Tulis                                                                                                                            |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `bits-pay-auth`    | `users`, `workspaces`, `workspace_members`, `apps`, `email_verifications`, `password_reset_tokens`, `oauth_states`, `tier_features` | `users`, `workspaces`, `workspace_members`, `apps`, `email_verifications`, `password_reset_tokens`, `oauth_states`, `audit_logs` |
-| `bits-pay-payment` | `apps` (API key auth + `callback_url`), `workspaces`, `tier_features` (limits), `payments`, `users`                                 | `payments`, `callbacks` (INSERT via enqueue flow), `audit_logs`                                                                  |
-| `bits-pay-billing` | `subscriptions`, `invoices`, `users`, `apps`, `payments`, `callbacks`, `config`, `notifications`                                    | `subscriptions`, `invoices`, `callbacks`, `notifications`, `audit_logs`, `config`                                                |
-| `bits-pay-router`  | — (tidak bind D1)                                                                                                                   | —                                                                                                                                |
+**CORS** (`packages/api/src/middleware/cors.ts`):
 
-Catatan tumpang-tindih yang wajar: `apps` dibaca auth (CRUD) + payment (auth API key) tunggal, sumber kebenaran tetap D1. Karena D1 **single-writer**, tidak ada konflik antar-worker; yang ada adalah antrean tulis di satu writer (lihat §7).
+- Origin diizinkan = `APP_URL` + isi `CORS_ORIGINS` (opsional, comma-separated).
+- `allowHeaders`: `Content-Type`, `Authorization`, `X-BITS-Signature`, `X-BITS-Event`.
+- Request server-to-server (tanpa header `Origin`) lolos otomatis — CORS hanya untuk browser SPA.
+- Nilai harus persis: `https://pay.bits.co.id` (tanpa trailing slash).
 
-### 4.2 Queue producer/consumer split
+SPA memanggil API via `VITE_API_URL` (build-time). Ganti URL API = rebuild SPA, bukan redeploy worker.
 
-```jsonc
-// bits-pay-payment/wrangler.jsonc — PRODUCER saja
-{
-  "queues": {
-    "producers": [{ "binding": "CALLBACK_QUEUE", "queue": "payment-callback" }]
-  }
-}
+---
 
-// bits-pay-billing/wrangler.jsonc — CONSUMER saja
-{
-  "queues": {
-    "consumers": [{ "queue": "payment-callback", "max_retries": 3, "max_batch_size": 10 }]
-  }
-}
+## 5. Verifikasi Pasca-Deploy
+
+```bash
+# 1. Health API (sama dengan smoke test CI)
+curl -fsS https://api.pay.bits.co.id/health
+# expect: {"success":true,"data":{"status":"ok"}}
+
+# 2. Web + SPA
+curl -fsS -o /dev/null -w '%{http_code}\n' https://pay.bits.co.id
+curl -fsS -o /dev/null -w '%{http_code}\n' https://pay.bits.co.id/user/
+curl -fsS -o /dev/null -w '%{http_code}\n' https://pay.bits.co.id/admin/
+# expect: 200 semua
 ```
 
-Satu consumer logis. Kalau volume callback meledak, tambah worker `bits-pay-callback` dedicated (opsi, bukan sekarang).
+> Tidak ada endpoint `/status` — satu-satunya health check publik adalah `/health`.
 
-### 4.3 Binding lain per worker (least privilege)
+Charge uji end-to-end (butuh API key: signup di dashboard → buat workspace → buat app →
+salin key `sk_...` yang hanya tampil sekali):
 
-| Binding             | auth              | payment         | billing                            | router |
-| ------------------- | ----------------- | --------------- | ---------------------------------- | ------ |
-| `DB` (D1)           | ✅                | ✅              | ✅                                 | ❌     |
-| `R2`                | ❌                | ✅              | ❌ (baca `proof_path` string saja) | ❌     |
-| `AI` (Workers AI)   | ❌                | ✅              | ❌                                 | ❌     |
-| `EMAIL`             | ✅ (verify/reset) | ❌              | ✅ (invoice/reminder)              | ❌     |
-| `CALLBACK_QUEUE`    | ❌                | ✅ producer     | ✅ consumer                        | ❌     |
-| `RATE_LIMITER` (DO) | ✅ public-IP      | ✅ api-key tier | ❌                                 | ❌     |
+```bash
+curl -X POST https://api.pay.bits.co.id/v1/charges \
+  -H "Authorization: Bearer sk_<key>" \
+  -H "Content-Type: application/json" \
+  -d '{"order_id":"SMOKE-001","amount":1000}'
+```
 
-### 4.4 Secret & vars
+Expect `201` dengan `success: true`, `data.amount_due = 1000 + unique_code`, `data.qr_image`,
+`data.expired_at`. Ulangi `order_id` yang sama → expect `409 duplicate_order` (idempotency jalan).
 
-- **`JWT_SECRET`** → duplikat di `bits-pay-auth` (issue) + `bits-pay-payment` + `bits-pay-billing` (verify). Lihat §7.
-- **`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI`** → hanya `bits-pay-auth`.
-- **`QRIS_STATIC`, `OCR_CONFIDENCE_THRESHOLD`, `MAX_UNIQUE_CODE`, `TRANSACTION_EXPIRE_MINUTES`, `PROOF_RETENTION_DAYS`** → `bits-pay-payment` (+ `billing` hanya `TRANSACTION_EXPIRE_MINUTES` jika cron expire pindah; kalau cron expire di payment, billing tidak butuh).
-- **`PREMIUM_PRICE_MONTHLY/YEARLY`, `ADMIN_EMAILS`** → `bits-pay-billing`.
-- **`APP_URL`, `FROM_EMAIL`** → auth (redirect/link) + billing (email).
-- Secret dipasang per worker via `wrangler secret put --env production`. Tidak ada mekanisme "sekali set, dipakai semua" — tiap deploy unit punya secret sendiri.
+Cron (tiap 5 menit): pantau `npx wrangler tail bits-pay-api` atau dashboard — harus ada event
+`scheduled` dalam ≤ 5 menit.
 
 ---
 
-## 5. Observability
+## 6. Rollback
 
-### 5.1 Log
+```bash
+# Kode worker → deployment sebelumnya (dari packages/api atau packages/web)
+npx wrangler rollback
+# atau pilih versi spesifik:
+npx wrangler deployments list
+npx wrangler rollback --version-id <id>
+```
 
-- `wrangler tail <worker>` per worker, atau Workers Logpush ke tujuan sentral.
-- Label minimal: `worker`, `route`, `status_code`, `duration_ms`. Jangan emit secret/R2 object/aku payload callback.
-- D1 slow query: D1 Analytics ada query duration per worker; tandai tulis > 100ms.
+Batasan rollback:
 
-### 5.2 Metrics per worker
-
-| Sinyal                      | Minta                                               | Alert kalau                                         |
-| --------------------------- | --------------------------------------------------- | --------------------------------------------------- |
-| Worker invocations          | split per route `/auth`, `/v1`, `/billing`          | drop mendadak → routing rusak                       |
-| Duration p95/p99            | driver utama                                        | p95 > 350ms non-OCR; p95 > 2.5s OCR                 |
-| CPU time                    | Workers Metrics                                     | mendekati limit plan                                |
-| Subrequests                 | Workers Metrics (service binding hitung subrequest) | > 20/request → ada chaining berlebih                |
-| Error rate                  | per worker                                          | > 1% (5xx) 15 menit                                 |
-| D1 query duration + error   | D1 Analytics                                        | `SQLITE_BUSY`/error naik, tulis > 100ms             |
-| Queue backlog + dead letter | Queues Metrics                                      | backlog > 200 atau dead letter > 0 baru dalam 1 jam |
-| Cron run                    | log scheduled                                       | gagal 2 run berturut                                |
-
-### 5.3 Uptime / health
-
-- `uptime.yml` (sudah ada) tambah probe per public host: `api.pay.bits.co.id/health`, `pay.bits.co.id`.
-- Internal worker tidak punya health publik — pantau lewat metric, bukan probe HTTP.
-- SLO: 99.9% = ≤ 43.2 menit downtime/bulan; error budget dashboard opsional.
+- **Migrasi D1 tidak ikut rollback.** Kembalikan kode ke versi yang kompatibel dengan schema
+  terkini; tulis migrasi backward-compatible agar window ini aman.
+- **Secrets persist** antar-deploy — rollback tidak mengubah secret. Rotasi = `secret put` ulang.
+- **Web**: rollback aman karena `dist` (termasuk SPA hasil copy) ikut tersimpan per deployment.
+- CI: alternatif rollback = run ulang workflow dari commit lama.
 
 ---
 
-## 6. Migration Runbook (staged rollout)
+## 7. Troubleshooting
 
-Prinsip: **tiap fase balik-able**, dan `bits-pay-router` jadi titik cutover + titik rollback.
-
-### Fase 0 — Persiapan (no behavior change)
-
-1. Pastikan `bits-pay-db` D1 bisa di-bind lintas worker (D1 multi-worker read/write sudah didukung; single-writer).
-2. Tambah label observability ke handler (worker name) sebelum pecah.
-3. Freeze schema: selesaikan migrasi yang pending dulu. Jangan pecah sambil migrasi.
-
-### Fase 1 — Gateway + potong custom domain
-
-4. Deploy `bits-pay-router` — route semua path ke `bits-pay-api` (monolith) via SATU service binding `MONO`.
-5. Pasang custom domain `api.pay.bits.co.id` ke `bits-pay-router` (dashboard/API).
-6. Verifikasi: semua `/v1/*`, `/auth/*`, `/app/*`, `/billing/*`, `/admin/*`, `/health` tembus.
-   Rollback: kembalikan custom domain ke `bits-pay-api` langsung.
-
-### Fase 2 — Keluarkan auth/tenant (monolith → 2 jalur)
-
-7. Deploy `bits-pay-auth` (target dulu). Isi: `/auth/*` + `/app/*` + JWT issue.
-8. Update `bits-pay-router`: `/auth`, `/app` → `AUTH.fetch`; sisanya tetap `MONO`.
-9. Canary: Gradual Deployments (versions) di `bits-pay-router` 10% → 50% → 100%. Pantau error rate auth.
-   Rollback: kembalikan versi router sebelumnya (fallback ke `MONO` untuk `/auth`/`/app`).
-
-### Fase 3 — Keluarkan payment hot path
-
-10. Deploy `bits-pay-payment` (target dulu). Isi: `/v1/*` + enqueue callback + cron payment-expire.
-11. UPDATE: matikan cron payment-expire di `bits-pay-api` SEBELUM menyalakan di `bits-pay-payment` (hindari double-expire).
-12. Update router: `/v1` → `PAYMENT.fetch`.
-13. Canary lagi lewat Gradual Deployments. Pantau `SQLITE_BUSY`, p95 `/v1`, queue producer enqueue.
-
-### Fase 4 — Keluarkan billing/admin/consumer/cron + pensiun monolith
-
-14. Deploy `bits-pay-billing` (target dulu). Isi: `/billing/*`, `/admin/*`, consumer queue, cron subscription+reminder.
-15. UPDATE produser: `CALLBACK_QUEUE` producer tetap di `bits-pay-payment`; consumer dipindah ke `bits-pay-billing`. Pastikan tidak ada DUA consumer aktif (double delivery).
-16. UPDATE cron: subscription-expire + reminder pindah ke `bits-pay-billing`; pastikan cron di monolith dimatikan.
-17. Update router: `/billing`, `/admin` → `BILLING.fetch`.
-18. Verifikasi end-to-end: create charge → confirm → OCR → callback delivered → invoice premium flow → cron.
-19. Hapus `bits-pay-api` (monolith). Update `.github/workflows/deploy-api.yml` untuk deploy 4 worker (atau matrix deploy).
-
-### Checklist rollback global
-
-- Custom domain = satu tombol cutover (balik ke worker lama).
-- Gradual Deployments `versions` di router + tiap worker internal = canary tanpa DNS.
-- Jangan hapus worker lama sampai Fase 4 benar-benar green minimal 1 minggu.
+| Gejala                                        | Penyebab umum                                                                  | Fix                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `no such table` setelah deploy                | Migrasi remote belum diapply (`deploy:api` root tidak menjalankan migrasi)     | `npx wrangler d1 migrations apply bits-pay-db --remote`; cek status: `... migrations list bits-pay-db --remote` |
+| Migrasi gagal / database not found            | `database_id` masih placeholder `local-bits-pay-db`                            | `export D1_DATABASE_ID=<id asli>` lalu `pnpm cf:config` ulang sebelum migrasi/deploy                            |
+| `/user/*` atau `/admin/*` 404                 | SPA belum di-copy ke `web/dist/{user,admin}`                                   | Ulangi step build SPA + `cp -r` (§3), deploy ulang web                                                          |
+| Deep link SPA 404                             | SPA pakai hash router — path benar adalah `/user/#/route`, bukan `/user/route` | Akses via `/#/...`; jangan tambah `not_found_handling`                                                          |
+| CORS error di browser                         | Origin tidak ada di `APP_URL`/`CORS_ORIGINS`, atau trailing slash              | Set `APP_URL=https://pay.bits.co.id` persis; tambah origin ke `CORS_ORIGINS`                                    |
+| `401 unauthorized` dari `/v1`                 | Header salah format / pakai prefix key                                         | `Authorization: Bearer sk_<full key>` — key lengkap, bukan prefix                                               |
+| Error JWT saat login (sign/verify)            | `JWT_SECRET` belum di-set di worker production                                 | `wrangler secret bulk` (§2), lalu verifikasi lagi                                                               |
+| Google OAuth gagal                            | `GOOGLE_CLIENT_ID` kosong di vars / redirect mismatch                          | Isi vars `GOOGLE_CLIENT_ID` + `GOOGLE_REDIRECT_URI` persis sama dengan Google Console                           |
+| Email tidak terkirim                          | Domain `FROM_EMAIL` belum diverifikasi                                         | Verifikasi domain di Cloudflare Email Routing                                                                   |
+| Deploy gagal attach domain                    | Zone `bits.co.id` belum ada/aktif di akun Cloudflare                           | Tambahkan zone + arahkan nameserver, deploy ulang                                                               |
+| Nama worker tabrakan antar workflow           | Repo Variable `WORKER_NAME` menimpa kedua workflow                             | Hapus/pisah per-environment (lihat ⚠️ §2)                                                                       |
+| `wrangler deploy` web gagal: config tidak ada | `wrangler.jsonc` gitignored, belum digenerate                                  | `pnpm --filter @bits-pay/web cf:config` dulu                                                                    |
 
 ---
 
-## 7. Risiko & Catatan
+## Catatan
 
-1. **`JWT_SECRET` shared.** JWT diterbitkan auth, diverifikasi payment/billing. Wajib nilainya IDENTIK di semua worker itu. Opsi A (dipakai sekarang): duplikasi secret; konsekuensi rotasi = update semua worker serentak. Opsi B (hardening, nanti): auth expose `verify()` via service binding RPC sehingga `JWT_SECRET` hanya hidup di auth — bayar 1 subrequest per call yang butuh auth.
-2. **DO `RATE_LIMITER` scope per worker.** DO namespace ter-bind ke (worker, class_name). `RATE_LIMITER` milik `bits-pay-payment` untuk rate-limit API key per-app; auth punya DO sendiri (misal `PUBLIC_RATE_LIMITER`) untuk rate-limit IP di `/auth`. JANGAN berbagi satu DO lintas worker langsung — kalau butuh limiter global lintas worker, semuanya harus panggil lewat worker pemilik DO via service binding. Migrasi `migrations.new_classes` harus ada di wrangler worker yang memiliki DO itu.
-3. **Cron stay di worker mana.** Cron adalah trigger per worker. Tiap job harus ada **tepat satu** worker pemilik, kalau tidak job jalan dobel. Pembagian: `payment-expire` → payment; `subscription-expire` + `invoice-reminder` → billing. Saat pindah, matikan job lama dulu baru nyalakan job baru.
-4. **D1 single-writer = ceiling sebenarnya.** Pemisahan worker tidak menambah throughput tulis D1. Kalau D1 jadi bottleneck (banyak `SQLITE_BUSY`), langkah berikutnya bukan tambah worker, tapi: kurangi write amplification, batch write, atau evaluasi D1 read replicas (masih eksperimental). Tulis itu di backlog.
-5. **Service binding subrequest limit.** Satu request maks 32 Worker invocations; gateway menambah 1 per call. Aman untuk topologi ini (1 hop). Hindari chaining internal worker saling panggil.
-6. **Secret & vars tidak ter-share otomatis.** `wrangler secret put` per worker. Risiko drift konfig (nilai beda antar worker) → mitigasi: satu template `wrangler.jsonc` + dokumentasi daftar var per worker (§4.4).
-7. **Consumer queue tunggal.** Dua consumer di queue yang sama = delivery dobel/retry membingungkan. Selalu satu pemilik consumer per queue.
-8. **`workers_dev: false` + tanpa route** untuk worker internal, supaya tidak bisa diakses dari luar selain gateway.
-9. **Kompatibilitas kontrak.** Client tidak berubah (base URL tetap `api.pay.bits.co.id`). `@bits-pay/shared` shared type = mencegah drift signature antar worker. Satu-satunya breaking internal adalah file `scheduled`/`queue` tidak lagi di satu `index.ts`.
-
----
-
-## Ringkasan Keputusan Utama
-
-- **Berapa worker:** 1 gateway (`bits-pay-router`) + 3 worker domain (`auth`, `payment`, `billing`) = **4 worker API** (web static tidak dihitung, tidak diubah).
-- **Boundary:** auth+tenant (`/auth`,`/app`) | payment+OCR (`/v1`) | billing+admin+callback+queue-consumer+cron-billing (`/billing`,`/admin`).
-- **Mekanisme routing:** custom domain → gateway → service bindings (HTTP interface). Bukan `routes`, bukan `sozu`.
-- **Trigger split:** 70k req/hari / p95 > 350ms / kontensi tulis D1 naik — bukan semata angka 100k.
+- Draft desain split lanjutan (4 worker: router/auth/payment/billing) versi sebelumnya dokumen ini
+  **dihapus** — belum diimplementasi dan bukan bagian deployment saat ini. Versi lama dapat
+  dilihat di git history (`git log -- docs/MULTI_WORKER.md`).

@@ -201,17 +201,12 @@ jobs:
       - run: pnpm exec vitest run --reporter=verbose
 ```
 
-### Deploy API — deploy-api.yml (push ke main, path api/)
+### Deploy API — deploy-api.yml (manual, workflow_dispatch)
 
 ```yaml
 name: Deploy API
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/api/**'
-      - 'packages/shared/**'
-      - 'packages/api/wrangler.jsonc'
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -226,26 +221,21 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @bits-pay/shared build
       - run: pnpm --filter @bits-pay/api build
+      # Config (vars/secrets repo) ditulis ke .worker-secrets.json → wrangler secret bulk
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: deploy
           workingDirectory: packages/api
 ```
 
-### Deploy Web — deploy-web.yml (push ke main, path web/)
+### Deploy Web — deploy-web.yml (manual, workflow_dispatch)
 
 ```yaml
 name: Deploy Web
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/web/**'
-      - 'packages/user/**'
-      - 'packages/admin/**'
-      - 'packages/web/wrangler.jsonc'
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -264,28 +254,34 @@ jobs:
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: deploy
           workingDirectory: packages/web
 ```
 
-### Uptime Monitor — uptime.yml (setiap jam)
+### Uptime Monitor — uptime.yml (tiap 5 menit)
+
+Ping tiga surface; exit 1 saat gagal → notifikasi GitHub Actions.
 
 ```yaml
-name: Uptime Monitor
+name: uptime
 on:
-  schedule:
-    - cron: '0 * * * *'
+  schedule: [{ cron: '*/5 * * * *' }]
+  workflow_dispatch:
 
 jobs:
-  check:
+  ping:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -sSf https://api.pay.bits.co.id/health || \
-            echo "::warning::API down"
-          curl -sSf https://pay.bits.co.id/health || \
-            echo "::warning::Web down"
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://api.pay.bits.co.id/health)
+          [ "$code" = "200" ] || exit 1
+      - run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://pay.bits.co.id/)
+          [ "$code" = "200" ] || exit 1
+      - run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://pay.bits.co.id/status.html)
+          [ "$code" = "200" ] || exit 1
 ```
 
 ## 10. Dependabot
@@ -332,15 +328,24 @@ updates:
 }
 ```
 
-## 12. GitHub Secrets Required
+## 12. GitHub Secrets & Variables
 
-| Secret                 | Guna                         |
-| ---------------------- | ---------------------------- |
-| `CF_API_TOKEN`         | Deploy ke Cloudflare Workers |
-| `CF_ACCOUNT_ID`        | Cloudflare account ID        |
-| `JWT_SECRET`           | JWT signing                  |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth                 |
-| `PASSWORD_PEPPER`      | Password hashing pepper      |
+Worker secrets (wajib rahasia, di-`wrangler secret bulk` saat deploy):
+
+| Secret                 | Guna                |
+| ---------------------- | ------------------- |
+| `JWT_SECRET`           | JWT signing         |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth        |
+| `QRIS_STATIC`          | Payload QRIS statis |
+
+Config non-secret dibaca dari **Variables** (fallback Secrets) repo: `ADMIN_EMAILS`, `API_DOMAIN`, `API_URL`, `APP_URL`, `FROM_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_REDIRECT_URI`, `JWT_EXPIRES_IN`, `MAX_UNIQUE_CODE`, `OCR_CONFIDENCE_THRESHOLD`, `PREMIUM_PRICE_MONTHLY`, `PREMIUM_PRICE_YEARLY`, `PROOF_RETENTION_DAYS`, `TRANSACTION_EXPIRE_MINUTES`, `VITE_API_URL`, `WEB_DOMAIN`, `WORKER_NAME`.
+
+Infra CI:
+
+| Secret / Variable       | Guna                         |
+| ----------------------- | ---------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | Deploy ke Cloudflare Workers |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID        |
 
 ## 13. .gitignore
 
