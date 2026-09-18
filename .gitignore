@@ -14,5 +14,3 @@ __pycache__/
 *.pyc
 packages/api/wrangler.jsonc
 packages/web/wrangler.jsonc
-test-results/
-playwright-report/
