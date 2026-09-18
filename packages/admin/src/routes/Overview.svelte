@@ -4,7 +4,7 @@
   import Card from '../components/ui/Card.svelte';
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
-  import type { AdminOverview } from '@bits-pay/shared';
+  import { formatAmount, type AdminOverview } from '@bits-pay/shared';
 
   let data = $state<AdminOverview | null>(null);
   let loading = $state(true);
@@ -46,7 +46,7 @@
     <Card>
       <div class="text-center">
         <p class="text-sm text-neutral-400">Total Revenue</p>
-        <p class="text-3xl font-bold text-success">Rp {data.total_revenue.toLocaleString('id-ID')}</p>
+        <p class="text-3xl font-bold text-success">{formatAmount(data.total_revenue)}</p>
       </div>
     </Card>
     <Card>
@@ -64,7 +64,7 @@
     <Card>
       <div class="text-center">
         <p class="text-sm text-neutral-400">Revenue Hari Ini</p>
-        <p class="text-3xl font-bold text-success">Rp {data.today_revenue.toLocaleString('id-ID')}</p>
+        <p class="text-3xl font-bold text-success">{formatAmount(data.today_revenue)}</p>
       </div>
     </Card>
     <Card>

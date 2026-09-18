@@ -110,7 +110,7 @@
         <p>
           Kirim <code>order_id</code> (unik per app, idempoten) dan <code>amount</code> (minimal Rp
           100). API mengembalikan QRIS dinamis dengan <strong>kode unik</strong>:
-          <code>amount_due = amount × 10000 + unique_code</code>.
+          <code>amount_due = amount + unique_code</code>.
         </p>
       </div>
       <pre><code>const res = await fetch('https://api.pay.bits.co.id/v1/charges', {
@@ -128,7 +128,7 @@
 const { success, data, error } = await res.json();
 if (!success) throw new Error(`${error.code}: ${error.message}`);
 
-console.log(data.amount_due);  // 1500000001
+console.log(data.amount_due);  // 150001
 console.log(data.qr_image);    // data:image/png;base64,...
 console.log(data.expired_at);  // batas bayar (default 15 menit)</code></pre>
       <p>
@@ -160,7 +160,7 @@ const { data } = await res.json();
         </p>
       </div>
       <pre><code>const form = new FormData();
-form.append('amount', '1500000001');        // = amount_due
+form.append('amount', '150001');        // = amount_due
 form.append('proof_image', fileInput.files[0]); // opsional
 
 const res = await fetch(`https://api.pay.bits.co.id/v1/payments/${id}/confirm`, {
@@ -191,7 +191,7 @@ const { data } = await res.json();
           <tr>
             <td><code>invalid_amount</code></td>
             <td>400</td>
-            <td>Amount di bawah Rp 100</td>
+            <td>Amount di bawah 100</td>
           </tr>
           <tr>
             <td><code>unauthorized</code></td>

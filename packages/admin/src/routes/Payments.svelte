@@ -8,7 +8,7 @@
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
-  import type { Payment, PaymentStatus } from '@bits-pay/shared';
+  import { formatAmount, type Payment, type PaymentStatus } from '@bits-pay/shared';
 
   interface PaymentPage {
     items: Payment[];
@@ -91,7 +91,7 @@
           <tr class="hover:bg-neutral-50">
             <td class="px-4 py-3 font-mono text-xs">{p.order_id || '-'}</td>
             <td class="px-4 py-3 text-xs text-neutral-400">{p.user_id?.slice(0, 8) || '-'}</td>
-            <td class="px-4 py-3">Rp {p.amount.toLocaleString('id-ID')}</td>
+            <td class="px-4 py-3">{formatAmount(p.amount)}</td>
             <td class="px-4 py-3"><Badge status={p.status} /></td>
             <td class="px-4 py-3 text-neutral-400">{new Date(p.created_at).toLocaleDateString('id-ID')}</td>
             <td class="px-4 py-3">

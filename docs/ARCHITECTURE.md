@@ -99,24 +99,23 @@ Request → Static Assets Router
 
 ### Unique Code
 
-**Rumus:** `amount_due = amount × 10000 + unique_code`
+**Rumus:** `amount_due = amount + unique_code`
 
 ```
 amount: 150000
 unique_code: 1
-amount_due: 1500000001
-
-Extract amount asli: Math.floor(amount_due / 10000)  → 150000
-Extract kode:        amount_due % 10000              → 1
+amount_due: 150001
 ```
 
-Range: `0001` – `9999` (9999 transaksi pending bersamaan). Cukup untuk skala besar.
+`amount_due` tidak bisa di-decompose balik (penjumlahan ambigu) — `amount` dan `unique_code` tersimpan sebagai kolom terpisah di DB.
+
+Range: `001` – `999` (999 transaksi pending bersamaan). Cukup untuk skala target.
 
 ### Create Charge
 
 ```
 App → POST /v1/charges { amount, order_id }
-  → QRService: generate kode unik (0001-9999, cek available)
+  → QRService: generate kode unik (001-999, cek available)
   → QRService: convert QRIS static → dynamic (bits-qris)
   → QRService: generate QR image (base64)
   → D1: INSERT transaction (status: pending)

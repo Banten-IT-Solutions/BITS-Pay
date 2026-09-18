@@ -9,7 +9,12 @@
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import { showToast } from '../lib/toast';
-  import type { Subscription, SubscriptionTier, UserMe } from '@bits-pay/shared';
+  import {
+    formatAmount,
+    type Subscription,
+    type SubscriptionTier,
+    type UserMe,
+  } from '@bits-pay/shared';
 
   interface UpgradeResponse {
     qr: {
@@ -129,7 +134,7 @@
       </div>
       <div>
         <p class="text-sm text-neutral-400">Biaya</p>
-        <p class="text-lg font-bold text-primary-500">Rp {sub.amount.toLocaleString('id-ID')}</p>
+        <p class="text-lg font-bold text-primary-500">{formatAmount(sub.amount)}</p>
       </div>
       {#if sub.status === 'active'}
         <div class="pt-2">
@@ -164,7 +169,7 @@
     </Card>
     <Card title="Premium" subtitle="Untuk bisnis serius">
       <div class="space-y-4">
-        <p class="text-3xl font-bold text-primary-500">Rp 50.000<span class="text-base font-normal text-neutral-400">/bln</span></p>
+        <p class="text-3xl font-bold text-primary-500">50.000<span class="text-base font-normal text-neutral-400">/bln</span></p>
         <ul class="space-y-2">
           {#each premiumFeatures as f}
             <li class="flex items-center gap-2 text-sm text-neutral-600">
@@ -174,10 +179,10 @@
         </ul>
         <div class="space-y-2">
           <Button block loading={upgrading} onclick={() => handleUpgrade('premium_monthly')}>
-            Premium Bulanan Rp 50.000
+            Premium Bulanan 50.000
           </Button>
           <Button variant="secondary" block loading={upgrading} onclick={() => handleUpgrade('premium_yearly')}>
-            Premium Tahunan Rp 500.000
+            Premium Tahunan 500.000
           </Button>
         </div>
       </div>
@@ -191,7 +196,7 @@
       <img src={qrData.qr.qr_image} alt="QRIS" class="w-64 rounded-lg border" />
       <div class="text-center">
         <p class="text-sm text-neutral-400">Total Pembayaran</p>
-        <p class="text-2xl font-bold text-neutral-900">Rp {qrData.qr.amount_due.toLocaleString('id-ID')}</p>
+        <p class="text-2xl font-bold text-neutral-900">{formatAmount(qrData.qr.amount_due)}</p>
         <p class="text-xs text-neutral-400">(termasuk kode unik)</p>
       </div>
       <p class="text-center text-sm text-neutral-400">Scan QRIS di atas menggunakan aplikasi pembayaran untuk menyelesaikan pembayaran.</p>

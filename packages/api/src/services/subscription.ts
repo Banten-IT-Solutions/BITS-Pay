@@ -70,7 +70,7 @@ export class SubscriptionService {
       const fmtAmount = inv.amount_due.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       const dueDate = inv.due_at.slice(0, 10);
       const invoiceUrl = `${appUrl}/billing/invoices/${inv.id}`;
-      const defaultText = `Halo ${user.name},\n\nIni pengingat bahwa invoice subscription kamu sebesar Rp ${fmtAmount} akan jatuh tempo pada ${dueDate}.\n\nSilakan lakukan pembayaran melalui dashboard:\n${invoiceUrl}\n\nTerima kasih,\nBITS Pay`;
+      const defaultText = `Halo ${user.name},\n\nIni pengingat bahwa invoice subscription kamu sebesar ${fmtAmount} akan jatuh tempo pada ${dueDate}.\n\nSilakan lakukan pembayaran melalui dashboard:\n${invoiceUrl}\n\nTerima kasih,\nBITS Pay`;
       const text =
         EmailTemplateService.render(tpl, {
           name: user.name,
@@ -107,7 +107,7 @@ export class SubscriptionService {
       const fmtAmount = inv.amount_due.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       const dueDate = inv.due_at.slice(0, 10);
       const invoiceUrl = `${appUrl}/billing/invoices/${inv.id}`;
-      const defaultText = `Halo ${user.name},\n\nIni pengingat terakhir! Invoice subscription kamu sebesar Rp ${fmtAmount} akan jatuh tempo besok (${dueDate}).\n\nSegera lakukan pembayaran melalui dashboard:\n${invoiceUrl}\n\nTerima kasih,\nBITS Pay`;
+      const defaultText = `Halo ${user.name},\n\nIni pengingat terakhir! Invoice subscription kamu sebesar ${fmtAmount} akan jatuh tempo besok (${dueDate}).\n\nSegera lakukan pembayaran melalui dashboard:\n${invoiceUrl}\n\nTerima kasih,\nBITS Pay`;
       const text =
         EmailTemplateService.render(tpl, {
           name: user.name,

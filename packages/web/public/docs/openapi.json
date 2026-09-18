@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "BITS Pay API",
-    "description": "QRIS payment gateway — ubah QRIS static menjadi dinamis dengan kode unik per transaksi, auto-confirm via OCR.\n\n## Autentikasi\n\nSemua endpoint `/v1/*` butuh API key di header:\n\n```\nAuthorization: Bearer sk_xxxxxxxxxxxxxxxx\n```\n\nAPI key didapat saat membuat App di dashboard. Key full hanya ditampilkan sekali saat create/rotate.\n\n## Kode Unik\n\n`amount_due = amount × 10000 + unique_code` (range `0001`–`9999`). Pelanggan membayar nominal `amount_due` persis.\n\n## Format Response\n\nSukses: `{ \"success\": true, \"data\": ... }`. Error: `{ \"success\": false, \"error\": { \"code\", \"message\" } }`.\n\n## Rate Limit\n\nHeader response: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`. Limit per tier: Free 10 req/s, Premium 100 req/s.",
+    "description": "QRIS payment gateway — ubah QRIS static menjadi dinamis dengan kode unik per transaksi, auto-confirm via OCR.\n\n## Autentikasi\n\nSemua endpoint `/v1/*` butuh API key di header:\n\n```\nAuthorization: Bearer sk_xxxxxxxxxxxxxxxx\n```\n\nAPI key didapat saat membuat App di dashboard. Key full hanya ditampilkan sekali saat create/rotate.\n\n## Kode Unik\n\n`amount_due = amount + unique_code` (range `001`–`999`). Pelanggan membayar nominal `amount_due` persis.\n\n## Format Response\n\nSukses: `{ \"success\": true, \"data\": ... }`. Error: `{ \"success\": false, \"error\": { \"code\", \"message\" } }`.\n\n## Rate Limit\n\nHeader response: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`. Limit per tier: Free 10 req/s, Premium 100 req/s.",
     "version": "1.0.0"
   },
   "servers": [{ "url": "https://api.pay.bits.co.id" }],
@@ -257,10 +257,10 @@
           "amount": { "type": "integer", "example": 150000 },
           "amount_due": {
             "type": "integer",
-            "description": "Nominal yang harus dibayar = `amount × 10000 + unique_code`",
-            "example": 1500000001
+            "description": "Nominal yang harus dibayar = `amount + unique_code`",
+            "example": 150001
           },
-          "unique_code": { "type": "integer", "minimum": 1, "maximum": 9999, "example": 1 },
+          "unique_code": { "type": "integer", "minimum": 1, "maximum": 999, "example": 1 },
           "currency": { "type": "string", "example": "IDR" },
           "status": { "$ref": "#/components/schemas/PaymentStatus" },
           "qr_image": {
@@ -297,7 +297,7 @@
           "order_id": { "type": ["string", "null"], "example": "ORD-001" },
           "type": { "type": "string", "enum": ["payment", "invoice"] },
           "amount": { "type": "integer", "example": 150000 },
-          "amount_due": { "type": "integer", "example": 1500000001 },
+          "amount_due": { "type": "integer", "example": 150001 },
           "unique_code": { "type": "integer", "example": 1 },
           "currency": { "type": "string", "example": "IDR" },
           "status": { "$ref": "#/components/schemas/PaymentStatus" },
@@ -331,7 +331,7 @@
             "type": "integer",
             "minimum": 100,
             "description": "Nominal yang dibayar pelanggan — harus sama persis dengan `amount_due` (termasuk kode unik).",
-            "example": 1500000001
+            "example": 150001
           },
           "proof_image": {
             "type": "string",
@@ -346,7 +346,7 @@
           "id": { "type": "string", "format": "uuid" },
           "status": { "$ref": "#/components/schemas/PaymentStatus" },
           "match_result": { "$ref": "#/components/schemas/MatchResult" },
-          "ocr_amount": { "type": ["integer", "null"], "example": 1500000001 },
+          "ocr_amount": { "type": ["integer", "null"], "example": 150001 },
           "ocr_confidence": { "type": ["integer", "null"], "example": 91 },
           "paid_at": { "type": ["string", "null"], "format": "date-time" },
           "message": {
@@ -429,7 +429,7 @@
                 ],
                 "example": "invalid_amount"
               },
-              "message": { "type": "string", "example": "Amount minimal Rp 100" },
+              "message": { "type": "string", "example": "Amount minimal 100" },
               "details": {
                 "type": "object",
                 "additionalProperties": { "type": "array", "items": { "type": "string" } }

@@ -48,7 +48,7 @@ POST /v1/charges
 {
   "id": "uuid-trx",
   "amount": 150000,
-  "amount_due": 1500000001,
+  "amount_due": 150001,
   "unique_code": 1,
   "currency": "IDR",
   "status": "pending",
@@ -62,14 +62,12 @@ POST /v1/charges
 **Unique Code — Rumus:**
 
 ```
-amount_due = amount × 10000 + unique_code
-Contoh: 150000 × 10000 + 1 = 1500000001
-
-Extract amount asli: Math.floor(amount_due / 10000)  → 150000
-Extract kode:        amount_due % 10000              → 1
+amount_due = amount + unique_code
+Contoh: 150000 + 1 = 150001
 ```
 
-Range: `0001` – `9999`. Kode dicek available dari transaksi pending yang belum expired.
+Range: `001` – `999`. Kode dicek available dari transaksi pending yang belum expired.
+`amount_due` tidak bisa di-decompose balik — `amount` dan `unique_code` selalu tersimpan sebagai kolom terpisah.
 
 **Error:**
 
@@ -99,7 +97,7 @@ GET /v1/payments/:id
   "app_id": "uuid-app",
   "order_id": "ORD-001",
   "amount": 150000,
-  "amount_due": 1500000001,
+  "amount_due": 150001,
   "status": "pending",
   "created_at": "2025-09-01T12:30:00Z",
   "paid_at": null,
@@ -117,7 +115,7 @@ POST /v1/payments/:id/confirm
 
 ```
 proof_image: File (jpg/png, max 5MB)
-amount: 1500000001
+amount: 150001
 ```
 
 **Response (200):**
@@ -127,7 +125,7 @@ amount: 1500000001
   "id": "uuid-trx",
   "status": "success",
   "match_result": "auto_confirm",
-  "ocr_amount": 1500000001,
+  "ocr_amount": 150001,
   "ocr_confidence": 91,
   "paid_at": "2025-09-01T12:32:00Z"
 }
@@ -182,14 +180,12 @@ X-BITS-Event: payment.success
     "id": "uuid-trx",
     "order_id": "ORD-001",
     "amount": 150000,
-    "amount_due": 1500000001,
+    "amount_due": 150001,
     "status": "success",
     "paid_at": "2025-09-01T12:32:00Z"
   }
 }
 ```
-
-> Contoh `amount_due` di atas fix: `1500000001` (bukan `150001`), konsisten rumus `amount × 10000 + unique_code`.
 
 **Events:**
 

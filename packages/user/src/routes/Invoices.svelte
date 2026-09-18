@@ -10,7 +10,7 @@
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
   import { showToast } from '../lib/toast';
-  import type { Invoice, InvoiceStatus } from '@bits-pay/shared';
+  import { formatAmount, type Invoice, type InvoiceStatus } from '@bits-pay/shared';
 
   interface InvoicePage {
     items: Invoice[];
@@ -142,7 +142,7 @@
             <td class="px-4 py-3 text-sm capitalize">
               {inv.tier === 'premium_monthly' ? 'Bulanan' : 'Tahunan'}
             </td>
-            <td class="px-4 py-3">Rp {inv.amount.toLocaleString('id-ID')}</td>
+            <td class="px-4 py-3">{formatAmount(inv.amount)}</td>
             <td class="px-4 py-3"><Badge status={inv.status} /></td>
             <td class="px-4 py-3 text-neutral-400">{new Date(inv.due_at).toLocaleDateString('id-ID')}</td>
             <td class="px-4 py-3">
@@ -168,7 +168,7 @@
       <img src={payData.qr_image} alt="QRIS" class="w-64 rounded-lg border" />
       <div class="text-center">
         <p class="text-sm text-neutral-400">Total Pembayaran</p>
-        <p class="text-2xl font-bold text-neutral-900">Rp {payData.amount_due.toLocaleString('id-ID')}</p>
+        <p class="text-2xl font-bold text-neutral-900">{formatAmount(payData.amount_due)}</p>
         <p class="text-xs text-neutral-400">(termasuk kode unik)</p>
       </div>
       <form class="w-full space-y-4" onsubmit={handleConfirm}>
@@ -201,7 +201,7 @@
       </p>
       <p class="text-sm text-neutral-400">{confirmResult.message || 'Status: ' + confirmResult.status}</p>
       {#if confirmResult.ocr_amount}
-        <p class="text-sm text-neutral-600">Terbaca: Rp {confirmResult.ocr_amount.toLocaleString('id-ID')}</p>
+        <p class="text-sm text-neutral-600">Terbaca: {formatAmount(confirmResult.ocr_amount)}</p>
       {/if}
       {#if confirmResult.ocr_confidence}
         <p class="text-sm text-neutral-600">Akurasi OCR: {confirmResult.ocr_confidence}%</p>

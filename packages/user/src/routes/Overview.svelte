@@ -6,7 +6,7 @@
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
-  import type { Payment } from '@bits-pay/shared';
+  import { formatAmount, type Payment } from '@bits-pay/shared';
 
   interface OverviewStats {
     total_payments: number;
@@ -90,7 +90,7 @@
             {#each recent as p}
               <tr>
                 <td class="px-4 py-3 font-mono text-xs">{p.order_id || '-'}</td>
-                <td class="px-4 py-3">Rp {p.amount.toLocaleString('id-ID')}</td>
+                <td class="px-4 py-3">{formatAmount(p.amount)}</td>
                 <td class="px-4 py-3"><Badge status={p.status} /></td>
                 <td class="px-4 py-3 text-neutral-400">{new Date(p.created_at).toLocaleDateString('id-ID')}</td>
               </tr>

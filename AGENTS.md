@@ -66,7 +66,7 @@ Satu task → satu agent. Jangan pecah task kecil ke banyak agent. Delegasi inde
 
 - **User tier**: `free` | `premium` (disimpan di `users.tier`). Menentukan feature limits via `tier_features`.
 - **Subscription tier**: `premium_monthly` | `premium_yearly` (disimpan di `subscriptions.tier`). Hanya beda harga/period, BUKAN limits. Harga dari wrangler vars `PREMIUM_PRICE_MONTHLY` / `PREMIUM_PRICE_YEARLY`.
-- **Unique code**: `amount_due = amount × 10000 + unique_code`, range `0001–9999`.
+- **Unique code**: `amount_due = amount + unique_code`, range `001–999`. `amount_due` tidak bisa di-decompose — baca `amount` & `unique_code` dari kolom DB.
 - **Idempotency order_id**: `payments(order_id)` unik per `app_id`. Gagal duplicate → 409.
 - **Password reset**: pakai tabel `password_reset_tokens` (bukan `email_verifications`).
 - **Email verification**: pakai tabel `email_verifications`.

@@ -28,7 +28,7 @@ describe('signCallbackPayload', () => {
   });
 
   it('cocok dengan HMAC-SHA256 manual via Web Crypto', async () => {
-    const payload = '{"order_id":"ord_42","amount":1500000001}';
+    const payload = '{"order_id":"ord_42","amount":150001}';
     const secret = 'callback-secret';
 
     const expected = await signCallbackPayload(payload, secret);

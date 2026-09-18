@@ -32,7 +32,7 @@ const devVarsTemplate = () =>
     'GOOGLE_CLIENT_SECRET=dummy-client-secret',
     'GOOGLE_REDIRECT_URI=http://localhost:7001/auth/google/callback',
     'OCR_CONFIDENCE_THRESHOLD=85',
-    'MAX_UNIQUE_CODE=9999',
+    'MAX_UNIQUE_CODE=999',
     'PROOF_RETENTION_DAYS=30',
     'ADMIN_EMAILS=admin@bits.co.id',
     // Origin dev tambahan untuk CORS (dashboard :7003/:7004 + akses via IP LAN).

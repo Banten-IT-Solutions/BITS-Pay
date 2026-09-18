@@ -2,6 +2,7 @@
 
 export * from './types/index.js';
 export * from './utils/unique-code.js';
+export * from './utils/format.js';
 export {
   hashPassword,
   verifyPassword,

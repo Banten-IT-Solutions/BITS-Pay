@@ -22,8 +22,8 @@ export const chargeSchema = z.object({
   amount: z
     .number()
     .int()
-    .min(100, 'Amount minimal Rp 100')
-    .max(1_000_000_000, 'Amount maksimal Rp 1.000.000.000'),
+    .min(100, 'Amount minimal 100')
+    .max(1_000_000_000, 'Amount maksimal 1.000.000.000'),
   currency: z.string().default('IDR'),
   description: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
@@ -50,7 +50,7 @@ export class PaymentService {
       `SELECT unique_code FROM payments WHERE status = 'pending' AND expired_at > datetime('now')`,
     ).all<{ unique_code: number }>();
     const usedCodeNumbers = (usedCodes ?? []).map((r) => r.unique_code);
-    const maxCode = parseInt(env.MAX_UNIQUE_CODE, 10) || 9999;
+    const maxCode = parseInt(env.MAX_UNIQUE_CODE, 10) || 999;
 
     const expireMinutes = parseInt(env.TRANSACTION_EXPIRE_MINUTES, 10) || 15;
     const expiredAt = dbTime(new Date(Date.now() + expireMinutes * 60 * 1000));

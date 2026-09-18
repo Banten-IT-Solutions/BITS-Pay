@@ -6,7 +6,7 @@
   import Button from '../components/ui/Button.svelte';
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
-  import type { OcrConfig } from '@bits-pay/shared';
+  import { formatAmount, type OcrConfig } from '@bits-pay/shared';
 
   interface EmailTemplates {
     verify: string;
@@ -166,7 +166,7 @@
               <span class="text-neutral-400">Provider</span>
               <span>{testResult.provider}</span>
               <span class="text-neutral-400">Nominal</span>
-              <span class="font-semibold">Rp {testResult.amount.toLocaleString('id-ID')}</span>
+              <span class="font-semibold">{formatAmount(testResult.amount)}</span>
               <span class="text-neutral-400">Confidence</span>
               <span>{testResult.confidence}%</span>
               <span class="text-neutral-400">Merchant</span>

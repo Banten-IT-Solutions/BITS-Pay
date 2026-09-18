@@ -63,7 +63,7 @@ describe('TesseractVpsOcr', () => {
     it('kembalikan OcrResult sesuai payload VPS', async () => {
       mockFetch(
         jsonResponse({
-          amount: 1500000001,
+          amount: 150001,
           confidence: 92,
           merchant: 'Toko ABC',
           raw_text: 'Toko ABC\nTotal 150.000',
@@ -74,7 +74,7 @@ describe('TesseractVpsOcr', () => {
       const result = await ocr.extractReceipt('QkFTRTY0');
 
       expect(result).toEqual({
-        amount: 1500000001,
+        amount: 150001,
         confidence: 92,
         merchant: 'Toko ABC',
         rawText: 'Toko ABC\nTotal 150.000',

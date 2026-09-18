@@ -8,7 +8,7 @@
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
-  import type { Payment } from '@bits-pay/shared';
+  import { formatAmount, type Payment } from '@bits-pay/shared';
 
   let items = $state<Payment[]>([]);
   let proofUrls = $state<Record<string, string>>({});
@@ -82,7 +82,7 @@
           </div>
           <div class="flex justify-between">
             <span class="text-neutral-400">Amount</span>
-            <span class="font-semibold">Rp {p.amount.toLocaleString('id-ID')}</span>
+            <span class="font-semibold">{formatAmount(p.amount)}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-neutral-400">Amount Due</span>
@@ -91,7 +91,7 @@
           {#if p.ocr_amount !== null}
             <div class="flex justify-between">
               <span class="text-neutral-400">OCR Terbaca</span>
-              <span class="font-mono">{p.ocr_amount.toLocaleString('id-ID')}</span>
+              <span class="font-mono">{formatAmount(p.ocr_amount)}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-neutral-400">Confidence</span>

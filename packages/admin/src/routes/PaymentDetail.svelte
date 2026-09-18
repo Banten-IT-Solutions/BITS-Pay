@@ -8,7 +8,7 @@ import { api, proofUrl } from '../lib/api';
   import Button from '../components/ui/Button.svelte';
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
-  import type { Payment } from '@bits-pay/shared';
+  import { formatAmount, type Payment } from '@bits-pay/shared';
 
   let { params } = $props();
   let paymentId = $derived(params?.id || '');
@@ -76,11 +76,11 @@ import { api, proofUrl } from '../lib/api';
         </div>
         <div class="flex justify-between">
           <span class="text-neutral-400">Amount</span>
-          <span class="font-semibold">Rp {payment.amount.toLocaleString('id-ID')}</span>
+          <span class="font-semibold">{formatAmount(payment.amount)}</span>
         </div>
         <div class="flex justify-between">
           <span class="text-neutral-400">Amount Due</span>
-          <span class="font-mono">{payment.amount_due}</span>
+          <span class="font-mono">{formatAmount(payment.amount_due)}</span>
         </div>
         <div class="flex justify-between">
           <span class="text-neutral-400">Status</span>
@@ -128,7 +128,7 @@ import { api, proofUrl } from '../lib/api';
         <div class="space-y-2 text-sm">
           <div class="flex justify-between">
             <span class="text-neutral-400">Terbaca</span>
-            <span class="font-mono">{payment.ocr_amount.toLocaleString('id-ID')}</span>
+            <span class="font-mono">{formatAmount(payment.ocr_amount)}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-neutral-400">Confidence</span>

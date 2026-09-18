@@ -7,6 +7,7 @@
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
+  import { formatAmount } from '@bits-pay/shared';
 
   interface DailyReport {
     day: string;
@@ -98,7 +99,7 @@
     <Card>
       <div class="text-center">
         <p class="text-sm text-neutral-400">Total Revenue</p>
-        <p class="text-3xl font-bold text-success">Rp {totalRevenue.toLocaleString('id-ID')}</p>
+        <p class="text-3xl font-bold text-success">{formatAmount(totalRevenue)}</p>
       </div>
     </Card>
   </div>
@@ -106,7 +107,7 @@
   <Card title="Grafik Revenue per Hari">
     <div class="flex h-48 items-end gap-1">
       {#each report as r}
-        <div class="flex flex-1 flex-col items-center justify-end gap-1" title="{r.day}: Rp {r.revenue.toLocaleString('id-ID')}">
+        <div class="flex flex-1 flex-col items-center justify-end gap-1" title="{r.day}: {formatAmount(r.revenue)}">
           <div class="w-full max-w-10 rounded-t bg-primary-500" style:height="{Math.max(2, (r.revenue / maxRevenue) * 160)}px"></div>
         </div>
       {/each}
@@ -129,7 +130,7 @@
               <tr class="hover:bg-neutral-50">
                 <td class="px-4 py-3">{r.day}</td>
                 <td class="px-4 py-3">{r.count}</td>
-                <td class="px-4 py-3">Rp {r.revenue.toLocaleString('id-ID')}</td>
+                <td class="px-4 py-3">{formatAmount(r.revenue)}</td>
               </tr>
             {/each}
           </tbody>

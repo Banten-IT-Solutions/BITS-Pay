@@ -43,7 +43,7 @@ export class BillingService {
       `SELECT unique_code FROM payments WHERE status = 'pending' AND expired_at > datetime('now')`,
     ).all<{ unique_code: number }>();
     const usedCodeNumbers = (usedCodes ?? []).map((r) => r.unique_code);
-    const maxCode = parseInt(env.MAX_UNIQUE_CODE, 10) || 9999;
+    const maxCode = parseInt(env.MAX_UNIQUE_CODE, 10) || 999;
     const uniqueCode = findAvailableCode(usedCodeNumbers, maxCode);
     if (uniqueCode === null)
       throw AppError.badRequest('no_unique_code', 'Semua kode unik terpakai');

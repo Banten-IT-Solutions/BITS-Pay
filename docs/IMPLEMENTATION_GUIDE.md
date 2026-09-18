@@ -576,7 +576,7 @@ Didefinisikan di `packages/api/wrangler.jsonc`:
 | `JWT_EXPIRES_IN`             | `7d`                                          | JWT expiry                        |
 | `JWT_SECRET`                 | `""`                                          | JWT signing secret (**secret**)   |
 | `OCR_CONFIDENCE_THRESHOLD`   | `85`                                          | Threshold auto-confirm            |
-| `MAX_UNIQUE_CODE`            | `9999`                                        | Max unique code range             |
+| `MAX_UNIQUE_CODE`            | `999`                                         | Max unique code range             |
 | `PROOF_RETENTION_DAYS`       | `30`                                          | Retention bukti bayar             |
 
 ### Env Type Definition
@@ -675,15 +675,15 @@ Request → Hono Router → Middleware (auth, rate-limit)
 
 ### Naming Convention
 
-| Item           | Convention      | Example                                   |
-| -------------- | --------------- | ----------------------------------------- |
-| File route     | `kebab-case.ts` | `signup.ts`, `create-charge.ts`           |
-| Class          | PascalCase      | `AuthService`, `PaymentService`           |
-| Function       | camelCase       | `generateUniqueCode()`, `extractAmount()` |
-| Variable       | camelCase       | `userInput`, `amountDue`                  |
-| DB Table       | snake_case      | `workspace_members`, `tier_features`      |
-| Type           | PascalCase      | `User`, `PaymentStatus`, `ApiResponse<T>` |
-| Enum/file type | PascalCase      | `PaymentStatus`, `MatchResult`            |
+| Item           | Convention      | Example                                       |
+| -------------- | --------------- | --------------------------------------------- |
+| File route     | `kebab-case.ts` | `signup.ts`, `create-charge.ts`               |
+| Class          | PascalCase      | `AuthService`, `PaymentService`               |
+| Function       | camelCase       | `calculateAmountDue()`, `findAvailableCode()` |
+| Variable       | camelCase       | `userInput`, `amountDue`                      |
+| DB Table       | snake_case      | `workspace_members`, `tier_features`          |
+| Type           | PascalCase      | `User`, `PaymentStatus`, `ApiResponse<T>`     |
+| Enum/file type | PascalCase      | `PaymentStatus`, `MatchResult`                |
 
 ---
 

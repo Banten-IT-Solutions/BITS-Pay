@@ -8,7 +8,7 @@
   import Button from '../components/ui/Button.svelte';
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
-  import type { Payment, PaymentConfirmResponse } from '@bits-pay/shared';
+  import { formatAmount, type Payment, type PaymentConfirmResponse } from '@bits-pay/shared';
 
   let { params } = $props();
   let paymentId = $derived(params?.id || '');
@@ -84,11 +84,11 @@
         </div>
         <div class="flex justify-between text-sm">
           <span class="text-neutral-400">Amount</span>
-          <span class="font-semibold">Rp {payment.amount.toLocaleString('id-ID')}</span>
+          <span class="font-semibold">{formatAmount(payment.amount)}</span>
         </div>
         <div class="flex justify-between text-sm">
           <span class="text-neutral-400">Amount Due</span>
-          <span class="font-mono">{payment.amount_due}</span>
+          <span class="font-mono">{formatAmount(payment.amount_due)}</span>
         </div>
         <div class="flex justify-between text-sm">
           <span class="text-neutral-400">Kode Unik</span>
@@ -128,7 +128,7 @@
         <div class="space-y-2 text-sm">
           <div class="flex justify-between">
             <span class="text-neutral-400">Terbaca</span>
-            <span class="font-mono">{payment.ocr_amount.toLocaleString('id-ID')}</span>
+            <span class="font-mono">{formatAmount(payment.ocr_amount)}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-neutral-400">Confidence</span>
@@ -161,7 +161,7 @@
               value={userAmount}
               oninput={(e) => userAmount = (e.target as HTMLInputElement).value}
               class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
-              placeholder="Contoh: 1500000001"
+              placeholder="Contoh: 150001"
               required
             />
           </div>

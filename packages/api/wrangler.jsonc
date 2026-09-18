@@ -54,7 +54,7 @@
     "JWT_EXPIRES_IN": "7d",
     "ADMIN_EMAILS": "",
     "OCR_CONFIDENCE_THRESHOLD": "85",
-    "MAX_UNIQUE_CODE": "9999",
+    "MAX_UNIQUE_CODE": "999",
     "PROOF_RETENTION_DAYS": "30",
   },
 }

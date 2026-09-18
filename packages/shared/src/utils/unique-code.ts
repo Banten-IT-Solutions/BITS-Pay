@@ -1,28 +1,19 @@
 // BITS Pay — Unique Code Utilities
-// amount_due = amount × 10000 + unique_code (range: 0001–9999)
+// amount_due = amount + unique_code (range: 001–999)
+// Catatan: amount_due tidak bisa di-decompose balik (penjumlahan ambigu).
+// Selalu baca amount & unique_code dari kolom DB, jangan extract dari amount_due.
 
 export function calculateAmountDue(amount: number, uniqueCode: number): number {
-  return amount * 10000 + uniqueCode;
-}
-
-export function extractAmount(amountDue: number): number {
-  return Math.floor(amountDue / 10000);
-}
-
-export function extractUniqueCode(amountDue: number): number {
-  return amountDue % 10000;
+  return amount + uniqueCode;
 }
 
 /**
  * Cari kode unik yang available dari transaksi pending yang belum expired.
  * @param usedCodes - Array kode yang sedang dipakai transaksi pending
- * @param maxCode - Kode maksimal (default 9999)
+ * @param maxCode - Kode maksimal (default 999)
  * @returns Kode unik yang available, atau null jika penuh
  */
-export function findAvailableCode(
-  usedCodes: number[],
-  maxCode = 9999,
-): number | null {
+export function findAvailableCode(usedCodes: number[], maxCode = 999): number | null {
   if (usedCodes.length >= maxCode) return null;
 
   const usedSet = new Set(usedCodes);
