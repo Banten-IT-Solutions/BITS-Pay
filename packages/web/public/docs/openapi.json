@@ -463,7 +463,8 @@
           "amount": {
             "type": "integer",
             "minimum": 100,
-            "description": "Nominal transaksi dalam Rupiah (sebelum kode unik). Minimal 100.",
+            "maximum": 1000000000,
+            "description": "Nominal transaksi dalam Rupiah (sebelum kode unik). Minimal 100, maksimal 1.000.000.000.",
             "example": 150000
           },
           "currency": {
@@ -478,7 +479,7 @@
           "metadata": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Data tambahan bebas (disimpan sebagai JSON string)."
+            "description": "Data tambahan bebas (disimpan sebagai JSON string). Maksimal 4KB ter-serialisasi."
           }
         }
       },
