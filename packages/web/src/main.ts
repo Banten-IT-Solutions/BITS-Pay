@@ -20,6 +20,18 @@ menu?.querySelectorAll('a').forEach((a) => {
   });
 });
 
+// Theme switcher — persist ke localStorage.
+const html = document.documentElement;
+document.getElementById('theme-toggle')?.addEventListener('click', () => {
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  try {
+    localStorage.setItem('bits-theme', next);
+  } catch {
+    /* private mode */
+  }
+});
+
 // Modal
 function openModal(id: string) {
   document.getElementById(id)!.style.display = 'flex';
