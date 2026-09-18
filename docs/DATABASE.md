@@ -265,20 +265,25 @@ CREATE TABLE tier_features (
   tier TEXT PRIMARY KEY CHECK(tier IN ('free','premium')),
   max_workspaces INTEGER DEFAULT 1,
   max_apps INTEGER DEFAULT 1,
-  max_transactions_month INTEGER DEFAULT 100,
+  max_transactions_month INTEGER DEFAULT 300,
   max_transactions_per_day INTEGER DEFAULT 10,
   api_rate_limit INTEGER DEFAULT 10,
   callback_allowed INTEGER DEFAULT 0,
   callback_retry_count INTEGER DEFAULT 0,
-  report_export INTEGER DEFAULT 0,
-  priority_review INTEGER DEFAULT 0,
   max_team_members INTEGER DEFAULT 1
 );
 
 INSERT INTO tier_features VALUES
-  ('free', 1, 1, 100, 10, 10, 0, 0, 0, 0, 1),
-  ('premium', 3, 5, 10000, 500, 100, 1, 3, 1, 1, 5);
+  ('free', 1, 1, 300, 10, 10, 0, 0, 1),
+  ('premium', 1, 3, 3000, 100, 100, 1, 3, 5);
 ```
+
+> **Trial & downgrade (tanpa tabel tambahan):**
+> trial = `users.tier='premium'` + `tier_expires_at` terisi + tanpa subscription aktif
+> (`TierService.TRIAL_DAYS = 14`, diisi saat signup email/Google).
+> Turun tier (cron `expireAndDowngrade`, cancel, admin) → `TierService.downgradeToFree`:
+> tier free + workspace/apps berlebih `is_active=0` (tertua dipertahankan, key beku 401).
+> Naik tier → `TierService.reactivateAll` menyalakan semuanya kembali.
 
 ### config
 

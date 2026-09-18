@@ -138,23 +138,25 @@ export class PaymentService {
     return payment;
   }
 
+  // Kuota transaksi milik AKUN (flat sharing semua workspace + apps milik user),
+  // bukan per workspace / per app. Unit billing = akun.
   private static async checkQuota(env: Env, workspaceId: string): Promise<void> {
     const owner = await env.DB.prepare(
-      'SELECT u.tier FROM workspaces w JOIN users u ON u.id = w.user_id WHERE w.id = ?',
+      'SELECT u.id AS user_id, u.tier FROM workspaces w JOIN users u ON u.id = w.user_id WHERE w.id = ?',
     )
       .bind(workspaceId)
-      .first<{ tier: UserTier }>();
+      .first<{ user_id: string; tier: UserTier }>();
     const features = await TierService.getTierFeatures(env, owner?.tier ?? 'free');
 
     const today = await env.DB.prepare(
-      "SELECT COUNT(*) as c FROM payments WHERE workspace_id = ? AND (type IS NULL OR type = 'payment') AND date(created_at) = date('now')",
+      "SELECT COUNT(*) as c FROM payments p JOIN workspaces w ON w.id = p.workspace_id WHERE w.user_id = ? AND (p.type IS NULL OR p.type = 'payment') AND date(p.created_at) = date('now')",
     )
-      .bind(workspaceId)
+      .bind(owner?.user_id ?? '')
       .first<{ c: number }>();
     const month = await env.DB.prepare(
-      "SELECT COUNT(*) as c FROM payments WHERE workspace_id = ? AND (type IS NULL OR type = 'payment') AND strftime('%Y-%m', created_at) = strftime('%Y-%m','now')",
+      "SELECT COUNT(*) as c FROM payments p JOIN workspaces w ON w.id = p.workspace_id WHERE w.user_id = ? AND (p.type IS NULL OR p.type = 'payment') AND strftime('%Y-%m', p.created_at) = strftime('%Y-%m','now')",
     )
-      .bind(workspaceId)
+      .bind(owner?.user_id ?? '')
       .first<{ c: number }>();
 
     if ((today?.c ?? 0) >= features.max_transactions_per_day) {
@@ -343,28 +345,20 @@ export class PaymentService {
     paidAt: string | null,
   ): Promise<void> {
     if (!payment.app_id) return;
-    const app = await env.DB.prepare('SELECT callback_url FROM apps WHERE id = ?')
-      .bind(payment.app_id)
-      .first<{ callback_url: string | null }>();
-    if (!app?.callback_url) return;
-    await CallbackService.enqueueCallback(
-      env,
-      payment.id,
-      payment.app_id,
-      app.callback_url,
+    // Gate: app beku / tier tanpa callback → tidak kirim.
+    const callbackUrl = await CallbackService.resolveTarget(env, payment.app_id);
+    if (!callbackUrl) return;
+    await CallbackService.enqueueCallback(env, payment.id, payment.app_id, callbackUrl, event, {
       event,
-      {
-        event,
-        transaction: {
-          id: payment.id,
-          order_id: payment.order_id,
-          amount: payment.amount,
-          amount_due: payment.amount_due,
-          status: event === 'payment.success' ? 'success' : 'failed',
-          paid_at: paidAt,
-        },
+      transaction: {
+        id: payment.id,
+        order_id: payment.order_id,
+        amount: payment.amount,
+        amount_due: payment.amount_due,
+        status: event === 'payment.success' ? 'success' : 'failed',
+        paid_at: paidAt,
       },
-    );
+    });
   }
 
   static async listPayments(

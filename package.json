@@ -4,20 +4,18 @@
   "description": "QRIS payment gateway untuk aplikasi kamu",
   "private": true,
   "license": "MIT",
+  "packageManager": "pnpm@12.4.2",
   "engines": {
     "node": ">=24"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "dev": "npm run dev -w packages/api",
-    "dev:web": "npm run dev -w packages/web",
+    "dev": "pnpm --filter @bits-pay/api dev",
+    "dev:web": "pnpm --filter @bits-pay/web dev",
     "dev:setup": "node scripts/setup-local.mjs",
-    "dev:all:run": "concurrently -k -n api,web,user,admin -c blue,green,yellow,magenta \"npm run dev -w packages/api -- --local --port 5173 --ip 0.0.0.0\" \"npm run dev -w packages/web -- --host 0.0.0.0 --port 5174 --strictPort\" \"npm run dev -w packages/user -- --host 0.0.0.0 --port 5175 --strictPort\" \"npm run dev -w packages/admin -- --host 0.0.0.0 --port 5176 --strictPort\"",
-    "dev:all": "npm run dev:setup && npm run dev:all:run",
-    "build": "npm run build -w packages/shared && npm run build -w packages/api",
-    "build:all": "npm run build && npm run build -w packages/web && npm run build -w packages/user && npm run build -w packages/admin",
+    "dev:all:run": "concurrently -k -n api,web,user,admin -c blue,green,yellow,magenta \"pnpm --filter @bits-pay/api dev --local --port ${API_PORT:-7001} --ip ${HOST:-0.0.0.0}\" \"pnpm --filter @bits-pay/web dev --host ${HOST:-0.0.0.0} --port ${WEB_PORT:-7002} --strictPort\" \"pnpm --filter @bits-pay/user dev --host ${HOST:-0.0.0.0} --port ${USER_PORT:-7003} --strictPort\" \"pnpm --filter @bits-pay/admin dev --host ${HOST:-0.0.0.0} --port ${ADMIN_PORT:-7004} --strictPort\"",
+    "dev:all": "pnpm dev:setup && pnpm dev:all:run",
+    "build": "pnpm --filter @bits-pay/shared build && pnpm --filter @bits-pay/api build",
+    "build:all": "pnpm build && pnpm --filter @bits-pay/web build && pnpm --filter @bits-pay/user build && pnpm --filter @bits-pay/admin build",
     "lint": "eslint --no-error-on-unmatched-pattern --pass-on-no-patterns packages/api/src packages/shared/src",
     "lint:fix": "eslint --fix --no-error-on-unmatched-pattern --pass-on-no-patterns packages/api/src packages/shared/src",
     "format": "prettier --write .",
@@ -27,8 +25,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "prepare": "husky",
-    "deploy:api": "wrangler deploy --config packages/api/wrangler.jsonc",
-    "deploy:web": "wrangler deploy --config packages/web/wrangler.jsonc"
+    "deploy:api": "pnpm --filter @bits-pay/api deploy",
+    "deploy:web": "pnpm --filter @bits-pay/web exec wrangler deploy"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

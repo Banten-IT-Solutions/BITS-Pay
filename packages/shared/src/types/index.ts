@@ -30,6 +30,13 @@ export interface User {
 
 export type UserPublic = Pick<User, 'id' | 'email' | 'name' | 'avatar_url' | 'tier' | 'status'>;
 
+// Profil diri (/auth/me): UserPublic + sisa masa premium + flag trial.
+// Trial = tier premium TANPA subscription aktif (lihat TierService.TRIAL_DAYS).
+export interface UserMe extends UserPublic {
+  tier_expires_at: string | null;
+  is_trial: boolean;
+}
+
 export interface UserSignupInput {
   email: string;
   password: string;
@@ -359,8 +366,6 @@ export interface TierFeatures {
   api_rate_limit: number;
   callback_allowed: number; // 0 | 1
   callback_retry_count: number;
-  report_export: number; // 0 | 1
-  priority_review: number; // 0 | 1
   max_team_members: number;
 }
 

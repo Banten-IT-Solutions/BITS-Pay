@@ -10,6 +10,7 @@ import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { dbTime } from '../lib/time';
 import { QrService } from './qr';
+import { TierService } from './tier';
 
 export const upgradeSchema = z.object({
   tier: z.enum(['premium_monthly', 'premium_yearly']),
@@ -126,11 +127,8 @@ export class BillingService {
       .first<Subscription>();
     if (!updated) throw AppError.internal('Gagal cancel subscription');
 
-    await env.DB.prepare(
-      "UPDATE users SET tier = 'free', tier_expires_at = NULL, updated_at = datetime('now') WHERE id = ?",
-    )
-      .bind(userId)
-      .run();
+    // Cancel = turun ke free + bekukan resource berlebih (Sama seperti expiry).
+    await TierService.downgradeToFree(env, userId);
 
     return updated;
   }

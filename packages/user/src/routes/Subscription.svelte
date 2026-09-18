@@ -9,7 +9,7 @@
   import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import { showToast } from '../lib/toast';
-  import type { Subscription, SubscriptionTier } from '@bits-pay/shared';
+  import type { Subscription, SubscriptionTier, UserMe } from '@bits-pay/shared';
 
   interface UpgradeResponse {
     qr: {
@@ -20,6 +20,7 @@
   }
 
   let sub = $state<Subscription | null>(null);
+  let me = $state<UserMe | null>(null);
   let loading = $state(true);
   let error = $state('');
   let upgrading = $state(false);
@@ -31,7 +32,12 @@
     loading = true;
     error = '';
     try {
-      sub = await api.get<Subscription | null>('/billing/subscriptions/current');
+      const [current, profile] = await Promise.all([
+        api.get<Subscription | null>('/billing/subscriptions/current'),
+        api.get<UserMe>('/auth/me'),
+      ]);
+      sub = current;
+      me = profile;
     } catch (e) {
       error = (e as Error).message || 'Gagal memuat data langganan';
     } finally {
@@ -78,18 +84,16 @@
   const freeFeatures = [
     '1 Workspace',
     '1 Aplikasi per workspace',
-    '100 Transaksi per bulan',
+    '300 Transaksi per bulan',
     '10 req/s rate limit',
     'Callback URL tidak tersedia',
   ];
   const premiumFeatures = [
-    '3 Workspace',
-    '5 Aplikasi per workspace',
-    '10.000 Transaksi per bulan',
+    '1 Workspace',
+    '3 Aplikasi',
+    '3.000 Transaksi per bulan',
     '100 req/s rate limit',
     'Callback URL + retry 3x',
-    'Export laporan CSV',
-    'Prioritas review manual',
     '5 Anggota tim',
   ];
 </script>
@@ -103,8 +107,7 @@
 {:else if error}
   <ErrorState {error} onRetry={load} />
 {:else if sub}
-  <Card title="Langganan Aktif">
-    <div class="space-y-4">
+  <Card title="Langganan Aktif">    <div class="space-y-4">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm text-neutral-400">Tier</p>
@@ -138,6 +141,13 @@
     </div>
   </Card>
 {:else}
+  {#if me?.is_trial && me.tier_expires_at}
+    <div class="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+      Kamu dalam masa <strong>trial premium</strong> sampai
+      <strong>{new Date(me.tier_expires_at).toLocaleDateString('id-ID')}</strong>.
+      Setelah itu akun turun ke Free dan resource berlebih dibekukan.
+    </div>
+  {/if}
   <div class="grid gap-6 lg:grid-cols-2">
     <Card title="Free" subtitle="Cocok untuk mencoba">
       <div class="space-y-4">

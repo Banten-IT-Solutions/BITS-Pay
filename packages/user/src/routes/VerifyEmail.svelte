@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
   import { api } from '../lib/api';
+  import { getQueryParam } from '../lib/query';
   import Card from '../components/ui/Card.svelte';
   import Loading from '../components/ui/Loading.svelte';
   import Button from '../components/ui/Button.svelte';
@@ -10,7 +11,7 @@
   let message = $state('');
 
   onMount(async () => {
-    const token = new URLSearchParams(window.location.search).get('token');
+    const token = getQueryParam('token');
     if (!token) {
       status = 'error';
       message = 'Token verifikasi tidak ditemukan.';

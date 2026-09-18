@@ -9,6 +9,24 @@ import { dbTime } from '../lib/time';
 import { validateCallbackUrl } from '../lib/ssrf';
 
 export class CallbackService {
+  // Gate pengiriman: kembalikan URL hanya jika app aktif DAN tier pemilik
+  // mengizinkan callback. Dipakai semua jalur enqueue (confirm user, confirm/
+  // reject admin, payment expired) supaya user free / app beku tak menerima webhook.
+  static async resolveTarget(env: Env, appId: string): Promise<string | null> {
+    const row = await env.DB.prepare(
+      `SELECT a.callback_url, a.is_active, COALESCE(tf.callback_allowed, 0) AS allowed
+       FROM apps a
+       JOIN workspaces w ON w.id = a.workspace_id
+       JOIN users u ON u.id = w.user_id
+       LEFT JOIN tier_features tf ON tf.tier = u.tier
+       WHERE a.id = ?`,
+    )
+      .bind(appId)
+      .first<{ callback_url: string | null; is_active: number; allowed: number }>();
+    if (!row?.callback_url || !row.is_active || !row.allowed) return null;
+    return row.callback_url;
+  }
+
   static async enqueueCallback(
     env: Env,
     paymentId: string,

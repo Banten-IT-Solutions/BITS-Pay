@@ -293,15 +293,13 @@ CREATE TABLE IF NOT EXISTS tier_features (
   api_rate_limit INTEGER DEFAULT 10,
   callback_allowed INTEGER DEFAULT 0 CHECK(callback_allowed IN (0,1)),
   callback_retry_count INTEGER DEFAULT 0,
-  report_export INTEGER DEFAULT 0 CHECK(report_export IN (0,1)),
-  priority_review INTEGER DEFAULT 0 CHECK(priority_review IN (0,1)),
   max_team_members INTEGER DEFAULT 1
 );
 
-INSERT INTO tier_features (tier, max_workspaces, max_apps, max_transactions_month, max_transactions_per_day, api_rate_limit, callback_allowed, callback_retry_count, report_export, priority_review, max_team_members)
+INSERT INTO tier_features (tier, max_workspaces, max_apps, max_transactions_month, max_transactions_per_day, api_rate_limit, callback_allowed, callback_retry_count, max_team_members)
 VALUES
-  ('free', 1, 1, 100, 10, 10, 0, 0, 0, 0, 1),
-  ('premium', 3, 5, 10000, 500, 100, 1, 3, 1, 1, 5);
+  ('free', 1, 1, 300, 10, 10, 0, 0, 1),
+  ('premium', 1, 3, 3000, 100, 100, 1, 3, 5);
 
 -- ============================================================
 -- CONFIG

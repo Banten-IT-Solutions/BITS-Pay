@@ -19,8 +19,6 @@
     'api_rate_limit',
     'callback_allowed',
     'callback_retry_count',
-    'report_export',
-    'priority_review',
     'max_team_members',
   ];
 
@@ -32,8 +30,6 @@
     api_rate_limit: 'Rate Limit API (req/s)',
     callback_allowed: 'Callback Diizinkan (0/1)',
     callback_retry_count: 'Maks Retry Callback',
-    report_export: 'Export Laporan (0/1)',
-    priority_review: 'Review Prioritas (0/1)',
     max_team_members: 'Max Anggota Tim',
   };
 
@@ -45,8 +41,6 @@
     api_rate_limit: '',
     callback_allowed: '',
     callback_retry_count: '',
-    report_export: '',
-    priority_review: '',
     max_team_members: '',
   };
 

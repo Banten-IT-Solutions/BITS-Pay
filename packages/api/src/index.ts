@@ -52,9 +52,13 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
       const { results: expiredPayments } = await env.DB.prepare(
         `SELECT p.id, p.app_id, a.callback_url, p.order_id, p.amount, p.amount_due
          FROM payments p
-         LEFT JOIN apps a ON a.id = p.app_id
+         JOIN apps a ON a.id = p.app_id
+         JOIN workspaces w ON w.id = a.workspace_id
+         JOIN users u ON u.id = w.user_id
+         JOIN tier_features tf ON tf.tier = u.tier
          WHERE p.status = 'expired' AND p.callback_queued = 0
-         AND p.app_id IS NOT NULL AND a.callback_url IS NOT NULL`,
+         AND p.app_id IS NOT NULL AND a.callback_url IS NOT NULL
+         AND a.is_active = 1 AND tf.callback_allowed = 1`,
       ).all<{
         id: string;
         app_id: string;

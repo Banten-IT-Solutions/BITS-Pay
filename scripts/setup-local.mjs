@@ -23,18 +23,21 @@ const devVarsTemplate = () =>
     'JWT_EXPIRES_IN=7d',
     // QRIS static test payload (merchant test, bukan produksi)
     'QRIS_STATIC=00020101021126640012ID.CO.BITS.WWW01189360091200008080240215BITS-PAY-TEST5204000053033605802ID5914BITS Pay Test6007Banten61053630062070703A016304',
-    'APP_URL=http://localhost:5174',
+    'APP_URL=http://localhost:7002',
     'FROM_EMAIL=noreply@pay.bits.co.id',
     'TRANSACTION_EXPIRE_MINUTES=15',
     'PREMIUM_PRICE_MONTHLY=50000',
     'PREMIUM_PRICE_YEARLY=500000',
     'GOOGLE_CLIENT_ID=dummy-client-id',
     'GOOGLE_CLIENT_SECRET=dummy-client-secret',
-    'GOOGLE_REDIRECT_URI=http://localhost:5173/auth/google/callback',
+    'GOOGLE_REDIRECT_URI=http://localhost:7001/auth/google/callback',
     'OCR_CONFIDENCE_THRESHOLD=85',
     'MAX_UNIQUE_CODE=9999',
     'PROOF_RETENTION_DAYS=30',
     'ADMIN_EMAILS=admin@bits.co.id',
+    // Origin dev tambahan untuk CORS (dashboard :7003/:7004 + akses via IP LAN).
+    // Tambahkan IP LAN mesinmu bila berubah, mis: ,http://192.168.1.10:7002,...
+    'CORS_ORIGINS=http://localhost:7003,http://localhost:7004',
     '',
   ].join('\n');
 
@@ -59,7 +62,7 @@ if (!existsSync(devVarsPath)) {
 for (const pkg of ['web', 'user', 'admin']) {
   const envPath = join(root, `packages/${pkg}/.env`);
   if (!existsSync(envPath)) {
-    writeFileSync(envPath, 'VITE_API_URL=http://localhost:5173\n');
+    writeFileSync(envPath, 'VITE_API_URL=http://localhost:7001\n');
     log(`buat packages/${pkg}/.env`);
   } else {
     log(`packages/${pkg}/.env OK, skip`);
@@ -68,7 +71,7 @@ for (const pkg of ['web', 'user', 'admin']) {
 
 // --- 3. D1 migrations lokal ---
 log('apply D1 migrations (--local)...');
-execFileSync('npx', ['wrangler', 'd1', 'migrations', 'apply', 'DB', '--local'], {
+execFileSync('pnpm', ['exec', 'wrangler', 'd1', 'migrations', 'apply', 'DB', '--local'], {
   cwd: join(root, 'packages/api'),
   stdio: 'inherit',
 });

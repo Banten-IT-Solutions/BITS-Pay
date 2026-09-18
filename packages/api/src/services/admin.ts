@@ -4,6 +4,7 @@ import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { CallbackService } from './callback';
 import { SubscriptionService } from './subscription';
+import { TierService } from './tier';
 import { AuditService } from './audit';
 
 export const updateUserSchema = z.object({
@@ -136,15 +137,13 @@ export class AdminService {
     await SubscriptionService.activateFromInvoice(env, paymentId);
 
     if (payment.app_id) {
-      const app = await env.DB.prepare('SELECT id, callback_url FROM apps WHERE id = ?')
-        .bind(payment.app_id)
-        .first<{ id: string; callback_url: string | null }>();
-      if (app?.callback_url) {
+      const callbackUrl = await CallbackService.resolveTarget(env, payment.app_id);
+      if (callbackUrl) {
         await CallbackService.enqueueCallback(
           env,
           paymentId,
           payment.app_id,
-          app.callback_url,
+          callbackUrl,
           'payment.success',
           {
             event: 'payment.success',
@@ -187,15 +186,13 @@ export class AdminService {
     });
 
     if (payment.app_id) {
-      const app = await env.DB.prepare('SELECT id, callback_url FROM apps WHERE id = ?')
-        .bind(payment.app_id)
-        .first<{ id: string; callback_url: string | null }>();
-      if (app?.callback_url) {
+      const callbackUrl = await CallbackService.resolveTarget(env, payment.app_id);
+      if (callbackUrl) {
         await CallbackService.enqueueCallback(
           env,
           paymentId,
           payment.app_id,
-          app.callback_url,
+          callbackUrl,
           'payment.failed',
           {
             event: 'payment.failed',
@@ -254,6 +251,15 @@ export class AdminService {
     )
       .bind(tier, status, name, userId)
       .first<UserPublic>();
+    if (!updated) throw AppError.internal('Gagal update user');
+
+    // Perubahan tier manual ikut aturan yang sama: free → bekukan berlebih,
+    // premium → aktifkan kembali.
+    if (input.tier === 'free' && user.tier !== 'free') {
+      await TierService.downgradeToFree(env, userId);
+    } else if (input.tier === 'premium' && user.tier !== 'premium') {
+      await TierService.reactivateAll(env, userId);
+    }
     if (!updated) throw AppError.internal('Gagal update user');
 
     await AuditService.log(env, {

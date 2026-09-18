@@ -1,5 +1,6 @@
 import type { Payment, Invoice } from '@bits-pay/shared';
 import type { Env } from '../config';
+import { TierService } from './tier';
 import { EmailService } from './email';
 import { EmailTemplateService } from './email-template';
 
@@ -35,6 +36,8 @@ export class SubscriptionService {
     )
       .bind(invoice.period_end, invoice.user_id)
       .run();
+    // Upgrade = akses penuh kembali (termasuk resource yang sempat dibekukan).
+    await TierService.reactivateAll(env, invoice.user_id);
   }
 
   static async expireAndDowngrade(env: Env): Promise<void> {
@@ -42,9 +45,13 @@ export class SubscriptionService {
       "UPDATE subscriptions SET status = 'expired', updated_at = datetime('now') WHERE status = 'active' AND current_period_end < datetime('now')",
     ).run();
 
-    await env.DB.prepare(
-      "UPDATE users SET tier = 'free', tier_expires_at = NULL, updated_at = datetime('now') WHERE tier = 'premium' AND tier_expires_at IS NOT NULL AND tier_expires_at < datetime('now')",
-    ).run();
+    // Trial maupun subscription yang habis → free + bekukan resource berlebih.
+    const { results } = await env.DB.prepare(
+      "SELECT id FROM users WHERE tier = 'premium' AND tier_expires_at IS NOT NULL AND tier_expires_at < datetime('now')",
+    ).all<{ id: string }>();
+    for (const u of (results ?? []) as { id: string }[]) {
+      await TierService.downgradeToFree(env, u.id);
+    }
   }
 
   static async sendInvoiceReminders(env: Env): Promise<void> {

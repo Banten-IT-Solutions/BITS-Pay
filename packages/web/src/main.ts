@@ -1,6 +1,8 @@
 import './style.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.pay.bits.co.id';
+// VITE_API_URL wajib diisi saat build produksi. Fallback = host yang sama + port
+// default API dev (7001), supaya akses via IP LAN tetap jalan tanpa edit .env.
+const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:7001`;
 
 // Nav toggle
 const toggle = document.querySelector<HTMLButtonElement>('#nav-toggle')!;

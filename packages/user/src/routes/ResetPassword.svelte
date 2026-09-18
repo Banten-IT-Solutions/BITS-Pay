@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
   import { api } from '../lib/api';
+  import { getQueryParam } from '../lib/query';
   import { showToast } from '../lib/toast';
   import Card from '../components/ui/Card.svelte';
   import Button from '../components/ui/Button.svelte';
@@ -13,7 +14,7 @@
   let error = $state('');
 
   onMount(() => {
-    token = new URLSearchParams(window.location.search).get('token') ?? '';
+    token = getQueryParam('token') ?? '';
     if (!token) error = 'Token reset tidak ditemukan.';
   });
 

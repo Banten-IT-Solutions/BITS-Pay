@@ -134,21 +134,21 @@ export default {
 
 ```bash
 #!/bin/sh
-npx lint-staged
+pnpm exec lint-staged
 ```
 
 ### commit-msg
 
 ```bash
 #!/bin/sh
-npx --no -- commitlint --edit $1
+pnpm exec commitlint --edit $1
 ```
 
 ### pre-push
 
 ```bash
 #!/bin/sh
-npm test
+pnpm test
 ```
 
 ## 9. GitHub Actions
@@ -168,34 +168,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
-      - run: npm ci
-      - run: npx eslint packages/api/src packages/shared/src
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec eslint packages/api/src packages/shared/src
 
   type-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
-      - run: npm ci
-      - run: npx tsc --noEmit
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit
 
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
-      - run: npm ci
-      - run: npx vitest run --reporter=verbose
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vitest run --reporter=verbose
 ```
 
 ### Deploy API — deploy-api.yml (push ke main, path api/)
@@ -215,13 +218,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build -w packages/shared
-      - run: npm run build -w packages/api
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @bits-pay/shared build
+      - run: pnpm --filter @bits-pay/api build
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
@@ -248,14 +252,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build -w packages/web
-      - run: npm run build -w packages/user
-      - run: npm run build -w packages/admin
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @bits-pay/web build
+      - run: pnpm --filter @bits-pay/user build
+      - run: pnpm --filter @bits-pay/admin build
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
@@ -308,9 +313,9 @@ updates:
 ```json
 {
   "scripts": {
-    "dev": "wrangler dev",
-    "build": "npm run build -w packages/shared && npm run build -w packages/api",
-    "build:all": "npm run build && npm run build -w packages/web && npm run build -w packages/user && npm run build -w packages/admin",
+    "dev": "pnpm --filter @bits-pay/api dev",
+    "build": "pnpm --filter @bits-pay/shared build && pnpm --filter @bits-pay/api build",
+    "build:all": "pnpm build && pnpm --filter @bits-pay/web build && pnpm --filter @bits-pay/user build && pnpm --filter @bits-pay/admin build",
     "lint": "eslint packages/api/src packages/shared/src",
     "lint:fix": "eslint --fix packages/api/src packages/shared/src",
     "format": "prettier --write .",
@@ -320,9 +325,9 @@ updates:
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "prepare": "husky",
-    "commit": "git add . && npx cz",
-    "deploy:api": "wrangler deploy --config packages/api/wrangler.jsonc",
-    "deploy:web": "wrangler deploy --config packages/web/wrangler.jsonc"
+    "commit": "git add . && pnpm exec cz",
+    "deploy:api": "pnpm --filter @bits-pay/api deploy",
+    "deploy:web": "pnpm --filter @bits-pay/web exec wrangler deploy"
   }
 }
 ```
@@ -372,8 +377,8 @@ trim_trailing_whitespace = false
 
 ```bash
 # Init project
-npm init -y
-npm install -D \
+pnpm init
+pnpm add -D -w \
   eslint typescript-eslint @eslint/js \
   prettier \
   husky lint-staged \
@@ -381,12 +386,12 @@ npm install -D \
   vitest
 
 # Init husky
-npx husky init
+pnpm exec husky init
 
 # Setup hooks
-echo "npx lint-staged" > .husky/pre-commit
-echo "npx --no -- commitlint --edit \$1" > .husky/commit-msg
-echo "npm test" > .husky/pre-push
+echo "pnpm exec lint-staged" > .husky/pre-commit
+echo "pnpm exec commitlint --edit \$1" > .husky/commit-msg
+echo "pnpm test" > .husky/pre-push
 chmod +x .husky/pre-commit .husky/commit-msg .husky/pre-push
 
 # Init commitlint

@@ -23,4 +23,6 @@ export interface Env {
   PROOF_RETENTION_DAYS: string;
   // Comma-separated email admin, mis: "a@x.com,b@y.com"
   ADMIN_EMAILS: string;
+  // Origin tambahan untuk CORS (comma-separated, opsional). APP_URL selalu diizinkan.
+  CORS_ORIGINS?: string;
 }

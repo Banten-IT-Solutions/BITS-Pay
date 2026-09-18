@@ -4,6 +4,7 @@
   import { api } from '../lib/api';
   import { showToast } from '../lib/toast';
   import Card from '../components/ui/Card.svelte';
+  import Badge from '../components/ui/Badge.svelte';
   import Button from '../components/ui/Button.svelte';
   import Input from '../components/ui/Input.svelte';
   import Modal from '../components/ui/Modal.svelte';
@@ -113,7 +114,10 @@
         <Card>
           <div class="flex items-start justify-between">
             <div>
-              <h3 class="font-semibold text-neutral-900">{app.name}</h3>
+              <div class="flex items-center gap-2">
+                <h3 class="font-semibold text-neutral-900">{app.name}</h3>
+                <Badge status={app.is_active ? 'active' : 'inactive'} />
+              </div>
               <p class="mt-1 text-xs font-mono text-neutral-400">{app.api_key_prefix}...</p>
               {#if app.callback_url}
                 <p class="mt-1 text-xs text-neutral-400">Callback: {app.callback_url}</p>

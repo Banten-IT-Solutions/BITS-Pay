@@ -6,39 +6,39 @@ QRIS payment gateway untuk aplikasi kamu. Convert QRIS static → dynamic, auto-
 
 ```bash
 # 1. Install dependencies
-npm install
+pnpm install
 
 # 2. Setup lokal (buat .dev.vars, .env, jalanin D1 migrations)
-npm run dev:setup
+pnpm dev:setup
 
 # 3. Jalankan semua service (API + 3 frontend)
-npm run dev:all
+pnpm dev:all
 ```
 
 | Service                  | Port | URL                   |
 | ------------------------ | ---- | --------------------- |
-| API (Hono Workers)       | 5173 | http://localhost:5173 |
-| Landing page (Web)       | 5174 | http://localhost:5174 |
-| User dashboard (Svelte)  | 5175 | http://localhost:5175 |
-| Admin dashboard (Svelte) | 5176 | http://localhost:5176 |
+| API (Hono Workers)       | 7001 | http://localhost:7001 |
+| Landing page (Web)       | 7002 | http://localhost:7002 |
+| User dashboard (Svelte)  | 7003 | http://localhost:7003 |
+| Admin dashboard (Svelte) | 7004 | http://localhost:7004 |
 
-> Semua SPA di-root `packages/{web,user,admin}/.env` punya `VITE_API_URL=http://localhost:5173`.
+> Semua SPA di-root `packages/{web,user,admin}/.env` punya `VITE_API_URL=http://localhost:7001`.
 
 ## Scripts
 
-| Script                | Fungsi                                                 |
-| --------------------- | ------------------------------------------------------ |
-| `npm run dev`         | API worker saja (port 5173)                            |
-| `npm run dev:all`     | Setup + run semua service (concurrently)               |
-| `npm run dev:all:run` | Run semua service tanpa setup ulang                    |
-| `npm run dev:setup`   | Setup idempotent lokal (dev vars, .env, D1 migrations) |
-| `npm run build`       | Build shared + api                                     |
-| `npm run build:all`   | Build semua package                                    |
-| `npm run type-check`  | TypeScript check (tsc --noEmit)                        |
-| `npm run lint`        | ESLint                                                 |
-| `npm test`            | Vitest (20 test, 4 files)                              |
-| `npm run deploy:api`  | Deploy API worker ke Cloudflare                        |
-| `npm run deploy:web`  | Deploy landing page worker ke Cloudflare               |
+| Script             | Fungsi                                                 |
+| ------------------ | ------------------------------------------------------ |
+| `pnpm dev`         | API worker saja (port 7001)                            |
+| `pnpm dev:all`     | Setup + run semua service (concurrently)               |
+| `pnpm dev:all:run` | Run semua service tanpa setup ulang                    |
+| `pnpm dev:setup`   | Setup idempotent lokal (dev vars, .env, D1 migrations) |
+| `pnpm build`       | Build shared + api                                     |
+| `pnpm build:all`   | Build semua package                                    |
+| `pnpm type-check`  | TypeScript check (tsc --noEmit)                        |
+| `pnpm lint`        | ESLint                                                 |
+| `pnpm test`        | Vitest (20 test, 4 files)                              |
+| `pnpm deploy:api`  | Deploy API worker ke Cloudflare                        |
+| `pnpm deploy:web`  | Deploy landing page worker ke Cloudflare               |
 
 ## Local Development
 
@@ -46,24 +46,24 @@ Semua dev server bind `0.0.0.0` — bisa diakses dari LAN/testing.
 
 ```bash
 # Setup awal (cukup sekali)
-npm run dev:setup
+pnpm dev:setup
 
 # Start semua service
-npm run dev:all
+pnpm dev:all
 
 # Atau satu per satu
-npm run dev              # API only
-npm run dev -w packages/web   # Landing page only
-npm run dev -w packages/user  # User dashboard only
-npm run dev -w packages/admin # Admin dashboard only
+pnpm dev              # API only
+pnpm --filter @bits-pay/web dev   # Landing page only
+pnpm --filter @bits-pay/user dev  # User dashboard only
+pnpm --filter @bits-pay/admin dev # Admin dashboard only
 ```
 
 ## Testing
 
 ```bash
-npm test                    # Semua test
-npm run test:watch          # Watch mode
-npm run test:coverage       # Coverage report
+pnpm test                    # Semua test
+pnpm test:watch          # Watch mode
+pnpm test:coverage       # Coverage report
 ```
 
 Test files:

@@ -1,6 +1,8 @@
 import type { ApiResponse } from '@bits-pay/shared';
 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.pay.bits.co.id';
+// VITE_API_URL wajib diisi saat build produksi. Fallback = host yang sama + port
+// default API dev (7001), supaya akses via IP LAN tetap jalan tanpa edit .env.
+export const BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:7001`;
 
 export class ApiError extends Error {
   code: string;

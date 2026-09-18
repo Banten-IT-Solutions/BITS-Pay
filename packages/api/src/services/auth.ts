@@ -10,6 +10,7 @@ import {
 import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 import { dbTime } from '../lib/time';
+import { TierService } from './tier';
 import { EmailService } from './email';
 import { EmailTemplateService } from './email-template';
 
@@ -46,14 +47,15 @@ export class AuthService {
     const passwordHash = await hashPassword(input.password);
     const token = generateToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    // Akun baru langsung trial premium (tanpa kartu kredit).
+    const trialEndsAt = new Date(
+      Date.now() + TierService.TRIAL_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
     // batch = atomik: user + token verifikasi masuk bersama, tidak ada user yatim.
     await env.DB.batch([
-      env.DB.prepare('INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)').bind(
-        id,
-        input.email,
-        passwordHash,
-        input.name,
-      ),
+      env.DB.prepare(
+        'INSERT INTO users (id, email, password_hash, name, tier, tier_expires_at) VALUES (?, ?, ?, ?, ?, ?)',
+      ).bind(id, input.email, passwordHash, input.name, 'premium', trialEndsAt),
       env.DB.prepare(
         'INSERT INTO email_verifications (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
       ).bind(crypto.randomUUID(), id, token, expiresAt),
@@ -332,10 +334,13 @@ export class AuthService {
 
     // 3) Akun baru — email dari Google dianggap terverifikasi.
     const id = crypto.randomUUID();
+    const trialEndsAt = new Date(
+      Date.now() + TierService.TRIAL_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
     const user = await env.DB.prepare(
-      'INSERT INTO users (id, email, name, avatar_url, google_id, email_verified) VALUES (?, ?, ?, ?, ?, 1) RETURNING id',
+      'INSERT INTO users (id, email, name, avatar_url, google_id, email_verified, tier, tier_expires_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?) RETURNING id',
     )
-      .bind(id, email, googleUser.name, googleUser.picture, googleUser.id)
+      .bind(id, email, googleUser.name, googleUser.picture, googleUser.id, 'premium', trialEndsAt)
       .first<{ id: string }>();
     if (!user) throw AppError.internal('Gagal membuat user');
 
