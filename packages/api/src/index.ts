@@ -94,6 +94,22 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
 
       await SubscriptionService.expireAndDowngrade(env);
       await SubscriptionService.sendInvoiceReminders(env);
+
+      // Retensi bukti transfer: hapus file R2 lebih tua dari PROOF_RETENTION_DAYS
+      // (default 30 hari). proof_hash dibiarkan untuk deteksi duplikat.
+      const retentionDays = parseInt(env.PROOF_RETENTION_DAYS, 10) || 30;
+      const { results: oldProofs } = await env.DB.prepare(
+        `SELECT id, proof_path FROM payments
+         WHERE proof_path IS NOT NULL
+         AND created_at < datetime('now', '-' || ? || ' days')
+         LIMIT 100`,
+      )
+        .bind(retentionDays)
+        .all<{ id: string; proof_path: string }>();
+      for (const p of oldProofs ?? []) {
+        await env.R2.delete(p.proof_path);
+        await env.DB.prepare('UPDATE payments SET proof_path = NULL WHERE id = ?').bind(p.id).run();
+      }
     })(),
   );
 }

@@ -8,12 +8,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/common.css" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script>
+      // Theme init — sebelum paint, cegah flash. Prioritas: localStorage > system.
       (function () {
         try {
           const s = localStorage.getItem('bits-theme');
@@ -37,152 +38,256 @@
   </head>
   <body>
     <nav class="navbar">
-      <div class="container">
-        <div class="nav-row">
-          <a href="/" class="nav-logo">BITS Pay</a>
+      <div class="container nav-container">
+        <a href="/" class="nav-logo"
+          ><svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="#e0272f" stroke-width="3.5" />
+            <rect x="8" y="8" width="8" height="8" rx="2" fill="#e0272f" /></svg
+          >BITS Pay</a
+        >
+        <div id="nav-menu" class="nav-menu">
           <div class="nav-links">
-            <a href="/docs/">API Docs</a>
-            <a href="/terms" class="active">Syarat &amp; Ketentuan</a>
-            <button
-              class="theme-switch"
-              onclick="toggleTheme()"
-              aria-label="Ganti tema terang/gelap"
-              title="Ganti tema"
-            >
-              <svg
-                class="icon-sun"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="4" />
-                <path
-                  d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
-                />
-              </svg>
-              <svg
-                class="icon-moon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-              </svg>
-            </button>
+            <a href="/#cara-kerja" class="nav-link">Cara Kerja</a>
+            <a href="/#fitur" class="nav-link">Fitur</a>
+            <a href="/#harga" class="nav-link">Harga</a>
+            <a href="/docs/" class="nav-link">Docs</a>
           </div>
+        </div>
+        <div class="nav-end">
+          <button
+            class="theme-switch"
+            onclick="toggleTheme()"
+            aria-label="Ganti tema terang/gelap"
+            title="Ganti tema"
+          >
+            <svg
+              class="icon-sun"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+              />
+            </svg>
+            <svg
+              class="icon-moon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+          <button
+            id="nav-toggle"
+            class="nav-toggle"
+            aria-label="Toggle menu"
+            aria-expanded="false"
+            aria-controls="nav-menu"
+          >
+            <span></span><span></span><span></span>
+          </button>
         </div>
       </div>
     </nav>
 
     <main class="page">
+      <span class="section-kicker">legal</span>
       <h1>Syarat &amp; Ketentuan</h1>
-      <p class="updated">Terakhir diperbarui: [TANGGAL]</p>
-      <div class="callout warn">
-        <strong>Draft internal.</strong> Konten di bawah menunggu persetujuan tim legal sebelum
-        rilis publik.
-      </div>
+      <p class="updated">Terakhir diperbarui: 18 September 2026</p>
+      <p>
+        Dengan mendaftar atau memakai BITS Pay, kamu menyetujui syarat &amp; ketentuan ini. BITS Pay
+        adalah layanan payment gateway QRIS dinamis yang dioperasikan oleh Banten IT Solutions.
+      </p>
 
       <h2>1. Layanan</h2>
       <p>
-        BITS Pay menyediakan payment gateway QRIS dinamis dengan verifikasi OCR. Kamu berhak memakai
-        layanan sesuai akun, workspace, dan tier yang kamu miliki.
+        BITS Pay menyediakan QRIS dinamis dengan verifikasi bukti transfer otomatis (OCR) dan
+        notifikasi webhook ke aplikasimu. Kamu berhak memakai layanan sesuai akun, workspace, dan
+        tier yang kamu miliki.
       </p>
 
-      <h2>2. Akun, Workspace &amp; Application</h2>
+      <h2>2. Akun, Workspace &amp; Aplikasi</h2>
       <ul>
         <li>
-          Satu akun = satu akun bisnis. Batas workspace, aplikasi (app), dan anggota tim ditentukan
-          oleh tier (<code>free</code> vs <code>premium</code>).
+          Satu akun mewakili satu bisnis. Batas workspace, aplikasi (app), dan anggota tim
+          ditentukan oleh tier (<code>free</code> atau <code>premium</code>).
         </li>
         <li>
-          API key (<code>sk_...</code>) bersifat rahasia &amp; hanya tampil sekali. Rotasi key wajib
-          jika dicurigai bocor.
+          API key (<code>sk_...</code>) bersifat rahasia dan hanya ditampilkan sekali saat dibuat.
+          Simpan dengan aman; rotasi key segera jika dicurigai bocor.
         </li>
         <li>
-          Akun yang turun tier akan <strong>membekukan</strong> workspace/aplikasi berlebih (tidak
-          dihapus), dan API key-nya tidak aktif.
+          Kamu bertanggung jawab atas semua aktivitas yang terjadi melalui akun dan API key-mu.
+        </li>
+        <li>
+          Akun yang turun tier akan membekukan workspace/aplikasi yang melebihi batas (tidak
+          dihapus); API key milik app yang dibekukan tidak dapat dipakai sampai tier dipulihkan.
         </li>
       </ul>
 
       <h2>3. Trial &amp; Langganan</h2>
       <ul>
-        <li>Akun baru mendapat <strong>trial premium 14 hari</strong> tanpa kartu kredit.</li>
-        <li><code>free</code>: 300 transaksi/bulan, 1 workspace, 1 app, tanpa callback webhook.</li>
         <li>
-          <code>premium</code>: 3.000 transaksi/bulan, 1 workspace, 3 app, callback + retry 3x, 5
-          anggota tim.
+          Akun baru mendapat <strong>trial premium 14 hari</strong>. Setelah trial berakhir tanpa
+          berlangganan, akun turun ke tier <code>free</code>.
         </li>
         <li>
-          Langganan premium <code>premium_monthly</code>/<code>premium_yearly</code> ditagih dulu,
-          masa layanan berjalan sesuai periode terbayar.
+          <code>free</code>: 300 transaksi/bulan, 1 workspace, 1 app, 10 request/detik, tanpa
+          callback webhook.
+        </li>
+        <li>
+          <code>premium</code>: 3.000 transaksi/bulan, 1 workspace, 3 app, 100 request/detik,
+          callback webhook + retry 3×, hingga 5 anggota tim.
+        </li>
+        <li>
+          Langganan premium (<code>premium_monthly</code>/<code>premium_yearly</code>) ditagih di
+          muka; masa layanan berjalan sesuai periode yang terbayar dan tidak diperpanjang otomatis
+          tanpa pembayaran.
+        </li>
+        <li>
+          Pembayaran langganan yang sudah masuk tidak dapat dikembalikan (non-refundable), kecuali
+          diwajibkan oleh hukum.
         </li>
       </ul>
 
       <h2>4. Pembayaran &amp; Transaksi</h2>
       <ul>
         <li>
-          <code>amount_due = amount + kode_unik</code>; kode unik dipakai membedakan pembayaran.
+          Setiap transaksi memakai kode unik: <code>amount_due = amount + kode_unik</code>.
+          Pelangganmu wajib membayar sesuai nominal <code>amount_due</code> agar terverifikasi
+          otomatis.
         </li>
         <li>
-          Kuota transaksi dihitung flat per akun (sharing semua workspace/app), reset tiap bulan.
+          Kuota transaksi dihitung flat per akun (dibagi semua workspace/app) dan reset setiap awal
+          bulan.
         </li>
-        <li>Verifikasi transfer memakai OCR; jika ragu, transaksi masuk <em>review manual</em>.</li>
         <li>
-          Kami tidak menampung dana: BITS Pay hanya menjembatani verifikasi &amp; notifikasi
-          pembayaran ke aplikasimu.
+          Verifikasi memakai OCR atas bukti transfer yang diunggah; transaksi yang meragukan masuk
+          antrean <em>review manual</em> oleh tim kami.
         </li>
+        <li>
+          <strong>Kami tidak menampung dana.</strong> Dana pembayaran langsung masuk ke rekening
+          QRIS merchant-mu; BITS Pay hanya menjembatani verifikasi dan notifikasi.
+        </li>
+        <li>Sengketa transaksi antara kamu dan pelangganmu adalah tanggung jawabmu sepenuhnya.</li>
       </ul>
 
       <h2>5. Penggunaan yang Dilarang</h2>
       <ul>
-        <li>Aktivitas ilegal, penipuan, atau melanggar hukum yang berlaku.</li>
-        <li>Menyalahgunakan API rate limit atau mencoba menerobos keamanan sistem.</li>
+        <li>Aktivitas ilegal, penipuan, pencucian uang, atau melanggar hukum yang berlaku.</li>
+        <li>
+          Menyalahgunakan API di luar batas rate limit, mencoba menerobos keamanan, atau mengganggu
+          integritas layanan.
+        </li>
+        <li>Memalsukan bukti transfer atau memanipulasi hasil verifikasi.</li>
         <li>Memakai layanan untuk merugikan pihak lain.</li>
       </ul>
 
-      <h2>6. Batasan Tanggung Jawab</h2>
+      <h2>6. Ketersediaan &amp; Batasan Tanggung Jawab</h2>
       <p>
-        BITS Pay berusaha menjaga ketersediaan layanan, namun tidak menjamin bebas gangguan. Kamu
-        bertanggung jawab atas integrasi dan kebenaran data yang kamu kirim.
+        Kami berusaha menjaga layanan tetap tersedia, namun tidak menjamin bebas gangguan. Sejauh
+        diizinkan hukum, BITS Pay tidak bertanggung jawab atas kerugian tidak langsung (kehilangan
+        keuntungan, data, atau peluang) yang timbul dari penggunaan layanan. Kamu bertanggung jawab
+        atas integrasi dan kebenaran data yang kamu kirim melalui API.
       </p>
 
       <h2>7. Penghentian</h2>
       <p>
-        Kami dapat menunda atau menutup akun atas pelanggaran syarat ini. Kamu dapat menghapus akun
-        kapan pun.
+        Kami dapat menunda atau menutup akun yang melanggar syarat ini, dengan atau tanpa
+        pemberitahuan terlebih dahulu untuk pelanggaran berat. Kamu dapat berhenti memakai layanan
+        dan meminta penghapusan akun kapan pun melalui email kontak di bawah.
       </p>
 
-      <h2>8. Kontak</h2>
-      <p>Pertanyaan: <a href="mailto:hello@bits.co.id">hello@bits.co.id</a></p>
+      <h2>8. Perubahan Syarat</h2>
+      <p>
+        Syarat ini dapat diperbarui sewaktu-waktu. Perubahan material akan diumumkan melalui email
+        atau dashboard sebelum berlaku. Pemakaian berlanjut setelah perubahan berarti kamu
+        menyetujui versi terbaru.
+      </p>
+
+      <h2>9. Hukum yang Berlaku</h2>
+      <p>
+        Syarat &amp; ketentuan ini tunduk pada hukum Republik Indonesia. Sengketa diselesaikan
+        secara musyawarah terlebih dahulu.
+      </p>
+
+      <h2>10. Kontak</h2>
+      <p>Pertanyaan tentang syarat ini: <a href="mailto:admin@bits.co.id">admin@bits.co.id</a></p>
     </main>
 
     <footer class="footer">
-      <div class="container">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <strong>BITS Pay</strong>
-            <p>QRIS payment gateway untuk aplikasi kamu.</p>
-          </div>
-          <div class="footer-col">
-            <h4>Produk</h4>
-            <a href="/docs/">Dokumentasi</a>
-            <a href="/privacy">Kebijakan Privasi</a>
-            <a href="/terms">Syarat &amp; Ketentuan</a>
-          </div>
-          <div class="footer-col">
-            <h4>Perusahaan</h4>
-            <a href="https://bits.co.id">Banten IT Solutions</a>
-            <a href="mailto:hello@bits.co.id">Kontak</a>
-          </div>
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <strong
+            ><svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect
+                x="2"
+                y="2"
+                width="20"
+                height="20"
+                rx="5.5"
+                stroke="#e0272f"
+                stroke-width="3.5"
+              />
+              <rect x="8" y="8" width="8" height="8" rx="2" fill="#e0272f" /></svg
+            >BITS Pay</strong
+          >
+          <p>QRIS payment gateway untuk aplikasi kamu.</p>
         </div>
-        <p class="footer-copyright">&copy; 2026 Banten IT Solutions. All rights reserved.</p>
+        <nav class="footer-nav" aria-label="Navigasi footer">
+          <a href="/#cara-kerja">Cara Kerja</a>
+          <a href="/#fitur">Fitur</a>
+          <a href="/#harga">Harga</a>
+          <a href="/docs/">Dokumentasi</a>
+          <a href="mailto:admin@bits.co.id">Kontak</a>
+          <a href="/privacy">Privasi</a>
+          <a href="/terms">Syarat</a>
+        </nav>
+      </div>
+      <div class="container footer-bottom">
+        <p class="footer-copyright">
+          &copy; 2026 BITS Pay &mdash; Developed with
+          <span class="heart">&#10084;&#xFE0E;</span> by
+          <a class="footer-co" href="https://bits.co.id">Banten IT Solutions</a>
+        </p>
       </div>
     </footer>
+
+    <script>
+      // Nav mobile toggle + elevasi pill saat scroll (main.ts tidak dimuat di halaman statis).
+      (function () {
+        var toggle = document.getElementById('nav-toggle');
+        var menu = document.getElementById('nav-menu');
+        if (toggle && menu) {
+          toggle.addEventListener('click', function () {
+            var open = menu.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', String(open));
+          });
+          menu.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function () {
+              menu.classList.remove('open');
+              toggle.setAttribute('aria-expanded', 'false');
+            });
+          });
+        }
+        var nav = document.querySelector('.navbar');
+        if (nav) {
+          var onScroll = function () {
+            nav.classList.toggle('scrolled', window.scrollY > 8);
+          };
+          window.addEventListener('scroll', onScroll, { passive: true });
+          onScroll();
+        }
+      })();
+    </script>
   </body>
 </html>

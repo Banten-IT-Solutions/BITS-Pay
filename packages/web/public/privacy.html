@@ -8,12 +8,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/common.css" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script>
+      // Theme init — sebelum paint, cegah flash. Prioritas: localStorage > system.
       (function () {
         try {
           const s = localStorage.getItem('bits-theme');
@@ -37,137 +38,223 @@
   </head>
   <body>
     <nav class="navbar">
-      <div class="container">
-        <div class="nav-row">
-          <a href="/" class="nav-logo">BITS Pay</a>
+      <div class="container nav-container">
+        <a href="/" class="nav-logo"
+          ><svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="#e0272f" stroke-width="3.5" />
+            <rect x="8" y="8" width="8" height="8" rx="2" fill="#e0272f" /></svg
+          >BITS Pay</a
+        >
+        <div id="nav-menu" class="nav-menu">
           <div class="nav-links">
-            <a href="/docs/">API Docs</a>
-            <a href="/privacy" class="active">Kebijakan Privasi</a>
-            <button
-              class="theme-switch"
-              onclick="toggleTheme()"
-              aria-label="Ganti tema terang/gelap"
-              title="Ganti tema"
-            >
-              <svg
-                class="icon-sun"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="4" />
-                <path
-                  d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
-                />
-              </svg>
-              <svg
-                class="icon-moon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-              </svg>
-            </button>
+            <a href="/#cara-kerja" class="nav-link">Cara Kerja</a>
+            <a href="/#fitur" class="nav-link">Fitur</a>
+            <a href="/#harga" class="nav-link">Harga</a>
+            <a href="/docs/" class="nav-link">Docs</a>
           </div>
+        </div>
+        <div class="nav-end">
+          <button
+            class="theme-switch"
+            onclick="toggleTheme()"
+            aria-label="Ganti tema terang/gelap"
+            title="Ganti tema"
+          >
+            <svg
+              class="icon-sun"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+              />
+            </svg>
+            <svg
+              class="icon-moon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+          <button
+            id="nav-toggle"
+            class="nav-toggle"
+            aria-label="Toggle menu"
+            aria-expanded="false"
+            aria-controls="nav-menu"
+          >
+            <span></span><span></span><span></span>
+          </button>
         </div>
       </div>
     </nav>
 
     <main class="page">
+      <span class="section-kicker">legal</span>
       <h1>Kebijakan Privasi</h1>
-      <p class="updated">Terakhir diperbarui: [TANGGAL]</p>
-      <div class="callout warn">
-        <strong>Draft internal.</strong> Konten di bawah menunggu persetujuan tim legal sebelum
-        rilis publik.
-      </div>
+      <p class="updated">Terakhir diperbarui: 18 September 2026</p>
+      <p>
+        Kebijakan ini menjelaskan data apa yang dikumpulkan BITS Pay (dioperasikan Banten IT
+        Solutions), bagaimana kami memakainya, dan hakmu atas data tersebut.
+      </p>
 
       <h2>1. Data yang Kami Kumpulkan</h2>
-      <p>BITS Pay mengumpulkan data yang kamu berikan saat mendaftar dan memakai layanan:</p>
       <ul>
-        <li>Identitas akun: nama, email, dan (opsional) nomor telepon.</li>
+        <li>Identitas akun: nama dan alamat email.</li>
         <li>
-          Data aplikasi &amp; integrasi: workspace, nama app, <code>callback_url</code>, dan API key
-          kamu.
+          Data integrasi: nama workspace, nama aplikasi (app), <code>callback_url</code>, dan API
+          key (disimpan sebagai hash, bukan teks asli).
         </li>
         <li>
-          Data transaksi: jumlah, <code>order_id</code>, status pembayaran QRIS, dan bukti transfer
-          yang kamu unggah untuk verifikasi OCR.
+          Data transaksi: jumlah, kode unik, <code>order_id</code>, status pembayaran, dan bukti
+          transfer yang diunggah untuk verifikasi OCR.
         </li>
-        <li>Data langganan &amp; invoice: tier, periode bayar, dan riwayat invoice.</li>
+        <li>Data langganan: tier, periode pembayaran, dan riwayat invoice.</li>
         <li>
-          Log teknis: alamat IP, waktu akses, dan endpoint yang dipanggil, untuk keamanan &amp;
-          audit.
+          Log teknis: alamat IP, waktu akses, dan endpoint yang dipanggil — untuk keamanan, rate
+          limiting, dan audit.
         </li>
       </ul>
 
       <h2>2. Bagaimana Kami Memakai Data</h2>
       <ul>
         <li>
-          Menjalankan layanan: membuat payment, verifikasi OCR, mengirim callback/webhook ke
+          Menjalankan layanan: membuat transaksi, verifikasi OCR, mengirim callback/webhook ke
           <code>callback_url</code> milikmu.
         </li>
-        <li>Memproses langganan premium dan invoice.</li>
-        <li>Keamanan: mencegah penyalahgunaan, rate-limit, dan audit log.</li>
-        <li>Kepatuhan hukum bila diwajibkan.</li>
+        <li>Mengirim email transaksional: verifikasi email, reset password, invoice.</li>
+        <li>Memproses langganan premium dan penagihan.</li>
+        <li>Keamanan: mencegah penyalahgunaan, pembatasan rate, dan audit internal.</li>
+        <li>Memenuhi kewajiban hukum bila diwajibkan.</li>
       </ul>
-      <p>Kami <strong>tidak menjual</strong> data pribadimu ke pihak ketiga.</p>
+      <p>Kami <strong>tidak menjual</strong> data pribadimu kepada pihak ketiga.</p>
 
       <h2>3. Penyimpanan &amp; Keamanan</h2>
-      <p>
-        Data disimpan di infrastruktur Cloudflare (D1/SQLite). Password di-hash (bcrypt), API key
-        di-hash (SHA-256). Kami menerapkan enkripsi dan akses terbatas untuk melindungi data.
-      </p>
+      <ul>
+        <li>Data disimpan di infrastruktur Cloudflare (Workers, D1, R2).</li>
+        <li>Password di-hash dengan bcrypt; API key di-hash dengan SHA-256.</li>
+        <li>Callback webhook ditandatangani HMAC-SHA256 agar bisa kamu verifikasi.</li>
+        <li>Akses internal ke data dibatasi pada kebutuhan operasional.</li>
+      </ul>
 
       <h2>4. Bukti Transfer (OCR)</h2>
       <p>
-        Bukti transfer yang kamu unggah untuk verifikasi pembayaran digunakan untuk konfirmasi OCR
-        dan disimpan sesuai <code>PROOF_RETENTION_DAYS</code>.
+        Bukti transfer yang diunggah dipakai semata untuk verifikasi pembayaran. File disimpan
+        maksimal <strong>30 hari</strong>, lalu dihapus otomatis.
       </p>
 
       <h2>5. Cookie &amp; Local Storage</h2>
       <p>
-        Dashboard memakai token JWT yang disimpan di <code>localStorage</code> browser kamu untuk
-        sesi login. Landing tidak memakai cookie pelacak pihak ketiga.
+        Kami tidak memakai cookie pelacak atau iklan pihak ketiga. Browser menyimpan preferensi tema
+        dan token sesi dashboard (JWT) di <code>localStorage</code> perangkatmu.
       </p>
 
-      <h2>6. Hak Anda</h2>
+      <h2>6. Pihak Ketiga</h2>
+      <ul>
+        <li><strong>Cloudflare</strong> — infrastruktur komputasi, database, dan penyimpanan.</li>
+        <li>
+          <strong>Penyedia email transaksional</strong> — pengiriman verifikasi, reset password, dan
+          invoice.
+        </li>
+      </ul>
+      <p>Kedua pihak memproses data hanya untuk menyediakan layanan kepada kami.</p>
+
+      <h2>7. Retensi Data</h2>
       <p>
-        Kamu dapat mengakses dan memperbarui data melalui dashboard, meminta penghapusan data, atau
-        menghubungi kami via email di bawah.
+        Data akun dan transaksi disimpan selama akun aktif. Setelah penghapusan akun, data dihapus
+        atau dianonimkan dalam jangka waktu wajar, kecuali yang wajib disimpan oleh hukum.
       </p>
 
-      <h2>7. Kontak</h2>
-      <p>Pertanyaan tentang privasi: <a href="mailto:hello@bits.co.id">hello@bits.co.id</a></p>
+      <h2>8. Hakmu</h2>
+      <p>
+        Kamu dapat mengakses dan memperbarui data melalui dashboard, meminta salinan data, meminta
+        penghapusan akun dan data, atau mengajukan pertanyaan privasi melalui email di bawah.
+      </p>
+
+      <h2>9. Perubahan Kebijakan</h2>
+      <p>
+        Perubahan material akan diumumkan melalui email atau dashboard sebelum berlaku. Versi
+        terbaru selalu tersedia di halaman ini.
+      </p>
+
+      <h2>10. Kontak</h2>
+      <p>Pertanyaan tentang privasi: <a href="mailto:admin@bits.co.id">admin@bits.co.id</a></p>
     </main>
 
     <footer class="footer">
-      <div class="container">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <strong>BITS Pay</strong>
-            <p>QRIS payment gateway untuk aplikasi kamu.</p>
-          </div>
-          <div class="footer-col">
-            <h4>Produk</h4>
-            <a href="/docs/">Dokumentasi</a>
-            <a href="/privacy">Kebijakan Privasi</a>
-            <a href="/terms">Syarat &amp; Ketentuan</a>
-          </div>
-          <div class="footer-col">
-            <h4>Perusahaan</h4>
-            <a href="https://bits.co.id">Banten IT Solutions</a>
-            <a href="mailto:hello@bits.co.id">Kontak</a>
-          </div>
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <strong
+            ><svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect
+                x="2"
+                y="2"
+                width="20"
+                height="20"
+                rx="5.5"
+                stroke="#e0272f"
+                stroke-width="3.5"
+              />
+              <rect x="8" y="8" width="8" height="8" rx="2" fill="#e0272f" /></svg
+            >BITS Pay</strong
+          >
+          <p>QRIS payment gateway untuk aplikasi kamu.</p>
         </div>
-        <p class="footer-copyright">&copy; 2026 Banten IT Solutions. All rights reserved.</p>
+        <nav class="footer-nav" aria-label="Navigasi footer">
+          <a href="/#cara-kerja">Cara Kerja</a>
+          <a href="/#fitur">Fitur</a>
+          <a href="/#harga">Harga</a>
+          <a href="/docs/">Dokumentasi</a>
+          <a href="mailto:admin@bits.co.id">Kontak</a>
+          <a href="/privacy">Privasi</a>
+          <a href="/terms">Syarat</a>
+        </nav>
+      </div>
+      <div class="container footer-bottom">
+        <p class="footer-copyright">
+          &copy; 2026 BITS Pay &mdash; Developed with
+          <span class="heart">&#10084;&#xFE0E;</span> by
+          <a class="footer-co" href="https://bits.co.id">Banten IT Solutions</a>
+        </p>
       </div>
     </footer>
+
+    <script>
+      // Nav mobile toggle + elevasi pill saat scroll (main.ts tidak dimuat di halaman statis).
+      (function () {
+        var toggle = document.getElementById('nav-toggle');
+        var menu = document.getElementById('nav-menu');
+        if (toggle && menu) {
+          toggle.addEventListener('click', function () {
+            var open = menu.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', String(open));
+          });
+          menu.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function () {
+              menu.classList.remove('open');
+              toggle.setAttribute('aria-expanded', 'false');
+            });
+          });
+        }
+        var nav = document.querySelector('.navbar');
+        if (nav) {
+          var onScroll = function () {
+            nav.classList.toggle('scrolled', window.scrollY > 8);
+          };
+          window.addEventListener('scroll', onScroll, { passive: true });
+          onScroll();
+        }
+      })();
+    </script>
   </body>
 </html>

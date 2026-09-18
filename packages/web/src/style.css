@@ -1,56 +1,61 @@
-/* BITS Pay landing — redesign 2026.
-   Dark/light via [data-theme] on <html>, persisted in localStorage,
-   respects prefers-color-scheme. Type: Space Grotesk (display) + Inter
-   (body) + JetBrains Mono (ledger/numbers). */
+/* BITS Pay landing — "Ledger / struk digital".
+   Satu aksen merah QRIS. Radius kecil, border tipis, tanpa gradient warna.
+   Type: IBM Plex Mono (display/angka) + IBM Plex Sans (body).
+   Theme via [data-theme] di <html>. */
 
-/* ── Theme tokens ─────────────────────────────────────────── */
+/* ── Tokens ───────────────────────────────────────────────── */
 :root,
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: oklch(0.975 0.006 255);
-  --bg-elev: oklch(1 0 0);
-  --surface: oklch(0.985 0.006 255);
-  --surface-2: oklch(0.955 0.01 255);
-  --border: oklch(0.92 0.012 255);
-  --border-strong: oklch(0.85 0.02 255);
-  --text: oklch(0.21 0.03 262);
-  --muted: oklch(0.5 0.02 262);
-  --faint: oklch(0.66 0.02 262);
-  --primary: oklch(0.55 0.2 262); /* indigo */
-  --primary-strong: oklch(0.45 0.2 262);
-  --primary-soft: oklch(0.94 0.04 262);
-  --success: oklch(0.66 0.17 155); /* emerald / QRIS-fertig */
-  --warning: oklch(0.78 0.15 80); /* amber / pending */
-  --error: oklch(0.58 0.2 27);
-  --code-bg: oklch(0.16 0.03 262);
-  --code-text: oklch(0.92 0.01 262);
-  --shadow: 0 1px 2px oklch(0 0 0 / 0.05), 0 8px 24px oklch(0 0 0 / 0.06);
-  --shadow-lg: 0 2px 4px oklch(0 0 0 / 0.06), 0 16px 48px oklch(0 0 0 / 0.12);
-  --gradient: linear-gradient(135deg, oklch(0.55 0.2 262), oklch(0.62 0.17 155));
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f2f2f3;
+  --border: #e3e4e7;
+  --border-strong: #c9cbd0;
+  --text: #17181c;
+  --muted: #555a63;
+  --faint: #878c96;
+  --accent: #e0272f;
+  --accent-strong: #ba1e25;
+  --accent-soft: rgba(224, 39, 47, 0.08);
+  --on-accent: #ffffff;
+  --success: #157a3e;
+  --warning: #b45309;
+  --error: #b91c1c;
+  --shadow: 0 1px 2px rgba(20, 22, 26, 0.05), 0 6px 20px rgba(20, 22, 26, 0.06);
+  --shadow-lg: 0 2px 6px rgba(20, 22, 26, 0.07), 0 18px 44px rgba(20, 22, 26, 0.1);
+  --radius: 8px;
+  --radius-lg: 10px;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: oklch(0.145 0.025 262); /* deep ink navy */
-  --bg-elev: oklch(0.185 0.03 262);
-  --surface: oklch(0.195 0.03 262);
-  --surface-2: oklch(0.23 0.035 262);
-  --border: oklch(0.28 0.03 262);
-  --border-strong: oklch(0.36 0.04 262);
-  --text: oklch(0.94 0.008 262);
-  --muted: oklch(0.72 0.02 262);
-  --faint: oklch(0.58 0.02 262);
-  --primary: oklch(0.72 0.15 262);
-  --primary-strong: oklch(0.78 0.15 262);
-  --primary-soft: oklch(0.24 0.06 262);
-  --success: oklch(0.72 0.16 155);
-  --warning: oklch(0.8 0.15 88);
-  --error: oklch(0.68 0.19 27);
-  --code-bg: oklch(0.11 0.02 262);
-  --code-text: oklch(0.92 0.01 262);
-  --shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 8px 24px oklch(0 0 0 / 0.4);
-  --shadow-lg: 0 2px 4px oklch(0 0 0 / 0.5), 0 16px 48px oklch(0 0 0 / 0.5);
-  --gradient: linear-gradient(135deg, oklch(0.72 0.15 262), oklch(0.72 0.16 155));
+  --bg: #0e0f12;
+  --surface: #16181d;
+  --surface-2: #1d2026;
+  --border: #262932;
+  --border-strong: #3b3f49;
+  --text: #ecedef;
+  --muted: #a3a8b1;
+  --faint: #6e737d;
+  --accent: #e0272f;
+  --accent-strong: #f03a42;
+  --accent-soft: rgba(224, 39, 47, 0.14);
+  --on-accent: #ffffff;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.45), 0 18px 44px rgba(0, 0, 0, 0.5);
+}
+
+/* Terminal panel: selalu gelap di kedua tema. */
+:root {
+  --term-bg: #101216;
+  --term-border: #272a33;
+  --term-text: #d7d9df;
+  --term-muted: #878c98;
+  --term-faint: #5c616c;
 }
 
 *,
@@ -66,32 +71,45 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   transition:
-    background-color 0.3s,
-    color 0.3s;
+    background-color 0.25s,
+    color 0.25s;
 }
 
 a {
-  color: var(--primary);
+  color: var(--accent);
   text-decoration: none;
 }
 a:hover {
-  color: var(--primary-strong);
+  color: var(--accent-strong);
 }
 img {
   max-width: 100%;
 }
-
-.mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+code {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
 }
-.display {
-  font-family: 'Space Grotesk', 'Inter', sans-serif;
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .container {
@@ -106,47 +124,47 @@ img {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 0.9rem;
   font-weight: 600;
   border: 1px solid transparent;
   cursor: pointer;
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s,
-    background 0.15s,
-    color 0.15s;
-  font-family: 'Inter', sans-serif;
   white-space: nowrap;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .btn:active {
   transform: translateY(1px);
 }
 .btn-lg {
-  padding: 0.85rem 1.75rem;
-  font-size: 0.975rem;
+  padding: 0.8rem 1.6rem;
+  font-size: 0.95rem;
 }
 .btn-block {
   width: 100%;
 }
 .btn-primary {
-  background: var(--primary);
-  color: oklch(0.99 0 0);
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 999px;
 }
 .btn-primary:hover {
-  background: var(--primary-strong);
-  color: oklch(0.99 0 0);
-  box-shadow: 0 4px 16px color-mix(in oklch, var(--primary) 45%, transparent);
+  background: var(--accent-strong);
+  color: var(--on-accent);
 }
 .btn-secondary {
   background: var(--surface);
   color: var(--text);
-  border-color: var(--border);
+  border-color: var(--border-strong);
 }
 .btn-secondary:hover {
-  border-color: var(--border-strong);
   background: var(--surface-2);
+  border-color: var(--faint);
 }
 .btn-ghost {
   background: transparent;
@@ -154,76 +172,169 @@ img {
 }
 .btn-ghost:hover {
   color: var(--text);
-  background: var(--surface);
+  background: var(--surface-2);
+}
+.btn-on-accent {
+  background: #ffffff;
+  color: #ba1e25;
+  border-radius: 999px;
+}
+.btn-on-accent:hover {
+  background: #f3f3f4;
+  color: #ba1e25;
 }
 
-/* ── Navbar ───────────────────────────────────────────────── */
+/* ── Navbar: floating pill ────────────────────────────────── */
 .navbar {
   position: sticky;
-  top: 0;
+  top: 0.75rem;
   z-index: 100;
-  background: color-mix(in oklch, var(--bg) 82%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
 }
 .nav-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 4rem;
   gap: 1rem;
+  width: calc(100% - 2rem);
+  padding: 0.4rem 0.5rem 0.4rem 1.15rem;
+  background: color-mix(in srgb, var(--bg) 76%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+/* Overlay elevation — satu-satunya shadow non-artefak yang diizinkan. */
+.navbar.scrolled .nav-container {
+  border-color: var(--border-strong);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.09);
 }
 .nav-logo {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.3rem;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  letter-spacing: -0.01em;
+  gap: 0.55rem;
+  letter-spacing: -0.02em;
+  flex: none;
 }
-.nav-logo .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background: var(--gradient);
+.brand-mark {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
 }
 .nav-menu {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin: 0 auto;
 }
 .nav-link {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--muted);
+  padding: 0.38rem 0.85rem;
+  border-radius: 999px;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 .nav-link:hover {
   color: var(--text);
+  background: var(--surface-2);
+}
+/* Scrollspy: section aktif dapat pill highlight. */
+.nav-link.active {
+  color: var(--text);
+  background: var(--surface-2);
 }
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.45rem;
+  flex: none;
+}
+/* Ujung kanan pill: theme toggle + hamburger (mobile). */
+.nav-end {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: none;
+  /* Mobile: nav-menu display:none (keluar flow) — tanpa ini nav-end nempel logo. */
+  margin-left: auto;
+}
+.nav-actions .btn {
+  height: 2rem;
+  padding: 0 1rem;
+  font-size: 0.83rem;
+  border-radius: 999px;
+}
+/* Masuk: outline pill senada dengan theme switcher. */
+.nav-actions .btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.nav-actions .btn-ghost:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text);
+}
+/* Daftar: pill merah, glow tipis supaya footprint optik sama dengan Masuk. */
+.nav-actions .btn-primary {
+  box-shadow: 0 1px 5px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.nav-actions .btn-primary:hover {
+  box-shadow: 0 2px 9px color-mix(in srgb, var(--accent) 32%, transparent);
 }
 .nav-toggle {
   display: none;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 4px;
-  background: none;
-  border: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
-  padding: 0.5rem;
+  flex: none;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.nav-toggle:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
 }
 .nav-toggle span {
   display: block;
-  width: 1.25rem;
+  width: 1rem;
   height: 2px;
-  background: var(--text);
+  background: currentColor;
   border-radius: 1px;
-  transition: 0.3s;
+  transition: 0.25s;
+}
+.nav-toggle[aria-expanded='true'] span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+.nav-toggle[aria-expanded='true'] span:nth-child(2) {
+  opacity: 0;
+}
+.nav-toggle[aria-expanded='true'] span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 /* Theme switcher */
@@ -231,9 +342,9 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 10px;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -261,6 +372,9 @@ img {
 }
 
 @media (max-width: 768px) {
+  .navbar {
+    top: 0.5rem;
+  }
   .nav-toggle {
     display: flex;
   }
@@ -269,23 +383,32 @@ img {
     flex-direction: column;
     align-items: stretch;
     position: absolute;
-    top: 4rem;
-    left: 0;
-    right: 0;
-    background: var(--bg-elev);
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-    gap: 0.25rem;
+    top: calc(100% + 0.5rem);
+    left: 1rem;
+    right: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.5rem;
+    gap: 0.15rem;
+    box-shadow: var(--shadow-lg);
   }
   .nav-menu.open {
     display: flex;
   }
-  .nav-menu .nav-link {
-    padding: 0.6rem 0.2rem;
+  .nav-links {
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0;
+    gap: 0.1rem;
+  }
+  .nav-links .nav-link {
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--radius);
   }
   .nav-actions {
-    margin-top: 0.5rem;
-    padding-top: 0.75rem;
+    margin-top: 0.35rem;
+    padding-top: 0.6rem;
     border-top: 1px solid var(--border);
     flex-wrap: wrap;
   }
@@ -296,137 +419,251 @@ img {
 
 /* ── Hero ─────────────────────────────────────────────────── */
 .hero {
-  padding: 5.5rem 0 4.5rem;
+  padding: 5rem 0 4.5rem;
   position: relative;
   overflow: hidden;
 }
+/* Tekstur dot-grid samar — mengingatkan QR matrix, bukan gradient. */
 .hero::before {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(
-      60rem 30rem at 80% -10%,
-      color-mix(in oklch, var(--primary) 22%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      40rem 24rem at 10% 120%,
-      color-mix(in oklch, var(--success) 12%, transparent),
-      transparent 60%
-    );
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--text) 9%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 26px 26px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 80%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 80%);
   pointer-events: none;
+  animation: hero-drift 32s linear infinite;
+}
+@keyframes hero-drift {
+  to {
+    background-position: 26px 26px;
+  }
 }
 .hero-inner {
   position: relative;
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: 1.05fr 0.95fr;
   align-items: center;
   gap: 3.5rem;
 }
 .eyebrow {
+  display: flex;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.78rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.8rem;
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--primary);
-  background: var(--primary-soft);
-  padding: 0.35rem 0.8rem;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  margin-bottom: 1.25rem;
+  padding: 0.38rem 0.95rem;
+  margin-bottom: 1.4rem;
 }
-.eyebrow::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
+.eyebrow::before,
+.eyebrow::after {
+  content: '//';
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--accent);
+  font-weight: 600;
 }
 .hero-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  font-size: clamp(2rem, 9vw, 3.5rem);
   font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
   margin-bottom: 1.25rem;
-}
-.hero-title .accent {
-  background: var(--gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  max-width: 22ch;
 }
 .hero-subtitle {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--muted);
   margin-bottom: 2rem;
   max-width: 34rem;
 }
-.hero-stats {
-  display: flex;
-  gap: 2.25rem;
-  margin-bottom: 2.25rem;
-  flex-wrap: wrap;
-}
-.stat .stat-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--text);
-}
-.stat .stat-label {
-  font-size: 0.8rem;
-  color: var(--faint);
-}
 .hero-actions {
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.4rem;
   flex-wrap: wrap;
 }
 .hero-footnote {
-  font-size: 0.8rem;
-  color: var(--faint);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.84rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.hero-footnote span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.fn-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  color: var(--success);
+  font-size: 0.6rem;
+  font-weight: 700;
+  flex: none;
+}
+/* CTA hero: glow aksen. */
+.hero-actions .btn-primary {
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.hero-actions .btn-primary:hover {
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 42%, transparent);
 }
 
-/* Hero live payment card */
+/* Jendela checkout ala macOS */
 .hero-visual {
   position: relative;
+  max-width: 420px;
+  justify-self: center;
+  width: 100%;
+  /* Grid item default min-width:auto — min-content badge "Menunggu
+     pembayaran" (nowrap) bisa maksa track lebih lebar dari viewport mobile. */
+  min-width: 0;
 }
-.pay-card {
-  background: var(--bg-elev);
+.window {
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1.5rem;
+  border-radius: 12px;
   box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.3s ease-out;
 }
-.pay-card-head {
+.window-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0.7rem 0.9rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.tl {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+}
+.tl-close {
+  background: #ff5f57;
+}
+.tl-min {
+  background: #febc2e;
+}
+.tl-max {
+  background: #28c840;
+}
+.window-title {
+  margin-left: 0.4rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.window-body {
+  padding: 1.2rem 1.4rem 1rem;
+}
+.checkout-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.25rem;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
 }
-.pay-card-head .label {
-  font-size: 0.72rem;
+.merchant-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.merchant-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex: none;
+}
+.merchant-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+.merchant-name {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.84rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.merchant-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.64rem;
   color: var(--faint);
+  white-space: nowrap;
 }
 .pay-status {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 0.72rem;
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
   color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 32%, transparent);
+  border-radius: 6px;
+  padding: 0.2rem 0.55rem;
+  white-space: nowrap;
+  transition:
+    color 0.3s,
+    background 0.3s,
+    border-color 0.3s;
+}
+/* Status sukses — flip hijau saat demo loop pembayaran terkonfirmasi. */
+.pay-status.success {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 32%, transparent);
+}
+.pay-status.success .pulse {
+  background: var(--success);
+  animation: none;
 }
 .pay-status .pulse {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--warning);
   animation: pulse 1.6s ease-in-out infinite;
@@ -434,104 +671,188 @@ img {
 @keyframes pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in oklch, var(--warning) 50%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--warning) 45%, transparent);
   }
   50% {
     box-shadow: 0 0 0 6px transparent;
   }
 }
-.qr-box {
-  background: white;
-  border-radius: 14px;
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
+/* Stiker QRIS resmi — selalu putih seperti cetakan, di kedua tema. */
+.qris-sticker {
+  position: relative;
+  background: #ffffff;
+  color: #14161a;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem 1.1rem;
+  overflow: hidden;
+  text-align: center;
+}
+.qris-merchant {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+.qris-nmid {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  color: #555;
+  margin-top: 0.15rem;
+}
+.qris-qr {
+  position: relative;
   display: grid;
   place-items: center;
+  margin-top: 0.7rem;
+  padding: 0.35rem 0;
 }
-.qr-box svg {
-  width: 180px;
-  height: 180px;
+/* Chevron merah kiri-kanan QR — ciri stiker QRIS. */
+.qris-qr::before,
+.qris-qr::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 26px;
+  height: 52px;
+  background: #e0272f;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
-.pay-amount {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.7rem;
-  font-weight: 600;
-  text-align: center;
+.qris-qr::before {
+  left: 0.1rem;
+}
+.qris-qr::after {
+  right: 0.1rem;
+  scale: -1 1;
+}
+.qris-qr svg {
+  width: 160px;
+  height: 160px;
+}
+/* Logo merah di tengah QR terangkat dari modul. */
+.qris-qr .qr-logo {
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.35));
+}
+/* Garis scan menyapu QR — feel "aktif menunggu scan". */
+.qris-qr .scan {
+  position: absolute;
+  left: 50%;
+  top: 0.35rem;
+  translate: -50% 0;
+  width: 160px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #e0272f 30%, #e0272f 70%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, #e0272f 55%, transparent);
+  opacity: 0;
+  animation: qr-scan 3.2s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+@keyframes qr-scan {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(152px);
+    opacity: 1;
+  }
+  62%,
+  100% {
+    transform: translateY(152px);
+    opacity: 0;
+  }
+}
+.qris-tagline {
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.25rem;
   letter-spacing: -0.02em;
-  color: var(--text);
+  margin-top: 0.55rem;
 }
-.pay-amount .unit {
-  font-size: 0.9rem;
-  color: var(--faint);
-  font-weight: 500;
+.qris-sub {
+  font-size: 0.62rem;
+  color: #666;
+  margin-top: 0.1rem;
 }
-.pay-unique {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  color: var(--success);
+.odometer {
+  display: inline-flex;
+  color: var(--accent);
+  font-weight: 700;
 }
-.pay-card-foot {
+.odo-col {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  vertical-align: top;
+}
+.odo-stack {
+  display: block;
+  transition: transform 1.9s cubic-bezier(0.16, 0.84, 0.3, 1);
+  will-change: transform;
+}
+.odo-digit {
+  display: block;
+  height: 1em;
+  line-height: 1;
+}
+.window-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--border);
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--border-strong);
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 0.75rem;
   color: var(--faint);
-  font-family: 'JetBrains Mono', monospace;
 }
-.hero-float {
-  position: absolute;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 0.75rem 1rem;
-  box-shadow: var(--shadow);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  display: flex;
+.exp-wrap {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
-.hero-float .tick {
-  color: var(--success);
+.exp-countdown {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-feature-settings: 'tnum';
   font-weight: 700;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.1rem 0.4rem;
 }
-.hero-float.top {
-  top: -0.75rem;
-  left: -1.75rem;
-}
-.hero-float.bot {
-  bottom: -0.75rem;
-  right: -1.5rem;
-  color: var(--success);
+.exp-countdown.urgent {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 @media (max-width: 900px) {
   .hero {
-    padding: 3.5rem 0 3rem;
+    padding: 3.5rem 0 3.5rem;
+  }
+  .section {
+    padding: 3.5rem 0;
   }
   .hero-inner {
     grid-template-columns: 1fr;
-    gap: 2.5rem;
+    gap: 3rem;
   }
-  .hero-float.top {
-    left: 0.5rem;
-  }
-  .hero-float.bot {
-    right: 0.5rem;
+  .hero-title {
+    max-width: none;
   }
 }
 
 /* ── Sections ─────────────────────────────────────────────── */
 .section {
-  padding: 5rem 0;
+  padding: 6rem 0;
 }
 .section-alt {
   background: var(--surface);
@@ -543,182 +864,227 @@ img {
   text-align: center;
 }
 .section-kicker {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--primary);
-  margin-bottom: 0.75rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.34rem 0.85rem;
+  margin-bottom: 0.9rem;
+}
+.section-kicker::before,
+.section-kicker::after {
+  content: '//';
+  color: var(--accent);
+  font-weight: 600;
 }
 .section-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: clamp(1.7rem, 3.4vw, 2.3rem);
-  font-weight: 700;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  font-size: clamp(1.6rem, 3.2vw, 2.2rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.18;
   margin-bottom: 0.75rem;
 }
 .section-desc {
   color: var(--muted);
-  font-size: 1.02rem;
-}
-
-/* Steps — real sequence so numbered markers earn their place */
-.steps-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-}
-.step-card {
-  position: relative;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.5rem 1.25rem;
-}
-.step-card::after {
-  content: '→';
-  position: absolute;
-  top: 1.5rem;
-  right: -0.8rem;
-  color: var(--faint);
   font-size: 1rem;
-  z-index: 2;
-}
-.step-card:last-child::after {
-  display: none;
-}
-.step-num {
-  display: inline-flex;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  font-weight: 700;
-  width: 2rem;
-  height: 2rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  margin-bottom: 1rem;
-}
-.step-card h3 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.06rem;
-  font-weight: 600;
-  margin-bottom: 0.4rem;
-}
-.step-card p {
-  font-size: 0.875rem;
-  color: var(--muted);
 }
 
-@media (max-width: 900px) {
-  .steps-grid {
-    grid-template-columns: repeat(2, 1fr);
+/* ── Cara kerja: terminal log ─────────────────────────────── */
+.terminal {
+  max-width: 56rem;
+  margin: 0 auto;
+  background: var(--term-bg);
+  border: 1px solid var(--term-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--term-border);
+}
+.term-title {
+  margin-left: 0.4rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--term-faint);
+}
+.terminal-log {
+  list-style: none;
+  padding: 0.5rem 0;
+}
+/* Kursor berkedip di akhir log — sistem terasa terus berjalan. */
+.terminal-log::after {
+  content: '_';
+  display: block;
+  padding: 0.1rem 1.2rem 0.45rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--term-muted);
+  animation: cursor-blink 1.1s steps(1) infinite;
+}
+@keyframes cursor-blink {
+  50% {
+    opacity: 0;
   }
-  .step-card::after {
+}
+.terminal-log li {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.4rem;
+  border-bottom: 1px solid var(--term-border);
+}
+.terminal-log li:last-child {
+  border-bottom: 0;
+}
+.log-idx {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  flex: none;
+  padding-top: 0.1rem;
+}
+.log-body {
+  flex: 1;
+}
+.log-body h3 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--term-text);
+  margin-bottom: 0.25rem;
+}
+.log-body p {
+  font-size: 0.86rem;
+  color: var(--term-muted);
+}
+.log-body code {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--term-border);
+  color: var(--term-text);
+}
+.log-tag {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--term-muted);
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid var(--term-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  flex: none;
+  margin-top: 0.15rem;
+}
+.log-tag.ok {
+  color: #4ade80;
+  background: rgb(74 222 128 / 0.1);
+  border-color: rgb(74 222 128 / 0.3);
+}
+
+@media (max-width: 520px) {
+  .terminal-log li {
+    padding: 0.9rem 1rem;
+    gap: 0.75rem;
+  }
+  .log-tag {
     display: none;
   }
 }
-@media (max-width: 520px) {
-  .steps-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
-/* Features — bento grid */
+/* ── Fitur ────────────────────────────────────────────────── */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 1fr;
-  gap: 1rem;
+  gap: 0.8rem;
+  /* Tablet: card wide (span 2) lompat baris — dense isi celah kosong di sampingnya. */
+  grid-auto-flow: dense;
 }
 .feature-card {
-  background: var(--bg-elev);
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  padding: 1.05rem 1.15rem 1.15rem;
   transition:
     border-color 0.2s,
-    transform 0.2s,
     box-shadow 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-.feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--gradient);
-  opacity: 0;
-  transition: opacity 0.2s;
 }
 .feature-card:hover {
   border-color: var(--border-strong);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-.feature-card:hover::before {
-  opacity: 1;
 }
 .feature-card.wide {
   grid-column: span 2;
 }
-.feature-icon {
-  display: inline-flex;
-  width: 2.75rem;
-  height: 2.75rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: var(--primary-soft);
-  font-size: 1.3rem;
-  margin-bottom: 1rem;
-}
-.feature-card h3 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-.feature-card p {
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-.feature-card .mono-detail {
-  margin-top: 1rem;
-  padding: 0.6rem 0.8rem;
-  background: var(--surface-2);
-  border-radius: 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  color: var(--muted);
-  border: 1px solid var(--border);
-}
-.feature-card .code-row {
+/* Ikon + judul satu baris — compact, ritme rapi. */
+.feature-head {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.82rem;
-  color: var(--code-text);
-  background: var(--code-bg);
-  padding: 0.6rem 0.8rem;
-  border-radius: 8px;
-  margin-top: 1rem;
+  gap: 0.65rem;
+  margin-bottom: 0.55rem;
 }
-.feature-card .code-row .ok {
+.feature-icon {
+  display: inline-flex;
+  width: 1.9rem;
+  height: 1.9rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  flex: none;
+}
+.feature-icon svg {
+  width: 17px;
+  height: 17px;
+}
+.feature-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.feature-card p {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+/* Benefit line — hasil nyata untuk user, bukan jargon teknikal. */
+.feature-point {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--border);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.feature-point span {
   color: var(--success);
+  font-size: 0.72rem;
+  flex: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .features-grid {
     grid-template-columns: 1fr 1fr;
+  }
+  .feature-card.wide {
+    grid-column: span 2;
   }
 }
 @media (max-width: 520px) {
@@ -730,81 +1096,66 @@ img {
   }
 }
 
-/* Pricing */
-.pricing-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  font-size: 0.9rem;
-  color: var(--muted);
-  font-weight: 500;
-}
-.pricing-toggle .bill {
-  cursor: pointer;
-  padding: 0.15rem 0.1rem;
-}
-.pricing-toggle .bill.active {
-  color: var(--text);
-  font-weight: 600;
-}
+/* ── Harga ────────────────────────────────────────────────── */
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
-  max-width: 54rem;
+  max-width: 52rem;
   margin: 0 auto;
 }
 .pricing-card {
-  background: var(--bg-elev);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 2rem;
+  border-radius: var(--radius-lg);
+  padding: 1.9rem;
   position: relative;
   display: flex;
   flex-direction: column;
 }
 .pricing-card.featured {
-  border-color: var(--primary);
-  box-shadow: var(--shadow-lg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 .pricing-badge {
   position: absolute;
-  top: -0.8rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--gradient);
-  color: white;
-  padding: 0.25rem 1rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
+  top: -0.7rem;
+  left: 1.9rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 0.18rem 0.7rem;
+  border-radius: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 .pricing-name {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
 }
 .pricing-amount {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 2.2rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--primary);
-  margin-bottom: 0.1rem;
+  line-height: 1.1;
 }
 .pricing-period {
-  font-family: 'Inter', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 0.9rem;
   font-weight: 400;
   color: var(--faint);
 }
 .pricing-desc {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--muted);
   margin: 0.5rem 0 1.25rem;
 }
@@ -812,14 +1163,15 @@ img {
   list-style: none;
   margin-bottom: 1.5rem;
   flex: 1;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
 }
 .pricing-features li {
-  padding: 0.42rem 0;
+  padding: 0.4rem 0;
   font-size: 0.9rem;
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
-  color: var(--text);
 }
 .pricing-features li.disabled {
   color: var(--faint);
@@ -827,131 +1179,198 @@ img {
 .check {
   color: var(--success);
   font-weight: 700;
+  flex: none;
 }
 .cross {
   color: var(--faint);
+  flex: none;
 }
 .pricing-features strong {
   font-weight: 600;
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .pricing-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* CTA */
+/* ── CTA ──────────────────────────────────────────────────── */
 .section-cta {
+  padding-top: 1rem;
+}
+.cta-panel {
   position: relative;
   overflow: hidden;
-}
-.cta-inner {
-  text-align: center;
-  padding: 1rem 0;
-  position: relative;
-}
-.cta-card {
-  max-width: 46rem;
+  max-width: 52rem;
   margin: 0 auto;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  padding: 3rem 1.5rem;
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--radius-lg);
+  padding: 3.5rem 1.5rem;
+  text-align: center;
 }
-.cta-card::before {
+/* Dot-grid drift — gema QR matrix, sama seperti tekstur hero. */
+.cta-panel::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--gradient);
-  opacity: 0.06;
+  background-image: radial-gradient(rgb(255 255 255 / 0.16) 1px, transparent 1.5px);
+  background-size: 24px 24px;
+  animation: cta-drift 16s linear infinite;
+}
+/* Scan beam menyapu panel — gema scan-line di stiker QRIS. */
+.cta-panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 160px;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14), transparent);
+  animation: cta-scan 5s ease-in-out infinite;
+}
+.cta-panel > * {
+  position: relative;
+  z-index: 1;
+}
+@keyframes cta-drift {
+  to {
+    background-position: 24px 24px;
+  }
+}
+@keyframes cta-scan {
+  0% {
+    transform: translateX(-160px);
+  }
+  60%,
+  100% {
+    transform: translateX(calc(52rem + 160px));
+  }
+}
+.cta-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--on-accent);
+  background: rgb(255 255 255 / 0.12);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  padding: 0.34rem 0.85rem;
+  margin-bottom: 0.9rem;
+}
+.cta-kicker::before,
+.cta-kicker::after {
+  content: '//';
+  font-weight: 600;
 }
 .cta-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: clamp(1.7rem, 3.4vw, 2.2rem);
-  font-weight: 700;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  font-size: clamp(1.6rem, 3.2vw, 2.2rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
   margin-bottom: 0.75rem;
 }
 .cta-desc {
-  font-size: 1.06rem;
-  color: var(--muted);
-  margin-bottom: 1.75rem;
+  font-size: 1rem;
+  opacity: 0.88;
+  margin: 0 auto 1.75rem;
   max-width: 32rem;
-  margin-left: auto;
-  margin-right: auto;
 }
 
-/* ── Footer ───────────────────────────────────────────────── */
+/* ── Footer: compact, satu baris + baris legal ────────────── */
 .footer {
-  background: var(--bg-elev);
+  background: var(--surface);
   border-top: 1px solid var(--border);
-  padding: 3.5rem 0 2.5rem;
-  margin-top: 1rem;
+  padding-top: 1.75rem;
 }
 .footer-inner {
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  gap: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.4rem;
 }
 .footer-brand strong {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.2rem;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: var(--text);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-}
-.footer-brand strong .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background: var(--gradient);
+  gap: 0.55rem;
 }
 .footer-brand p {
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   color: var(--muted);
-  margin-top: 0.5rem;
+  margin-top: 0.3rem;
+}
+.footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-wrap: wrap;
+}
+.footer-nav a {
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: var(--muted);
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.footer-nav a:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-top: 1px dashed var(--border);
+  padding-top: 1rem;
+  padding-bottom: 1.1rem;
 }
 .footer-copyright {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--faint);
-  margin-top: 1.25rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'IBM Plex Mono', monospace;
+  text-align: center;
 }
-.footer-links {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+.footer-copyright .heart {
+  color: var(--accent);
 }
-.footer-col h4 {
-  font-size: 0.8rem;
+.footer-co {
+  color: var(--muted);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin-bottom: 0.85rem;
 }
-.footer-col a {
-  display: block;
-  font-size: 0.875rem;
-  color: var(--muted);
-  padding: 0.3rem 0;
-}
-.footer-col a:hover {
+.footer-co:hover {
   color: var(--text);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  /* Mobile & tablet: semua elemen footer center. */
   .footer-inner {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
   }
-  .footer-links {
-    grid-template-columns: repeat(2, 1fr);
+  .footer-brand strong {
+    justify-content: center;
+  }
+  .footer-nav {
+    justify-content: center;
   }
 }
 
@@ -959,18 +1378,19 @@ img {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: color-mix(in oklch, oklch(0 0 0) 55%, transparent);
+  background: rgba(10, 11, 14, 0.55);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 .modal {
-  background: var(--bg-elev);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 2rem;
   width: 100%;
   max-width: 400px;
@@ -979,18 +1399,28 @@ img {
 }
 .modal-close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 0.9rem;
+  right: 0.9rem;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
-  border: none;
-  font-size: 1.5rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 1.4rem;
   cursor: pointer;
   color: var(--faint);
   line-height: 1;
 }
+.modal-close:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
 .modal h2 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.5rem;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  font-size: 1.35rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
 }
@@ -999,53 +1429,86 @@ img {
 }
 .form-group label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 500;
   margin-bottom: 0.375rem;
-  color: var(--text);
 }
 .form-group input {
   width: 100%;
   padding: 0.65rem 0.8rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
   font-size: 0.9rem;
-  font-family: 'Inter', sans-serif;
-  background: var(--surface);
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
   color: var(--text);
   transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .form-group input:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-soft);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .form-error {
-  background: color-mix(in oklch, var(--error) 12%, transparent);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
   color: var(--error);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
   padding: 0.5rem 0.75rem;
-  border-radius: 10px;
-  font-size: 0.875rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
   margin-bottom: 1rem;
 }
 .form-footer {
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: var(--faint);
   margin-top: 1rem;
 }
 
-/* Motion */
+/* ── Reveal on scroll ─────────────────────────────────────── */
+/* Default: konten terlihat. Hanya saat JS aktif (.js di <html>)
+   elemen disembunyikan dulu lalu di-reveal via IntersectionObserver. */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.5s ease var(--d, 0s),
+    transform 0.5s ease var(--d, 0s);
+}
+.js .reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 520px) {
+  .eyebrow::after {
+    display: none;
+  }
+}
+
+/* ── Aksesibilitas & reduced motion ───────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  * {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
   }
-}
-:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+  }
 }
