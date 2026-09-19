@@ -62,7 +62,7 @@
         </div>
         <div>
           <span class="font-display text-lg font-bold tracking-tight text-text block leading-none">BITS Pay</span>
-          <span class="font-mono text-[10px] tracking-wider text-faint uppercase font-medium">Gateway Platform</span>
+          <span class="font-mono text-[10px] tracking-wider text-faint uppercase font-medium">QRIS Payment Gateway</span>
         </div>
       </a>
       <div
