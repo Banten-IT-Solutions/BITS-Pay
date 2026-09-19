@@ -127,15 +127,9 @@
       savingPassword = false;
     }
   }
-
-  function copyUserId() {
-    if (!me?.id) return;
-    navigator.clipboard.writeText(me.id);
-    showToast('ID Pengguna disalin ke clipboard', 'info');
-  }
 </script>
 
-<div class="mx-auto max-w-5xl space-y-6">
+<div class="space-y-5 sm:space-y-6">
   {#if loading}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <Card class="p-6">
@@ -180,22 +174,6 @@
           </div>
 
           <div class="mt-6 space-y-3 border-t border-border pt-4 text-xs">
-            <div>
-              <span class="text-faint">ID Pengguna</span>
-              <div class="mt-1 flex items-center justify-between rounded-lg bg-surface-2 px-2.5 py-1.5 font-mono text-[11px] text-text">
-                <span class="truncate">{me.id}</span>
-                <button
-                  type="button"
-                  class="ml-2 flex-none text-muted transition-colors hover:text-text"
-                  onclick={copyUserId}
-                  title="Salin ID Pengguna"
-                  aria-label="Salin ID Pengguna"
-                >
-                  <Icon name="copy" size={13} />
-                </button>
-              </div>
-            </div>
-
             <div class="flex items-center justify-between py-1">
               <span class="text-faint">Paket Langganan</span>
               <span class="font-medium text-text capitalize">
@@ -270,20 +248,11 @@
                   required
                   disabled={savingProfile}
                 />
-                <div class="mt-2 flex items-center justify-between gap-2">
-                  <Badge
-                    status={me.email_verified ? 'verified' : 'unverified'}
-                    label={me.email_verified ? 'Email terverifikasi' : 'Belum terverifikasi'}
-                    dot={true}
-                  />
-                  {#if emailChanged}
-                    <span
-                      class="inline-flex items-center rounded-md border border-accent/30 bg-accent-soft px-2 py-0.5 font-mono text-[11px] font-medium text-accent"
-                    >
-                      Perubahan terdeteksi
-                    </span>
-                  {/if}
-                </div>
+                {#if emailChanged}
+                  <p class="mt-1.5 text-right font-mono text-[11px] font-medium text-accent">
+                    Perubahan terdeteksi
+                  </p>
+                {/if}
               </div>
             </div>
 

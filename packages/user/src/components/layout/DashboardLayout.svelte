@@ -34,8 +34,8 @@
 
   <div class="flex min-h-dvh min-w-0 flex-col">
     <Navbar onMenu={() => (drawerOpen = true)} />
-    <main class="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-      <div class="mx-auto w-full max-w-[1200px]">
+    <main class="flex-1 p-4 sm:p-5 lg:p-6">
+      <div class="w-full">
         {@render children?.()}
       </div>
     </main>
