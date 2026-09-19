@@ -21,6 +21,12 @@
   --color-warning: oklch(0.75 0.15 80);
   --color-error: oklch(0.55 0.2 30);
   --color-info: oklch(0.6 0.1 250);
+  /* Ink — sidebar & teks utama konsol */
+  --color-ink-950: oklch(0.17 0.02 255);
+  --color-ink-900: oklch(0.21 0.02 255);
+  --color-ink-800: oklch(0.26 0.025 255);
+  --color-ink-700: oklch(0.32 0.025 255);
+  --color-ink-400: oklch(0.65 0.02 255);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
@@ -31,7 +37,14 @@ body {
   font-family: var(--font-sans);
 }
 body {
-  @apply bg-neutral-50 text-neutral-900 antialiased;
+  @apply bg-neutral-100 text-neutral-900 antialiased;
+}
+
+/* Fokus keyboard selalu terlihat — menggantikan outline bawaan yang di-remove */
+:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 a,
@@ -39,8 +52,90 @@ button,
 [role='button'] {
   cursor: pointer;
 }
-
 button:disabled,
 [role='button'][aria-disabled='true'] {
   cursor: not-allowed;
+}
+
+@layer components {
+  /* Kontrol form standar admin — dipakai semua input/select/textarea */
+  .input {
+    @apply h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-100;
+  }
+  select.input {
+    @apply pr-8;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    appearance: none;
+  }
+  textarea.input {
+    @apply h-auto py-2;
+  }
+  .label {
+    @apply mb-1.5 block text-[13px] font-medium text-neutral-600;
+  }
+
+  /* Angka finansial: mono + tabular supaya rata kanan stabil */
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Skeleton shimmer untuk loading tabel */
+  .skeleton {
+    @apply animate-pulse rounded bg-neutral-200;
+  }
+
+  /* Scrollbar tipis untuk area scroll tabel */
+  .scroll-x {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-400) transparent;
+  }
+}
+
+/* Animasi toast & drawer — didefinisikan sekali */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-toast-in {
+  animation: toast-in 160ms ease-out;
+}
+.animate-drawer-in {
+  animation: drawer-in 180ms ease-out;
+}
+.animate-fade-in {
+  animation: fade-in 160ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-toast-in,
+  .animate-drawer-in,
+  .animate-fade-in {
+    animation: none;
+  }
 }

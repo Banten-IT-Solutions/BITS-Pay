@@ -98,35 +98,30 @@
   }
 </script>
 
-<div class="mb-4 flex items-center justify-between">
-  <h2 class="text-xl font-semibold">Fitur Tier</h2>
-  <Button loading={saving} onclick={save}>Simpan</Button>
-</div>
-
 {#if loading}
   <Loading />
 {:else if error}
   <ErrorState {error} onRetry={load} />
 {:else}
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-    <Card title="Free" subtitle="Limit untuk pengguna gratis">
-      <div class="space-y-4">
-        {#each fieldKeys as k}
-          <div>
-            <label for="free-{k}" class="mb-1 block text-sm font-medium text-neutral-600">{labels[k]}</label>
-            <input id="free-{k}" type="number" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={free[k]} />
+  <div class="max-w-4xl">
+    <Card padding={false}>
+      <!-- Header kolom tier -->
+      <div class="grid grid-cols-[1fr_96px_96px] items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-5 py-2.5 sm:grid-cols-[1fr_160px_160px]">
+        <span class="font-mono text-[10.5px] font-medium tracking-[0.1em] text-neutral-600 uppercase">Limit</span>
+        <span class="text-center font-mono text-[10.5px] font-medium tracking-[0.1em] text-neutral-600 uppercase">Free</span>
+        <span class="text-center font-mono text-[10.5px] font-medium tracking-[0.1em] text-primary-600 uppercase">Premium</span>
+      </div>
+      <div class="divide-y divide-neutral-100">
+        {#each fieldKeys as k (k)}
+          <div class="grid grid-cols-[1fr_96px_96px] items-center gap-2 px-5 py-2.5 sm:grid-cols-[1fr_160px_160px]">
+            <label for="free-{k}" class="text-[13px] text-neutral-900">{labels[k]}</label>
+            <input id="free-{k}" type="number" inputmode="numeric" class="input num h-9 px-2 text-center" aria-label="{labels[k]} — Free" bind:value={free[k]} />
+            <input type="number" inputmode="numeric" class="input num h-9 px-2 text-center" aria-label="{labels[k]} — Premium" bind:value={premium[k]} />
           </div>
         {/each}
       </div>
-    </Card>
-    <Card title="Premium" subtitle="Limit untuk pengguna premium">
-      <div class="space-y-4">
-        {#each fieldKeys as k}
-          <div>
-            <label for="premium-{k}" class="mb-1 block text-sm font-medium text-neutral-600">{labels[k]}</label>
-            <input id="premium-{k}" type="number" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={premium[k]} />
-          </div>
-        {/each}
+      <div class="flex justify-end border-t border-neutral-100 px-5 py-3">
+        <Button loading={saving} onclick={save}>Simpan</Button>
       </div>
     </Card>
   </div>

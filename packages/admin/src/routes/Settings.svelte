@@ -116,65 +116,79 @@
   }
 </script>
 
-<div class="mb-4">
-  <h2 class="text-xl font-semibold">Pengaturan</h2>
-</div>
-
 {#if loading}
   <Loading />
 {:else if error}
   <ErrorState {error} onRetry={load} />
 {:else}
-  <div class="space-y-6">
+  <div class="max-w-3xl space-y-4">
     <Card title="OCR" subtitle="Provider pembacaan bukti transfer">
-      <div class="space-y-4">
-        <div>
-          <p class="mb-2 text-sm font-medium text-neutral-600">Provider</p>
-          <label class="mb-1 flex items-center gap-2 text-sm">
-            <input type="radio" name="provider" value="workers-ai" bind:group={ocrProvider} />
+      <fieldset>
+        <legend class="label">Provider</legend>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <label
+            class="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border px-3 text-sm transition-colors {ocrProvider === 'workers-ai'
+              ? 'border-primary-500 bg-primary-50 font-medium text-neutral-900'
+              : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'}"
+          >
+            <input type="radio" name="provider" value="workers-ai" bind:group={ocrProvider} class="accent-primary-600" />
             Workers AI
           </label>
-          <label class="flex items-center gap-2 text-sm">
-            <input type="radio" name="provider" value="tesseract-vps" bind:group={ocrProvider} />
+          <label
+            class="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border px-3 text-sm transition-colors {ocrProvider === 'tesseract-vps'
+              ? 'border-primary-500 bg-primary-50 font-medium text-neutral-900'
+              : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'}"
+          >
+            <input type="radio" name="provider" value="tesseract-vps" bind:group={ocrProvider} class="accent-primary-600" />
             Tesseract VPS
           </label>
         </div>
+      </fieldset>
 
-        {#if ocrProvider === 'tesseract-vps'}
+      {#if ocrProvider === 'tesseract-vps'}
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label for="vps-ocr-url" class="mb-1 block text-sm font-medium text-neutral-600">VPS OCR URL</label>
-            <input id="vps-ocr-url" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" placeholder="https://..." bind:value={vpsUrl} />
+            <label for="vps-ocr-url" class="label">VPS OCR URL</label>
+            <input id="vps-ocr-url" class="input" placeholder="https://..." bind:value={vpsUrl} />
           </div>
           <div>
-            <label for="vps-ocr-key" class="mb-1 block text-sm font-medium text-neutral-600">VPS OCR API Key</label>
-            <input id="vps-ocr-key" type="password" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" placeholder="••••••••" bind:value={vpsKey} />
+            <label for="vps-ocr-key" class="label">VPS OCR API Key</label>
+            <input id="vps-ocr-key" type="password" class="input" placeholder="••••••••" bind:value={vpsKey} />
           </div>
-        {/if}
+        </div>
+      {/if}
 
+      <div class="mt-4">
         <Button loading={ocrSaving} onclick={saveOcr}>Simpan OCR</Button>
       </div>
 
-      <div class="mt-6 border-t border-neutral-100 pt-6">
-        <p class="mb-3 text-sm font-semibold text-neutral-600">Tes OCR</p>
-        <div class="mb-3 flex items-center gap-3">
-          <input type="file" accept="image/*" class="text-sm" onchange={onFileChange} />
+      <div class="mt-6 border-t border-neutral-100 pt-5">
+        <p class="label">Tes OCR</p>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            type="file"
+            accept="image/*"
+            aria-label="File bukti untuk tes OCR"
+            class="w-full rounded-lg border border-dashed border-neutral-200 px-3 py-2.5 text-[13px] text-neutral-600 file:mr-3 file:rounded-md file:border-0 file:bg-neutral-100 file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-neutral-900"
+            onchange={onFileChange}
+          />
           <Button variant="secondary" loading={testing} disabled={!testFile} onclick={runTest}>Jalankan Tes</Button>
         </div>
         {#if testResult}
-          <div class="rounded-lg bg-neutral-50 p-4 text-sm">
-            <div class="grid grid-cols-2 gap-2">
-              <span class="text-neutral-400">Provider</span>
-              <span>{testResult.provider}</span>
-              <span class="text-neutral-400">Nominal</span>
-              <span class="font-semibold">{formatAmount(testResult.amount)}</span>
-              <span class="text-neutral-400">Confidence</span>
-              <span>{testResult.confidence}%</span>
-              <span class="text-neutral-400">Merchant</span>
-              <span>{testResult.merchant || '-'}</span>
-            </div>
+          <div class="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-[13px]">
+            <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
+              <dt class="text-neutral-600">Provider</dt>
+              <dd class="font-mono text-xs text-neutral-900">{testResult.provider}</dd>
+              <dt class="text-neutral-600">Nominal</dt>
+              <dd class="num font-semibold text-neutral-900">{formatAmount(testResult.amount)}</dd>
+              <dt class="text-neutral-600">Confidence</dt>
+              <dd class="num text-neutral-900">{testResult.confidence}%</dd>
+              <dt class="text-neutral-600">Merchant</dt>
+              <dd class="text-neutral-900">{testResult.merchant || '-'}</dd>
+            </dl>
             {#if testResult.rawText}
-              <p class="mt-2 text-neutral-400">Raw Text</p>
-              <pre class="mt-1 whitespace-pre-wrap font-mono text-xs text-neutral-600">{testResult.rawText}</pre>
+              <p class="mt-3 text-xs font-medium text-neutral-600">Raw Text</p>
+              <pre class="mt-1 overflow-x-auto rounded-md bg-white p-2 font-mono text-xs whitespace-pre-wrap text-neutral-600">{testResult.rawText}</pre>
             {/if}
           </div>
         {/if}
@@ -182,23 +196,23 @@
     </Card>
 
     {#if templates}
-    <Card title="Template Email" subtitle="Isi email untuk verifikasi, reset password & pengingat invoice">
-      <div class="space-y-4">
-        <div>
-          <label for="tmpl-verify" class="mb-1 block text-sm font-medium text-neutral-600">Verifikasi Email</label>
-          <textarea id="tmpl-verify" rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.verify}></textarea>
+      <Card title="Template Email" subtitle="Isi email untuk verifikasi, reset password & pengingat invoice">
+        <div class="space-y-4">
+          <div>
+            <label for="tmpl-verify" class="label">Verifikasi Email</label>
+            <textarea id="tmpl-verify" rows="4" class="input font-mono text-xs" bind:value={templates.verify}></textarea>
+          </div>
+          <div>
+            <label for="tmpl-reset" class="label">Reset Password</label>
+            <textarea id="tmpl-reset" rows="4" class="input font-mono text-xs" bind:value={templates.reset}></textarea>
+          </div>
+          <div>
+            <label for="tmpl-invoice" class="label">Pengingat Invoice</label>
+            <textarea id="tmpl-invoice" rows="4" class="input font-mono text-xs" bind:value={templates.invoice_reminder}></textarea>
+          </div>
+          <Button loading={templatesSaving} onclick={saveTemplates}>Simpan Template</Button>
         </div>
-        <div>
-          <label for="tmpl-reset" class="mb-1 block text-sm font-medium text-neutral-600">Reset Password</label>
-          <textarea id="tmpl-reset" rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.reset}></textarea>
-        </div>
-        <div>
-          <label for="tmpl-invoice" class="mb-1 block text-sm font-medium text-neutral-600">Pengingat Invoice</label>
-          <textarea id="tmpl-invoice" rows="4" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" bind:value={templates.invoice_reminder}></textarea>
-        </div>
-        <Button loading={templatesSaving} onclick={saveTemplates}>Simpan Template</Button>
-      </div>
-    </Card>
-{/if}
+      </Card>
+    {/if}
   </div>
 {/if}

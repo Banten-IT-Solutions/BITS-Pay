@@ -3,7 +3,8 @@
   import { auth } from '../stores/auth';
   import { showToast } from '../lib/toast';
   import Button from '../components/ui/Button.svelte';
-  import Card from '../components/ui/Card.svelte';
+  import BrandMark from '../components/ui/BrandMark.svelte';
+  import Icon from '../components/ui/Icon.svelte';
 
   let loading = $state(false);
   let email = $state('');
@@ -25,29 +26,50 @@
   }
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-  <Card>
-    <div class="w-full max-w-sm">
-      <div class="mb-6 text-center">
-        <h2 class="text-2xl font-bold text-primary-500">Admin Panel</h2>
-        <p class="mt-1 text-sm text-neutral-400">Masuk ke panel admin</p>
-      </div>
-
-      {#if error}
-        <div class="mb-4 rounded-lg bg-error/10 px-4 py-3 text-sm text-error">{error}</div>
-      {/if}
-
-      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
-        <div>
-          <label for="admin-email" class="mb-1 block text-sm font-medium text-neutral-600">Email</label>
-          <input id="admin-email" type="email" value={email} oninput={(e) => email = (e.target as HTMLInputElement).value} class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" required />
-        </div>
-        <div>
-          <label for="admin-password" class="mb-1 block text-sm font-medium text-neutral-600">Password</label>
-          <input id="admin-password" type="password" value={password} oninput={(e) => password = (e.target as HTMLInputElement).value} class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" required />
-        </div>
-        <Button type="submit" block loading={loading}>Masuk</Button>
-      </form>
+<div class="flex min-h-dvh items-center justify-center bg-ink-950 p-4">
+  <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+    <div class="mb-6 flex flex-col items-center text-center">
+      <BrandMark size={36} />
+      <h1 class="mt-3 text-xl font-bold text-neutral-900">BITS Pay Admin</h1>
+      <p class="mt-1 flex items-center gap-1.5 text-[13px] text-neutral-600">
+        <Icon name="shield" size={13} />
+        Area khusus administrator
+      </p>
     </div>
-  </Card>
+
+    {#if error}
+      <div class="mb-4 flex items-start gap-2 rounded-lg bg-error/10 px-3.5 py-2.5 text-[13px] font-medium text-error" role="alert">
+        <span class="mt-0.5 flex-none"><Icon name="alert" size={14} /></span>
+        {error}
+      </div>
+    {/if}
+
+    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
+      <div>
+        <label for="admin-email" class="label">Email</label>
+        <input
+          id="admin-email"
+          type="email"
+          autocomplete="username"
+          value={email}
+          oninput={(e) => (email = (e.target as HTMLInputElement).value)}
+          class="input"
+          required
+        />
+      </div>
+      <div>
+        <label for="admin-password" class="label">Password</label>
+        <input
+          id="admin-password"
+          type="password"
+          autocomplete="current-password"
+          value={password}
+          oninput={(e) => (password = (e.target as HTMLInputElement).value)}
+          class="input"
+          required
+        />
+      </div>
+      <Button type="submit" block loading={loading}>Masuk</Button>
+    </form>
+  </div>
 </div>

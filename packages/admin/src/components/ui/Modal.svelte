@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import Icon from './Icon.svelte';
 
   interface Props {
     open: boolean;
@@ -15,11 +16,29 @@
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onclick={handleBackdrop} onkeydown={(e) => { if (e.key === 'Escape') onClose?.(); }} role="dialog" aria-modal="true" tabindex="-1">
-    <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
-      <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-neutral-900">{title}</h3>
-        <button class="text-2xl leading-none text-neutral-400 hover:text-neutral-600" onclick={() => onClose?.()} aria-label="Tutup">&times;</button>
+  <!-- Mobile: sheet dari bawah; ≥sm: dialog tengah -->
+  <div
+    class="animate-fade-in fixed inset-0 z-50 flex items-end justify-center bg-ink-950/60 p-0 sm:items-center sm:p-4"
+    onclick={handleBackdrop}
+    onkeydown={(e) => {
+      if (e.key === 'Escape') onClose?.();
+    }}
+    role="dialog"
+    aria-modal="true"
+    aria-label={title}
+    tabindex="-1"
+  >
+    <div class="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-xl sm:p-6">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <h3 class="text-[15px] font-semibold text-neutral-900">{title}</h3>
+        <button
+          type="button"
+          class="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900 sm:min-h-8 sm:min-w-8"
+          onclick={() => onClose?.()}
+          aria-label="Tutup"
+        >
+          <Icon name="x" size={18} />
+        </button>
       </div>
       {@render children?.()}
     </div>
