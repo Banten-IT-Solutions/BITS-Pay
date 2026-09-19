@@ -93,7 +93,9 @@ export class WorkspaceService {
       .first();
     if (!member) throw AppError.notFound('Workspace');
 
-    const workspace = await env.DB.prepare('SELECT * FROM workspaces WHERE id = ?')
+    const workspace = await env.DB.prepare(
+      'SELECT * FROM workspaces WHERE id = ? AND is_active = 1',
+    )
       .bind(workspaceId)
       .first<Workspace>();
     if (!workspace) throw AppError.notFound('Workspace');

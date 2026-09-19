@@ -4,7 +4,7 @@ import { AppError } from '../lib/errors';
 
 declare module 'hono' {
   interface ContextVariableMap {
-    app: { id: string; workspace_id: string; api_rate_limit: number };
+    app: { id: string; workspace_id: string; api_rate_limit: number; qris_static: string | null };
   }
 }
 
@@ -17,7 +17,7 @@ export const requireApiKey = createMiddleware(async (c, next) => {
   const key = header.slice(7);
   const hash = await hashApiKey(key);
   const app = (await c.env.DB.prepare(
-    `SELECT a.id, a.workspace_id, a.is_active, tf.api_rate_limit
+    `SELECT a.id, a.workspace_id, a.is_active, a.qris_static, tf.api_rate_limit
      FROM apps a
      JOIN workspaces w ON w.id = a.workspace_id
      JOIN users u ON u.id = w.user_id
@@ -30,11 +30,17 @@ export const requireApiKey = createMiddleware(async (c, next) => {
     workspace_id: string;
     is_active: number;
     api_rate_limit: number;
+    qris_static: string | null;
   } | null;
   if (!app || !app.is_active) {
     c.header('WWW-Authenticate', 'Bearer');
     throw AppError.unauthorized('API key tidak dikenal');
   }
-  c.set('app', { id: app.id, workspace_id: app.workspace_id, api_rate_limit: app.api_rate_limit });
+  c.set('app', {
+    id: app.id,
+    workspace_id: app.workspace_id,
+    api_rate_limit: app.api_rate_limit,
+    qris_static: app.qris_static,
+  });
   await next();
 });

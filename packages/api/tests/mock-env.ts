@@ -5,6 +5,7 @@ export interface MockAppRow {
   workspace_id: string;
   is_active: number;
   api_rate_limit: number;
+  qris_static?: string | null;
 }
 
 /** DB mock: prepare().bind().first() selalu return row yang sama. */

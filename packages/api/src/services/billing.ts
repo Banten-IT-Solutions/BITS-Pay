@@ -49,7 +49,13 @@ export class BillingService {
       throw AppError.badRequest('no_unique_code', 'Semua kode unik terpakai');
     const amountDue = calculateAmountDue(price, uniqueCode);
 
-    const qrisDynamic = QrService.convertStaticToDynamic(env, amountDue);
+    // Langganan premium = pendapatan platform → pakai QRIS operator (env),
+    // BUKAN qris_static app user.
+    const operatorQris = env.QRIS_STATIC?.trim();
+    if (!operatorQris) {
+      throw AppError.internal('QRIS_STATIC belum dikonfigurasi');
+    }
+    const qrisDynamic = QrService.convertStaticToDynamic(operatorQris, amountDue);
     const qrImage = await QrService.generateQrImage(qrisDynamic, amountDue);
 
     const now = new Date();

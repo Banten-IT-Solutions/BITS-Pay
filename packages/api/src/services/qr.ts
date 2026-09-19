@@ -1,14 +1,11 @@
 import { convertQris } from 'bits-qris';
 import QRCode from 'qrcode';
-import type { Env } from '../config';
 import { AppError } from '../lib/errors';
 
 export class QrService {
-  static convertStaticToDynamic(env: Env, amountDue: number): string {
-    const qrisStatic = env.QRIS_STATIC?.trim();
-    if (!qrisStatic) {
-      throw AppError.internal('QRIS_STATIC belum dikonfigurasi');
-    }
+  // qrisStatic milik app (merchant user) untuk charge, atau milik operator
+  // (env.QRIS_STATIC) untuk invoice langganan premium — pemanggil yang memilih.
+  static convertStaticToDynamic(qrisStatic: string, amountDue: number): string {
     try {
       return convertQris(qrisStatic, { amount: amountDue });
     } catch (err) {

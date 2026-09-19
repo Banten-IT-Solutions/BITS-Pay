@@ -103,6 +103,8 @@ CREATE TABLE apps (
   api_key_prefix TEXT NOT NULL,
   callback_url TEXT,
   is_active INTEGER DEFAULT 1,
+  -- Migrasi 0011: QRIS static per app (merchant user). NULL = belum dikonfigurasi.
+  qris_static TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );

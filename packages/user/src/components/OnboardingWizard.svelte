@@ -1,5 +1,6 @@
 <script lang="ts">
   import { api } from '../lib/api';
+  import { auth } from '../stores/auth';
   import { showToast } from '../lib/toast';
   import { workspaces } from '../stores/workspace';
   import Modal from './ui/Modal.svelte';
@@ -34,6 +35,8 @@
   // Langkah 2
   let appName = $state('');
   let callbackUrl = $state('');
+  let qrisStatic = $state('');
+  let qrisInstalled = $state(false);
   let apiKey = $state('');
   let callbackSecret = $state('');
 
@@ -62,7 +65,9 @@
   });
 
   function selesai() {
-    localStorage.setItem('onboarding-done', '1');
+    // Flag per user; fallback key lama bila user belum termuat.
+    const key = $auth.user ? `onboarding-done:${$auth.user.id}` : 'onboarding-done';
+    localStorage.setItem(key, '1');
     onClose();
   }
 
@@ -88,6 +93,11 @@
         name: appName,
         callback_url: callbackUrl || undefined,
       });
+      // QRIS opsional: simpan via update app bila diisi.
+      if (qrisStatic.trim()) {
+        await api.put(`/app/workspaces/${wid}/apps/${app.id}`, { qris_static: qrisStatic.trim() });
+        qrisInstalled = true;
+      }
       apiKey = app.api_key;
       callbackSecret = app.callback_secret;
       showToast('Aplikasi berhasil dibuat', 'success');
@@ -127,7 +137,12 @@
       charge = json.data;
       showToast('Tagihan uji coba berhasil dibuat', 'success');
     } catch (e) {
-      showToast((e as Error).message, 'error');
+      // TypeError = kegagalan jaringan (fetch mentah, bukan via api client).
+      const pesan =
+        e instanceof TypeError
+          ? 'Tidak dapat terhubung ke server. Periksa koneksi internet kamu lalu coba lagi.'
+          : (e as Error).message;
+      showToast(pesan, 'error');
     } finally {
       submitting = false;
     }
@@ -238,8 +253,25 @@
             oninput={(e) => (callbackUrl = (e.target as HTMLInputElement).value)}
             placeholder="https://example.com/callback"
           />
+          <div>
+            <label for="onboarding-qris" class="mb-1.5 block text-[13px] font-medium text-muted">
+              QRIS Static (opsional)
+            </label>
+            <textarea
+              id="onboarding-qris"
+              class="min-h-24 w-full rounded-lg border border-border bg-surface px-3 py-2 font-mono text-xs text-text"
+              placeholder="00020101021126..."
+              value={qrisStatic}
+              oninput={(e) => (qrisStatic = (e.target as HTMLTextAreaElement).value)}
+            ></textarea>
+            <p class="mt-1.5 text-xs text-faint">
+              Salin payload QRIS static dari QRIS merchant milikmu (misalnya dari aplikasi mobile
+              banking atau penyedia QRIS merchant). Dana pembayaran akan langsung masuk ke rekening
+              merchant tersebut.
+            </p>
+          </div>
           <div class="flex items-center justify-between pt-1">
-            <Button variant="ghost" onclick={() => (step = 1)}>Kembali</Button>
+            <Button variant="muted" onclick={() => (step = 1)}>Kembali</Button>
             <div class="flex gap-2">
               <Button variant="muted" onclick={() => (step = 3)}>Lewati</Button>
               <Button type="submit" loading={submitting} disabled={!appName}>Buat Aplikasi</Button>
@@ -288,7 +320,7 @@
           </div>
         </div>
         <div class="flex items-center justify-between pt-4">
-          <Button variant="ghost" onclick={() => (step = 1)}>Kembali</Button>
+          <Button variant="muted" onclick={() => (step = 1)}>Kembali</Button>
           <Button onclick={() => (step = 3)}>Lanjut</Button>
         </div>
       {/if}
@@ -301,6 +333,14 @@
           <p class="mb-4 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-muted">
             Kamu melewati pembuatan aplikasi, jadi uji coba pembayaran dilewati. Buat aplikasi
             terlebih dahulu dari menu Apps untuk mencoba.
+          </p>
+        {:else if !qrisInstalled}
+          <p
+            class="mb-4 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning"
+            role="alert"
+          >
+            QRIS static aplikasi belum dipasang, jadi uji coba pembayaran belum bisa dilakukan.
+            Atur QRIS terlebih dahulu dari menu Apps, lalu kembali ke sini.
           </p>
         {/if}
         <form
@@ -316,7 +356,7 @@
             oninput={(e) => (orderId = (e.target as HTMLInputElement).value)}
             placeholder="ORD-TEST-001"
             required
-            disabled={!apiKey}
+            disabled={!apiKey || !qrisInstalled}
           />
           <Input
             label="Nominal (Rp)"
@@ -326,13 +366,17 @@
             oninput={(e) => (amount = (e.target as HTMLInputElement).value)}
             placeholder="150000"
             required
-            disabled={!apiKey}
+            disabled={!apiKey || !qrisInstalled}
           />
           <div class="flex items-center justify-between pt-1">
-            <Button variant="ghost" onclick={() => (step = 2)}>Kembali</Button>
+            <Button variant="muted" onclick={() => (step = 2)}>Kembali</Button>
             <div class="flex gap-2">
               <Button variant="muted" onclick={selesai}>Lewati</Button>
-              <Button type="submit" loading={submitting} disabled={!apiKey || !orderId || !amount}>
+              <Button
+                type="submit"
+                loading={submitting}
+                disabled={!apiKey || !qrisInstalled || !orderId || !amount}
+              >
                 Buat Tagihan
               </Button>
             </div>

@@ -21,6 +21,31 @@
   let newName = $state('');
   let newCallback = $state('');
   let submitting = $state(false);
+  let editingApp = $state<AppPublic | null>(null);
+  let editQris = $state('');
+
+  function openEdit(app: AppPublic) {
+    editingApp = app;
+    editQris = app.qris_static ?? '';
+  }
+
+  async function saveQris() {
+    if (!editingApp) return;
+    submitting = true;
+    try {
+      const updated = await api.put<AppPublic>(
+        `/app/workspaces/${selectedWid}/apps/${editingApp.id}`,
+        { qris_static: editQris.trim() || null },
+      );
+      apps = apps.map((a) => (a.id === updated.id ? { ...a, qris_static: updated.qris_static } : a));
+      showToast('QRIS aplikasi disimpan', 'success');
+      editingApp = null;
+    } catch (e) {
+      showToast((e as Error).message, 'error');
+    } finally {
+      submitting = false;
+    }
+  }
 
   async function load() {
     loading = true;
@@ -165,11 +190,22 @@
               {:else}
                 <p class="mt-2 text-xs text-faint">Callback belum diatur</p>
               {/if}
+              {#if app.qris_static}
+                <p class="mt-1 text-xs text-success">QRIS terpasang</p>
+              {:else}
+                <p class="mt-1 text-xs text-warning">QRIS belum diatur</p>
+              {/if}
             </div>
-            <Button variant="ghost" size="sm" class="flex-none" onclick={() => rotateKey(app.id)}>
-              <Icon name="refresh" size={14} />
-              Rotate Key
-            </Button>
+            <div class="flex flex-none flex-col gap-1">
+              <Button variant="ghost" size="sm" onclick={() => rotateKey(app.id)}>
+                <Icon name="refresh" size={14} />
+                Rotate Key
+              </Button>
+              <Button variant="ghost" size="sm" onclick={() => openEdit(app)}>
+                <Icon name="qr" size={14} />
+                QRIS
+              </Button>
+            </div>
           </div>
         </Card>
       {/each}
@@ -199,5 +235,34 @@
       placeholder="https://example.com/callback"
     />
     <Button type="submit" block loading={submitting}>Buat App</Button>
+  </form>
+</Modal>
+
+<Modal open={editingApp !== null} title="QRIS Static App" onClose={() => (editingApp = null)}>
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      saveQris();
+    }}
+    class="space-y-4"
+  >
+    <div>
+      <label for="qris-static" class="mb-1.5 block text-[13px] font-medium text-muted">
+        QRIS Static
+      </label>
+      <textarea
+        id="qris-static"
+        class="min-h-28 w-full rounded-lg border border-border bg-surface px-3 py-2 font-mono text-xs text-text"
+        placeholder="00020101021126..."
+        value={editQris}
+        oninput={(e) => (editQris = (e.target as HTMLTextAreaElement).value)}
+      ></textarea>
+      <p class="mt-1.5 text-xs text-faint">
+        Salin payload QRIS static dari QRIS merchant milikmu (misalnya dari aplikasi mobile banking
+        atau penyedia QRIS merchant). Dana pembayaran akan langsung masuk ke rekening merchant
+        tersebut. Kosongkan untuk menghapus QRIS.
+      </p>
+    </div>
+    <Button type="submit" block loading={submitting}>Simpan QRIS</Button>
   </form>
 </Modal>

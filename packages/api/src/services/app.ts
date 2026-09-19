@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidQris } from 'bits-qris';
 import {
   generateApiKey,
   generateToken,
@@ -17,10 +18,21 @@ export const createAppSchema = z.object({
   callback_url: z.string().url('URL callback tidak valid').optional().or(z.literal('')),
 });
 
+// Kolom QRIS dipilih eksplisit (bukan SELECT *) supaya response stabil.
+const APP_PUBLIC_COLS =
+  'id, workspace_id, name, api_key_prefix, callback_url, is_active, qris_static, created_at, updated_at';
+
 export const updateAppSchema = z.object({
   name: z.string().min(1).optional(),
   callback_url: z.string().url().optional().or(z.literal('')),
   is_active: z.boolean().optional(),
+  // null / string kosong = hapus QRIS. Non-empty wajib payload QRIS valid.
+  qris_static: z
+    .string()
+    .max(512, 'QRIS static maksimal 512 karakter')
+    .nullable()
+    .optional()
+    .refine((v) => !v || isValidQris(v), { message: 'Format QRIS static tidak valid' }),
 });
 
 export class AppService {
@@ -45,7 +57,7 @@ export class AppService {
   static async list(env: Env, userId: string, workspaceId: string): Promise<AppPublic[]> {
     await this.requireMember(env, workspaceId, userId);
     const { results } = await env.DB.prepare(
-      'SELECT id, workspace_id, name, api_key_prefix, callback_url, is_active, created_at, updated_at FROM apps WHERE workspace_id = ? ORDER BY created_at DESC',
+      `SELECT ${APP_PUBLIC_COLS} FROM apps WHERE workspace_id = ? ORDER BY created_at DESC`,
     )
       .bind(workspaceId)
       .all<AppPublic>();
@@ -79,7 +91,7 @@ export class AppService {
     const callbackSecret = generateToken(32);
     const id = crypto.randomUUID();
     const app = await env.DB.prepare(
-      'INSERT INTO apps (id, workspace_id, name, api_key_hash, api_key_prefix, callback_url, callback_secret) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, workspace_id, name, api_key_prefix, callback_url, is_active, created_at, updated_at',
+      `INSERT INTO apps (id, workspace_id, name, api_key_hash, api_key_prefix, callback_url, callback_secret) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING ${APP_PUBLIC_COLS}`,
     )
       .bind(id, workspaceId, input.name, hash, prefix, callbackUrl, callbackSecret)
       .first<AppPublic>();
@@ -96,7 +108,7 @@ export class AppService {
   ): Promise<AppPublic> {
     await this.requireMember(env, workspaceId, userId);
     const app = await env.DB.prepare(
-      'SELECT id, workspace_id, name, api_key_prefix, callback_url, is_active, created_at, updated_at FROM apps WHERE id = ? AND workspace_id = ?',
+      `SELECT ${APP_PUBLIC_COLS} FROM apps WHERE id = ? AND workspace_id = ?`,
     )
       .bind(appId, workspaceId)
       .first<AppPublic>();
@@ -119,11 +131,14 @@ export class AppService {
       input.callback_url !== undefined ? input.callback_url || null : app.callback_url;
     if (callbackUrl) validateCallbackUrl(callbackUrl);
     const isActive = input.is_active !== undefined ? (input.is_active ? 1 : 0) : app.is_active;
+    // undefined = tidak diubah; null/string kosong = hapus QRIS.
+    const qrisStatic =
+      input.qris_static !== undefined ? input.qris_static || null : app.qris_static;
 
     const updated = await env.DB.prepare(
-      "UPDATE apps SET name = ?, callback_url = ?, is_active = ?, updated_at = datetime('now') WHERE id = ? RETURNING id, workspace_id, name, api_key_prefix, callback_url, is_active, created_at, updated_at",
+      `UPDATE apps SET name = ?, callback_url = ?, is_active = ?, qris_static = ?, updated_at = datetime('now') WHERE id = ? RETURNING ${APP_PUBLIC_COLS}`,
     )
-      .bind(name, callbackUrl, isActive, appId)
+      .bind(name, callbackUrl, isActive, qrisStatic, appId)
       .first<AppPublic>();
     if (!updated) throw AppError.internal('Gagal update app');
     return updated;
@@ -140,7 +155,7 @@ export class AppService {
 
     const { key, prefix, hash } = await generateApiKey();
     const updated = await env.DB.prepare(
-      "UPDATE apps SET api_key_hash = ?, api_key_prefix = ?, updated_at = datetime('now') WHERE id = ? RETURNING id, workspace_id, name, api_key_prefix, callback_url, is_active, created_at, updated_at",
+      `UPDATE apps SET api_key_hash = ?, api_key_prefix = ?, updated_at = datetime('now') WHERE id = ? RETURNING ${APP_PUBLIC_COLS}`,
     )
       .bind(hash, prefix, appId)
       .first<AppPublic>();

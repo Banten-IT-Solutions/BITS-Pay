@@ -77,7 +77,7 @@ Satu task → satu agent. Jangan pecah task kecil ke banyak agent. Delegasi inde
 - Class: PascalCase. Function/variable: camelCase. DB: snake_case.
 - Response sukses: `{ success: true, data }` (helper `success()` di `lib/response.ts`).
 - Response error: `{ success: false, error: { code, message, details? } }`.
-- Error code: `validation_error`, `unauthorized`, `not_found`, `expired`, `invalid_status`, `no_unique_code`, `duplicate_order`, `duplicate_hash`, `proof_too_large`, `invalid_proof`, `payload_too_large`, `unsupported_media_type`, `rate_limited`, `internal_error`.
+- Error code: `validation_error`, `unauthorized`, `not_found`, `expired`, `invalid_status`, `no_unique_code`, `qris_not_configured`, `duplicate_order`, `duplicate_hash`, `proof_too_large`, `invalid_proof`, `payload_too_large`, `unsupported_media_type`, `rate_limited`, `internal_error`.
 
 ## Status Build & Cakupan Fitur
 

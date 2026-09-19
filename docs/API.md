@@ -111,15 +111,16 @@ selalu tersimpan sebagai kolom terpisah.
 
 **Error:**
 
-| HTTP | Code              | Penyebab                                                |
-| ---- | ----------------- | ------------------------------------------------------- |
-| 400  | validation_error  | Field tidak valid (cek `error.details`), metadata > 4KB |
-| 400  | no_unique_code    | Semua kode unik terpakai                                |
-| 401  | unauthorized      | API key salah / app nonaktif                            |
-| 409  | duplicate_order   | `order_id` sudah dipakai transaksi aktif                |
-| 409  | no_unique_code    | Gagal mengalokasikan kode unik (race) — coba lagi       |
-| 413  | payload_too_large | Body > 64KB                                             |
-| 429  | rate_limited      | Rate limit / kuota transaksi harian / bulanan tercapai  |
+| HTTP | Code                | Penyebab                                                |
+| ---- | ------------------- | ------------------------------------------------------- |
+| 400  | validation_error    | Field tidak valid (cek `error.details`), metadata > 4KB |
+| 400  | qris_not_configured | App belum punya QRIS static — atur dulu via Update App  |
+| 400  | no_unique_code      | Semua kode unik terpakai                                |
+| 401  | unauthorized        | API key salah / app nonaktif                            |
+| 409  | duplicate_order     | `order_id` sudah dipakai transaksi aktif                |
+| 409  | no_unique_code      | Gagal mengalokasikan kode unik (race) — coba lagi       |
+| 413  | payload_too_large   | Body > 64KB                                             |
+| 429  | rate_limited        | Rate limit / kuota transaksi harian / bulanan tercapai  |
 
 Contoh body error:
 
@@ -569,6 +570,14 @@ GET /app/workspaces/:wid/apps/:id
 ```
 PUT /app/workspaces/:wid/apps/:id
 ```
+
+Body (semua field opsional): `name`, `callback_url`, `is_active`, `qris_static`.
+
+`qris_static` = payload QRIS static merchant milik user (sumber dana masuk untuk charge app
+ini). Non-empty divalidasi formatnya (`validation_error` bila tidak valid); `null`/string kosong
+menghapus QRIS. App tanpa `qris_static` ditolak saat create charge (`qris_not_configured`).
+`qris_static` tampil apa adanya di response list/detail app (bukan secret — tercetak di stiker
+merchant).
 
 #### Rotate API Key
 

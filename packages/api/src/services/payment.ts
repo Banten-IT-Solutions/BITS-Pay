@@ -67,9 +67,18 @@ export function toPublicPayment(p: Payment): PublicPayment {
 export class PaymentService {
   static async createCharge(
     env: Env,
-    app: { id: string; workspace_id: string },
+    app: { id: string; workspace_id: string; qris_static: string | null },
     input: z.infer<typeof chargeSchema>,
   ): Promise<ChargeCreateResponse> {
+    // QRIS per app: dana charge masuk ke merchant milik user. App lama tanpa
+    // QRIS dikonfigurasi ditolak di sini (bukan saat render QR).
+    const qrisStatic = app.qris_static?.trim();
+    if (!qrisStatic) {
+      throw AppError.badRequest(
+        'qris_not_configured',
+        'Aplikasi belum memiliki QRIS. Atur QRIS static aplikasi terlebih dahulu di pengaturan aplikasi.',
+      );
+    }
     const existing = await env.DB.prepare(
       "SELECT id FROM payments WHERE app_id = ? AND order_id = ? AND status != 'expired'",
     )
@@ -101,7 +110,7 @@ export class PaymentService {
         throw AppError.badRequest('no_unique_code', 'Semua kode unik terpakai');
       const amountDue = calculateAmountDue(input.amount, uniqueCode);
 
-      const qrisDynamic = QrService.convertStaticToDynamic(env, amountDue);
+      const qrisDynamic = QrService.convertStaticToDynamic(qrisStatic, amountDue);
       const qrImage = await QrService.generateQrImage(qrisDynamic, amountDue);
 
       try {
@@ -530,13 +539,20 @@ export class PaymentService {
       params.push(endDate);
     }
 
+    // w.is_active = 1: payment workspace yang di-soft-delete tidak tampil lagi.
     const count = await env.DB.prepare(
-      `SELECT COUNT(*) as total FROM payments p INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id ${where}`,
+      `SELECT COUNT(*) as total FROM payments p
+         INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+         INNER JOIN workspaces w ON w.id = p.workspace_id AND w.is_active = 1
+         ${where}`,
     )
       .bind(...params)
       .first<{ total: number }>();
     const { results } = await env.DB.prepare(
-      `SELECT p.* FROM payments p INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT p.* FROM payments p
+         INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+         INNER JOIN workspaces w ON w.id = p.workspace_id AND w.is_active = 1
+         ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
     )
       .bind(...params, perPage, offset)
       .all<Payment>();
@@ -561,6 +577,7 @@ export class PaymentService {
          SUM(CASE WHEN p.status = 'success' AND date(p.paid_at) = date('now') THEN 1 ELSE 0 END) as today_payments
        FROM payments p
        INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+       INNER JOIN workspaces w ON w.id = p.workspace_id AND w.is_active = 1
        WHERE wm.user_id = ?`,
     )
       .bind(userId)
@@ -583,6 +600,7 @@ export class PaymentService {
     const payment = await env.DB.prepare(
       `SELECT p.* FROM payments p
        INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+       INNER JOIN workspaces w ON w.id = p.workspace_id AND w.is_active = 1
        WHERE p.id = ? AND wm.user_id = ?`,
     )
       .bind(paymentId, userId)

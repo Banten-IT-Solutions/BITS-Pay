@@ -123,6 +123,9 @@ export interface App {
   callback_secret: string | null;
   callback_url: string | null;
   is_active: number; // 0 | 1
+  // Payload QRIS static merchant milik user (bukan secret — tercetak di stiker
+  // merchant). NULL = belum dikonfigurasi → charge app ini ditolak.
+  qris_static: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -12,10 +12,16 @@ import {
   type SqlRoute,
 } from './mock-env';
 
-const ACTIVE_APP: MockAppRow = { id: 'a1', workspace_id: 'w1', is_active: 1, api_rate_limit: 10 };
-// QRIS static uji (sama dengan seed scripts/setup-local.mjs).
+// QRIS static uji (sama dengan seed scripts/setup-local.mjs) — dipasang per app.
 const QRIS_STATIC =
   '00020101021126640012ID.CO.BITS.WWW01189360091200008080240215BITS-PAY-TEST5204000053033605802ID5914BITS Pay Test6007Banten61053630062070703A016304';
+const ACTIVE_APP: MockAppRow = {
+  id: 'a1',
+  workspace_id: 'w1',
+  is_active: 1,
+  api_rate_limit: 10,
+  qris_static: QRIS_STATIC,
+};
 
 const FREE_FEATURES = {
   tier: 'free',
@@ -82,7 +88,6 @@ function makeApp({ routes, queueSent }: MakeAppOptions) {
   const env = mockEnv({
     DB: mockDbDispatch(routes),
     RATE_LIMITER: mockRateLimiter({ allowed: true, remaining: 9, reset: Date.now() + 1000 }),
-    QRIS_STATIC,
     MAX_UNIQUE_CODE: '999',
     TRANSACTION_EXPIRE_MINUTES: '15',
     CALLBACK_QUEUE: {
@@ -185,6 +190,22 @@ describe('POST /v1/charges', () => {
     expect(res2.status).toBe(409);
     const body2 = (await res2.json()) as { success: boolean; error: { code: string } };
     expect(body2).toMatchObject({ success: false, error: { code: 'duplicate_order' } });
+  });
+
+  it('app tanpa qris_static → 400 qris_not_configured', async () => {
+    const routes: SqlRoute[] = [
+      { match: 'api_key_hash = ?', first: () => ({ ...ACTIVE_APP, qris_static: null }) },
+      ...baseRoutes().slice(1),
+    ];
+    const { app, env, auth } = makeApp({ routes });
+    const res = await app.request(
+      '/v1/charges',
+      postCharge(auth, { order_id: 'ORD-NOQRIS', amount: 150000 }),
+      env,
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe('qris_not_configured');
   });
 
   it('validasi gagal (amount < 100) → 400 validation_error', async () => {

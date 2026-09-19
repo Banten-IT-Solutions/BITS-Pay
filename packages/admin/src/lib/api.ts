@@ -32,11 +32,33 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Content-Type'] = 'application/json';
   }
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
-  const json: ApiResponse<T> = await res.json();
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+  } catch {
+    // Kegagalan jaringan (offline, server mati, CORS) — pesan ramah, bukan TypeError mentah.
+    throw new ApiError(
+      0,
+      'network_error',
+      'Tidak dapat terhubung ke server. Periksa koneksi internet lalu coba lagi.',
+    );
+  }
+  let json: ApiResponse<T>;
+  try {
+    json = await res.json();
+  } catch {
+    throw new ApiError(
+      res.status,
+      'invalid_response',
+      'Terjadi gangguan pada server. Coba beberapa saat lagi.',
+    );
+  }
 
   if (!res.ok || !json.success) {
-    const err = 'error' in json ? json.error : { code: 'unknown', message: 'Unknown error' };
+    const err =
+      'error' in json
+        ? json.error
+        : { code: 'unknown', message: 'Terjadi kesalahan. Silakan coba lagi.' };
     throw new ApiError(res.status, err.code, err.message, err.details);
   }
 

@@ -14,6 +14,42 @@
 
   let initialized = $state(false);
   let showOnboarding = $state(false);
+  // Guard anti double-fetch; reset saat logout supaya akun lain dicek ulang.
+  let checkingOnboarding = false;
+  let checkedForUserId = $state<string | null>(null);
+
+  function onboardingKey(userId: string | undefined): string {
+    return userId ? `onboarding-done:${userId}` : 'onboarding-done';
+  }
+
+  // Onboarding wizard: hanya untuk user baru tanpa workspace & belum pernah skip/selesai.
+  async function maybeShowOnboarding(userId: string) {
+    checkingOnboarding = true;
+    checkedForUserId = userId;
+    try {
+      const list = await api.get<WorkspaceWithMemberCount[]>('/app/workspaces');
+      if (list.length === 0) showOnboarding = true;
+    } catch {
+      // Gagal fetch bukan penghalang — dashboard tetap jalan.
+    } finally {
+      checkingOnboarding = false;
+    }
+  }
+
+  // Reaktif: jalan juga setelah login tanpa reload (onMount saja terlalu awal,
+  // token masih null). Reset saat token hilang supaya akun lain dicek ulang.
+  $effect(() => {
+    if (!initialized) return;
+    const userId = $auth.user?.id;
+    if (!$auth.token || !userId) {
+      showOnboarding = false;
+      checkedForUserId = null;
+      return;
+    }
+    if (showOnboarding || checkingOnboarding || checkedForUserId === userId) return;
+    if (localStorage.getItem(onboardingKey(userId))) return;
+    void maybeShowOnboarding(userId);
+  });
 
   const PUBLIC_PATHS = [
     '/login',
@@ -28,15 +64,6 @@
     initialized = true;
     if (!$auth.token && !PUBLIC_PATHS.includes(router.location)) {
       push('/login');
-    }
-    // Onboarding wizard: hanya untuk user baru tanpa workspace & belum pernah skip/selesai.
-    if ($auth.token && !localStorage.getItem('onboarding-done')) {
-      try {
-        const list = await api.get<WorkspaceWithMemberCount[]>('/app/workspaces');
-        if (list.length === 0) showOnboarding = true;
-      } catch {
-        // Gagal fetch bukan penghalang — dashboard tetap jalan.
-      }
     }
   });
 
