@@ -165,9 +165,10 @@ describe('POST /v1/charges', () => {
     const d = body.data;
     expect(d.id).toBeTypeOf('string');
     expect(d.amount).toBe(150000);
-    // Tidak ada transaksi pending lain → kode unik pertama (1) terpakai.
-    expect(d.unique_code).toBe(1);
-    expect(d.amount_due).toBe(150001);
+    // Kode unik diacak (bebas di 1–999) — yang penting konsisten amount_due.
+    expect(d.unique_code).toBeGreaterThanOrEqual(1);
+    expect(d.unique_code).toBeLessThanOrEqual(999);
+    expect(d.amount_due).toBe(150000 + (d.unique_code as number));
     expect(d.currency).toBe('IDR');
     expect(d.status).toBe('pending');
     expect(String(d.qr_image)).toMatch(/^data:image\/svg\+xml;base64,/);
