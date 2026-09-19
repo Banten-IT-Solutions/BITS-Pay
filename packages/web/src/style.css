@@ -1422,7 +1422,36 @@ code {
   font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
   font-size: 1.35rem;
   font-weight: 700;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  text-decoration: none;
+}
+.btn-google svg {
+  flex-shrink: 0;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.15rem 0;
+  text-align: center;
+  color: var(--faint);
+  font-size: 0.8rem;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-strong);
+}
+.auth-divider span {
+  padding: 0 0.65rem;
 }
 .form-group {
   margin-bottom: 1rem;

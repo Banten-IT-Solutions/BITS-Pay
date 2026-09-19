@@ -155,6 +155,12 @@ async function handleSignup(e: Event) {
   }
 }
 
+// Google OAuth
+function handleGoogleAuth(e?: Event) {
+  e?.preventDefault();
+  window.location.href = `${API_URL}/auth/google`;
+}
+
 // Expose for inline handlers
 declare global {
   interface Window {
@@ -162,12 +168,18 @@ declare global {
     closeModal: typeof closeModal;
     handleLogin: typeof handleLogin;
     handleSignup: typeof handleSignup;
+    handleGoogleAuth: typeof handleGoogleAuth;
   }
 }
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
+window.handleGoogleAuth = handleGoogleAuth;
+
+document.querySelectorAll('.btn-google').forEach((btn) => {
+  btn.addEventListener('click', handleGoogleAuth);
+});
 
 // Close modals on Escape
 document.addEventListener('keydown', (e) => {
