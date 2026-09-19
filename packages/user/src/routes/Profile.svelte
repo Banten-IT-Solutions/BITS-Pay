@@ -146,6 +146,10 @@
 
   {#if loading}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <Card class="p-6">
+        <div class="mx-auto h-16 w-16 animate-pulse rounded-full bg-surface-2"></div>
+        <div class="mx-auto mt-4 h-5 w-32 animate-pulse rounded bg-surface-2"></div>
+      </Card>
       <div class="space-y-6 lg:col-span-2">
         <Card class="p-6">
           <div class="h-6 w-36 animate-pulse rounded bg-surface-2"></div>
@@ -155,16 +159,89 @@
           </div>
         </Card>
       </div>
-      <Card class="p-6">
-        <div class="h-16 w-16 animate-pulse rounded-full bg-surface-2"></div>
-        <div class="mt-4 h-5 w-32 animate-pulse rounded bg-surface-2"></div>
-      </Card>
     </div>
   {:else if error}
     <ErrorState message={error} retry={loadProfile} />
   {:else if me}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <!-- Kolom Kiri: Form Profil & Kata Sandi -->
+      <!-- Kolom Kiri: Ringkasan Akun -->
+      <div class="space-y-6">
+        <Card class="p-5 sm:p-6">
+          <div class="text-center">
+            <div
+              class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent-soft text-2xl font-bold text-accent shadow-sm"
+            >
+              {me.name.charAt(0).toUpperCase()}
+            </div>
+            <h3 class="mt-3 truncate font-display text-base font-semibold text-text">{me.name}</h3>
+            <p class="truncate text-xs text-muted">{me.email}</p>
+
+            <div class="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+              <Badge status={me.tier === 'premium' ? 'premium' : 'free'} dot={false} />
+              <Badge status={me.status} dot={true} />
+              <Badge
+                status={me.email_verified ? 'verified' : 'unverified'}
+                label={me.email_verified ? 'Terverifikasi' : 'Belum Verifikasi'}
+                dot={true}
+              />
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-3 border-t border-border pt-4 text-xs">
+            <div>
+              <span class="text-faint">ID Pengguna</span>
+              <div class="mt-1 flex items-center justify-between rounded-lg bg-surface-2 px-2.5 py-1.5 font-mono text-[11px] text-text">
+                <span class="truncate">{me.id}</span>
+                <button
+                  type="button"
+                  class="ml-2 flex-none text-muted transition-colors hover:text-text"
+                  onclick={copyUserId}
+                  title="Salin ID Pengguna"
+                  aria-label="Salin ID Pengguna"
+                >
+                  <Icon name="copy" size={13} />
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between py-1">
+              <span class="text-faint">Paket Langganan</span>
+              <span class="font-medium text-text capitalize">
+                {me.tier}
+                {#if me.is_trial}
+                  <span class="text-accent">(Trial)</span>
+                {/if}
+              </span>
+            </div>
+
+            {#if me.tier_expires_at}
+              <div class="flex items-center justify-between py-1">
+                <span class="text-faint">Masa Berlaku</span>
+                <span class="font-mono text-text">{formatDate(me.tier_expires_at)}</span>
+              </div>
+            {/if}
+
+            {#if me.created_at}
+              <div class="flex items-center justify-between py-1">
+                <span class="text-faint">Terdaftar Sejak</span>
+                <span class="font-mono text-text">{formatDate(me.created_at)}</span>
+              </div>
+            {/if}
+          </div>
+
+          <div class="mt-6 border-t border-border pt-4">
+            <a
+              href="#/subscription"
+              class="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 text-xs font-medium text-text transition-colors hover:bg-surface hover:border-border-strong"
+            >
+              <Icon name="subscription" size={14} />
+              Kelola Paket Langganan
+            </a>
+          </div>
+        </Card>
+      </div>
+
+      <!-- Kolom Kanan: Form Profil & Kata Sandi -->
       <div class="space-y-6 lg:col-span-2">
         <!-- Card 1: Informasi Dasar -->
         <Card class="p-5 sm:p-6">
@@ -183,36 +260,38 @@
           </div>
 
           <form onsubmit={handleSaveProfile} class="mt-5 space-y-4">
-            <Input
-              label="Nama Lengkap"
-              bind:value={name}
-              placeholder="Contoh: Budi Santoso"
-              required
-              disabled={savingProfile}
-            />
-
-            <div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
-                label="Alamat Email"
-                type="email"
-                bind:value={email}
-                placeholder="nama@email.com"
+                label="Nama Lengkap"
+                bind:value={name}
+                placeholder="Contoh: Budi Santoso"
                 required
                 disabled={savingProfile}
               />
-              <div class="mt-2 flex items-center justify-between gap-2">
-                <Badge
-                  status={me.email_verified ? 'verified' : 'unverified'}
-                  label={me.email_verified ? 'Email terverifikasi' : 'Belum terverifikasi'}
-                  dot={true}
+
+              <div>
+                <Input
+                  label="Alamat Email"
+                  type="email"
+                  bind:value={email}
+                  placeholder="nama@email.com"
+                  required
+                  disabled={savingProfile}
                 />
-                {#if emailChanged}
-                  <span
-                    class="inline-flex items-center rounded-md border border-accent/30 bg-accent-soft px-2 py-0.5 font-mono text-[11px] font-medium text-accent"
-                  >
-                    Perubahan terdeteksi
-                  </span>
-                {/if}
+                <div class="mt-2 flex items-center justify-between gap-2">
+                  <Badge
+                    status={me.email_verified ? 'verified' : 'unverified'}
+                    label={me.email_verified ? 'Email terverifikasi' : 'Belum terverifikasi'}
+                    dot={true}
+                  />
+                  {#if emailChanged}
+                    <span
+                      class="inline-flex items-center rounded-md border border-accent/30 bg-accent-soft px-2 py-0.5 font-mono text-[11px] font-medium text-accent"
+                    >
+                      Perubahan terdeteksi
+                    </span>
+                  {/if}
+                </div>
               </div>
             </div>
 
@@ -347,83 +426,6 @@
               </Button>
             </div>
           </form>
-        </Card>
-      </div>
-
-      <!-- Kolom Kanan: Ringkasan Akun -->
-      <div class="space-y-6">
-        <Card class="p-5 sm:p-6">
-          <div class="text-center">
-            <div
-              class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent-soft text-2xl font-bold text-accent shadow-sm"
-            >
-              {me.name.charAt(0).toUpperCase()}
-            </div>
-            <h3 class="mt-3 truncate font-display text-base font-semibold text-text">{me.name}</h3>
-            <p class="truncate text-xs text-muted">{me.email}</p>
-
-            <div class="mt-3 flex flex-wrap items-center justify-center gap-1.5">
-              <Badge status={me.tier === 'premium' ? 'premium' : 'free'} dot={false} />
-              <Badge status={me.status} dot={true} />
-              <Badge
-                status={me.email_verified ? 'verified' : 'unverified'}
-                label={me.email_verified ? 'Terverifikasi' : 'Belum Verifikasi'}
-                dot={true}
-              />
-            </div>
-          </div>
-
-          <div class="mt-6 space-y-3 border-t border-border pt-4 text-xs">
-            <div>
-              <span class="text-faint">ID Pengguna</span>
-              <div class="mt-1 flex items-center justify-between rounded-lg bg-surface-2 px-2.5 py-1.5 font-mono text-[11px] text-text">
-                <span class="truncate">{me.id}</span>
-                <button
-                  type="button"
-                  class="ml-2 flex-none text-muted transition-colors hover:text-text"
-                  onclick={copyUserId}
-                  title="Salin ID Pengguna"
-                  aria-label="Salin ID Pengguna"
-                >
-                  <Icon name="copy" size={13} />
-                </button>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between py-1">
-              <span class="text-faint">Paket Langganan</span>
-              <span class="font-medium text-text capitalize">
-                {me.tier}
-                {#if me.is_trial}
-                  <span class="text-accent">(Trial)</span>
-                {/if}
-              </span>
-            </div>
-
-            {#if me.tier_expires_at}
-              <div class="flex items-center justify-between py-1">
-                <span class="text-faint">Masa Berlaku</span>
-                <span class="font-mono text-text">{formatDate(me.tier_expires_at)}</span>
-              </div>
-            {/if}
-
-            {#if me.created_at}
-              <div class="flex items-center justify-between py-1">
-                <span class="text-faint">Terdaftar Sejak</span>
-                <span class="font-mono text-text">{formatDate(me.created_at)}</span>
-              </div>
-            {/if}
-          </div>
-
-          <div class="mt-6 border-t border-border pt-4">
-            <a
-              href="#/subscription"
-              class="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 text-xs font-medium text-text transition-colors hover:bg-surface hover:border-border-strong"
-            >
-              <Icon name="subscription" size={14} />
-              Kelola Paket Langganan
-            </a>
-          </div>
         </Card>
       </div>
     </div>
