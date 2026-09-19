@@ -281,7 +281,15 @@
               </div>
             {/if}
 
-            <div class="flex items-center justify-end gap-3 pt-2">
+            <div class="flex items-center gap-3 pt-2">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={!hasProfileChanges || savingProfile}
+                loading={savingProfile}
+              >
+                Simpan Perubahan
+              </Button>
               {#if hasProfileChanges}
                 <button
                   type="button"
@@ -298,14 +306,6 @@
                   Batal
                 </button>
               {/if}
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={!hasProfileChanges || savingProfile}
-                loading={savingProfile}
-              >
-                Simpan Perubahan
-              </Button>
             </div>
           </form>
         </Card>
@@ -373,10 +373,7 @@
               />
             </div>
 
-            <div class="flex items-center justify-between pt-2">
-              <span class="text-[11px] text-faint">
-                Sesi di perangkat lain akan otomatis dikeluarkan saat kata sandi diperbarui.
-              </span>
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
               <Button
                 type="submit"
                 variant="secondary"
@@ -385,6 +382,9 @@
               >
                 {me.has_password ? 'Perbarui Kata Sandi' : 'Buat Kata Sandi'}
               </Button>
+              <span class="text-[11px] text-faint">
+                Sesi di perangkat lain akan otomatis dikeluarkan saat kata sandi diperbarui.
+              </span>
             </div>
           </form>
         </Card>
