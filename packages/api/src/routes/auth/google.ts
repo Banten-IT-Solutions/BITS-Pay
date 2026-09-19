@@ -11,6 +11,13 @@ router.get('/google', async (c) => {
 });
 
 router.get('/google/callback', async (c) => {
+  const errorParam = c.req.query('error');
+  if (errorParam) {
+    // User batalkan login Google di consent screen -> arahkan kembali ke /login
+    const redirectUrl = new URL(`${c.env.APP_URL}/user/`);
+    redirectUrl.hash = '/login';
+    return c.redirect(redirectUrl.toString());
+  }
   const code = c.req.query('code');
   const state = c.req.query('state');
   if (!code) throw AppError.badRequest('google_auth_failed', 'Kode OAuth tidak ditemukan');

@@ -220,8 +220,11 @@ export class AuthService {
   }
 
   static async googleAuthUrl(env: Env): Promise<string> {
-    const redirectUri = env.GOOGLE_REDIRECT_URI;
     const clientId = env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw AppError.badRequest('google_auth_not_configured', 'Google OAuth belum dikonfigurasi');
+    }
+    const redirectUri = env.GOOGLE_REDIRECT_URI;
     const state = generateToken(16);
     await env.DB.prepare('INSERT INTO oauth_states (id, state, expires_at) VALUES (?, ?, ?)')
       .bind(crypto.randomUUID(), state, new Date(Date.now() + 10 * 60 * 1000).toISOString())
@@ -244,6 +247,9 @@ export class AuthService {
     state: string | undefined,
   ): Promise<{ code: string; isNew: boolean }> {
     if (!state) throw AppError.badRequest('google_auth_failed', 'State OAuth tidak ditemukan');
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      throw AppError.badRequest('google_auth_not_configured', 'Google OAuth belum dikonfigurasi');
+    }
     const st = await env.DB.prepare('SELECT id, used, expires_at FROM oauth_states WHERE state = ?')
       .bind(state)
       .first<{ id: string; used: number; expires_at: string }>();
@@ -277,11 +283,16 @@ export class AuthService {
     }
     const googleUser = (await userInfoResp.json()) as {
       id: string;
-      email: string;
-      name: string;
-      picture: string;
+      email?: string;
+      name?: string;
+      picture?: string;
     };
-    const email = googleUser.email.toLowerCase();
+    const email = (googleUser.email || '').toLowerCase().trim();
+    if (!email) {
+      throw AppError.badRequest('google_auth_failed', 'Email tidak ditemukan dari akun Google');
+    }
+    const name = googleUser.name?.trim() || email.split('@')[0] || 'User';
+    const avatarUrl = googleUser.picture || null;
 
     // Tandai state terpakai HANYA setelah exchange + userinfo sukses —
     // kalau exchange gagal, state masih bisa dipakai ulang.
@@ -324,9 +335,9 @@ export class AuthService {
         );
       }
       await env.DB.prepare(
-        "UPDATE users SET google_id = ?, last_login_at = datetime('now') WHERE id = ?",
+        "UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?), last_login_at = datetime('now') WHERE id = ?",
       )
-        .bind(googleUser.id, byEmail.id)
+        .bind(googleUser.id, avatarUrl, byEmail.id)
         .run();
       const authCode = await createAuthCode(env, byEmail.id);
       return { code: authCode, isNew: false };
@@ -340,7 +351,7 @@ export class AuthService {
     const user = await env.DB.prepare(
       'INSERT INTO users (id, email, name, avatar_url, google_id, email_verified, tier, tier_expires_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?) RETURNING id',
     )
-      .bind(id, email, googleUser.name, googleUser.picture, googleUser.id, 'premium', trialEndsAt)
+      .bind(id, email, name, avatarUrl, googleUser.id, 'premium', trialEndsAt)
       .first<{ id: string }>();
     if (!user) throw AppError.internal('Gagal membuat user');
 
