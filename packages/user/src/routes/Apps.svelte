@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
   import { showToast } from '../lib/toast';
+  import { copyText } from '../lib/clipboard';
   import Card from '../components/ui/Card.svelte';
   import Badge from '../components/ui/Badge.svelte';
   import Button from '../components/ui/Button.svelte';
@@ -10,6 +11,7 @@
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
   import Icon from '../components/ui/Icon.svelte';
+  import QrisInput from '../components/QrisInput.svelte';
   import type { WorkspaceWithMemberCount, AppPublic, AppWithSecrets } from '@bits-pay/shared';
 
   let workspaces = $state<WorkspaceWithMemberCount[]>([]);
@@ -20,25 +22,50 @@
   let showCreate = $state(false);
   let newName = $state('');
   let newCallback = $state('');
+  let newQris = $state('');
   let submitting = $state(false);
   let editingApp = $state<AppPublic | null>(null);
+  let editCallback = $state('');
   let editQris = $state('');
+  // Kredensial sekali-tampil setelah buat app / rotate key.
+  let secret = $state<{ appName: string; apiKey: string; callbackSecret: string } | null>(null);
+
+  async function salin(text: string, label: string) {
+    const ok = await copyText(text);
+    showToast(
+      ok ? `${label} disalin` : 'Gagal menyalin — salin manual',
+      ok ? 'success' : 'error',
+    );
+  }
 
   function openEdit(app: AppPublic) {
     editingApp = app;
+    editCallback = app.callback_url ?? '';
     editQris = app.qris_static ?? '';
   }
 
-  async function saveQris() {
+  async function saveSettings() {
     if (!editingApp) return;
+    // QRIS wajib — server menolak kosong/null; cegah lebih awal di client.
+    if (!editQris.trim()) {
+      showToast('QRIS static wajib diisi', 'error');
+      return;
+    }
     submitting = true;
     try {
       const updated = await api.put<AppPublic>(
         `/app/workspaces/${selectedWid}/apps/${editingApp.id}`,
-        { qris_static: editQris.trim() || null },
+        {
+          callback_url: editCallback.trim(),
+          qris_static: editQris.trim(),
+        },
       );
-      apps = apps.map((a) => (a.id === updated.id ? { ...a, qris_static: updated.qris_static } : a));
-      showToast('QRIS aplikasi disimpan', 'success');
+      apps = apps.map((a) =>
+        a.id === updated.id
+          ? { ...a, callback_url: updated.callback_url, qris_static: updated.qris_static }
+          : a,
+      );
+      showToast('Pengaturan app disimpan', 'success');
       editingApp = null;
     } catch (e) {
       showToast((e as Error).message, 'error');
@@ -72,24 +99,25 @@
   onMount(load);
 
   async function create() {
-    if (!newName || !selectedWid) return;
+    if (!newName || !selectedWid || !newQris.trim()) return;
     submitting = true;
     try {
       const app = await api.post<AppWithSecrets>(`/app/workspaces/${selectedWid}/apps`, {
         name: newName,
         callback_url: newCallback || undefined,
+        qris_static: newQris.trim(),
       });
-      showToast('App berhasil dibuat', 'success');
       showCreate = false;
       newName = '';
       newCallback = '';
+      newQris = '';
       apps = [...apps, app];
-      if (app.api_key) {
-        showToast(`API Key: ${app.api_key} — simpan!`, 'info');
-      }
-      if (app.callback_secret) {
-        showToast(`Callback Secret: ${app.callback_secret} — simpan untuk verifikasi webhook!`, 'info');
-      }
+      // Tampilkan kredensial sekali saja di modal (bukan toast yang mudah hilang).
+      secret = {
+        appName: app.name,
+        apiKey: app.api_key,
+        callbackSecret: app.callback_secret,
+      };
     } catch (e) {
       showToast((e as Error).message, 'error');
     } finally {
@@ -97,16 +125,21 @@
     }
   }
 
-  async function rotateKey(appId: string) {
-    if (!confirm('Rotate API key? Key lama tidak bisa dipakai lagi.')) return;
+  async function rotateKey(app: AppPublic) {
+    if (!confirm(`Rotate API key "${app.name}"? Key lama tidak bisa dipakai lagi.`)) return;
     try {
-      const app = await api.post<AppWithSecrets>(
-        `/app/workspaces/${selectedWid}/apps/${appId}/rotate-key`,
+      const updated = await api.post<AppWithSecrets>(
+        `/app/workspaces/${selectedWid}/apps/${app.id}/rotate-key`,
       );
-      showToast(`API Key baru: ${app.api_key} — simpan!`, 'success');
-      if (app.callback_secret) {
-        showToast(`Callback Secret: ${app.callback_secret} — simpan untuk verifikasi webhook!`, 'info');
-      }
+      apps = apps.map((a) =>
+        a.id === updated.id ? { ...a, api_key_prefix: updated.api_key_prefix } : a,
+      );
+      // Tampilkan key baru sekali saja di modal (bukan toast yang mudah hilang).
+      secret = {
+        appName: updated.name,
+        apiKey: updated.api_key,
+        callbackSecret: updated.callback_secret,
+      };
     } catch (e) {
       showToast((e as Error).message, 'error');
     }
@@ -197,13 +230,13 @@
               {/if}
             </div>
             <div class="flex flex-none flex-col gap-1">
-              <Button variant="ghost" size="sm" onclick={() => rotateKey(app.id)}>
+              <Button variant="ghost" size="sm" onclick={() => rotateKey(app)}>
                 <Icon name="refresh" size={14} />
                 Rotate Key
               </Button>
               <Button variant="ghost" size="sm" onclick={() => openEdit(app)}>
                 <Icon name="qr" size={14} />
-                QRIS
+                Pengaturan
               </Button>
             </div>
           </div>
@@ -234,35 +267,84 @@
       oninput={(e) => (newCallback = (e.target as HTMLInputElement).value)}
       placeholder="https://example.com/callback"
     />
-    <Button type="submit" block loading={submitting}>Buat App</Button>
+    <QrisInput bind:value={newQris} />
+    <Button type="submit" block loading={submitting} disabled={!newName || !newQris.trim()}>
+      Buat App
+    </Button>
   </form>
 </Modal>
 
-<Modal open={editingApp !== null} title="QRIS Static App" onClose={() => (editingApp = null)}>
+<Modal open={editingApp !== null} title="Pengaturan App" onClose={() => (editingApp = null)}>
   <form
     onsubmit={(e) => {
       e.preventDefault();
-      saveQris();
+      saveSettings();
     }}
     class="space-y-4"
   >
     <div>
-      <label for="qris-static" class="mb-1.5 block text-[13px] font-medium text-muted">
-        QRIS Static
-      </label>
-      <textarea
-        id="qris-static"
-        class="min-h-28 w-full rounded-lg border border-border bg-surface px-3 py-2 font-mono text-xs text-text"
-        placeholder="00020101021126..."
-        value={editQris}
-        oninput={(e) => (editQris = (e.target as HTMLTextAreaElement).value)}
-      ></textarea>
+      <Input
+        label="Webhook Callback URL"
+        type="url"
+        value={editCallback}
+        oninput={(e) => (editCallback = (e.target as HTMLInputElement).value)}
+        placeholder="https://example.com/callback"
+      />
       <p class="mt-1.5 text-xs text-faint">
-        Salin payload QRIS static dari QRIS merchant milikmu (misalnya dari aplikasi mobile banking
-        atau penyedia QRIS merchant). Dana pembayaran akan langsung masuk ke rekening merchant
-        tersebut. Kosongkan untuk menghapus QRIS.
+        URL HTTPS publik yang menerima notifikasi pembayaran. Kosongkan untuk menonaktifkan
+        webhook.
       </p>
     </div>
-    <Button type="submit" block loading={submitting}>Simpan QRIS</Button>
+    <QrisInput bind:value={editQris} />
+    <Button type="submit" block loading={submitting} disabled={!editQris.trim()}>
+      Simpan Pengaturan
+    </Button>
   </form>
+</Modal>
+
+<Modal open={secret !== null} title="Simpan Kredensial App" onClose={() => (secret = null)}>
+  <div class="space-y-4">
+    <div class="rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs leading-relaxed text-warning" role="alert">
+      <strong>Simpan sekarang.</strong> API key hanya ditampilkan sekali ini dan tidak bisa dilihat
+      lagi setelah modal ditutup.
+    </div>
+    <div>
+      <p class="mb-1.5 text-[13px] font-medium text-muted">API Key — {secret?.appName}</p>
+      <div class="flex items-start gap-2">
+        <code class="num min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-xs break-all text-text">
+          {secret?.apiKey}
+        </code>
+        <Button
+          variant="secondary"
+          size="sm"
+          onclick={() => secret && salin(secret.apiKey, 'API Key')}
+        >
+          <Icon name="copy" size={14} />
+          Salin
+        </Button>
+      </div>
+    </div>
+    {#if secret?.callbackSecret}
+      <div>
+        <p class="mb-1.5 text-[13px] font-medium text-muted">Callback Secret</p>
+        <div class="flex items-start gap-2">
+          <code class="num min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-xs break-all text-text">
+            {secret.callbackSecret}
+          </code>
+          <Button
+            variant="secondary"
+            size="sm"
+            onclick={() => secret && salin(secret.callbackSecret, 'Callback Secret')}
+          >
+            <Icon name="copy" size={14} />
+            Salin
+          </Button>
+        </div>
+        <p class="mt-1.5 text-xs text-faint">
+          Dipakai untuk verifikasi signature webhook di server kamu.
+        </p>
+      </div>
+    {/if}
+    <Button block onclick={() => (secret = null)}>Sudah Disimpan, Tutup</Button>
+  </div>
 </Modal>

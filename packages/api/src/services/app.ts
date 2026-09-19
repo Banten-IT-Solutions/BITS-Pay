@@ -16,6 +16,11 @@ import { TierService } from './tier';
 export const createAppSchema = z.object({
   name: z.string().min(1, 'Nama app wajib diisi'),
   callback_url: z.string().url('URL callback tidak valid').optional().or(z.literal('')),
+  qris_static: z
+    .string()
+    .min(1, 'QRIS static wajib diisi')
+    .max(512, 'QRIS static maksimal 512 karakter')
+    .refine(isValidQris, { message: 'Format QRIS static tidak valid' }),
 });
 
 // Kolom QRIS dipilih eksplisit (bukan SELECT *) supaya response stabil.
@@ -26,13 +31,13 @@ export const updateAppSchema = z.object({
   name: z.string().min(1).optional(),
   callback_url: z.string().url().optional().or(z.literal('')),
   is_active: z.boolean().optional(),
-  // null / string kosong = hapus QRIS. Non-empty wajib payload QRIS valid.
+  // Absen = tidak diubah. Bila diisi wajib non-empty + valid — QRIS tidak bisa dihapus lagi.
   qris_static: z
     .string()
+    .min(1, 'QRIS static tidak boleh kosong')
     .max(512, 'QRIS static maksimal 512 karakter')
-    .nullable()
-    .optional()
-    .refine((v) => !v || isValidQris(v), { message: 'Format QRIS static tidak valid' }),
+    .refine(isValidQris, { message: 'Format QRIS static tidak valid' })
+    .optional(),
 });
 
 export class AppService {
@@ -91,9 +96,18 @@ export class AppService {
     const callbackSecret = generateToken(32);
     const id = crypto.randomUUID();
     const app = await env.DB.prepare(
-      `INSERT INTO apps (id, workspace_id, name, api_key_hash, api_key_prefix, callback_url, callback_secret) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING ${APP_PUBLIC_COLS}`,
+      `INSERT INTO apps (id, workspace_id, name, api_key_hash, api_key_prefix, callback_url, callback_secret, qris_static) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING ${APP_PUBLIC_COLS}`,
     )
-      .bind(id, workspaceId, input.name, hash, prefix, callbackUrl, callbackSecret)
+      .bind(
+        id,
+        workspaceId,
+        input.name,
+        hash,
+        prefix,
+        callbackUrl,
+        callbackSecret,
+        input.qris_static,
+      )
       .first<AppPublic>();
     if (!app) throw AppError.internal('Gagal membuat app');
 
@@ -131,9 +145,8 @@ export class AppService {
       input.callback_url !== undefined ? input.callback_url || null : app.callback_url;
     if (callbackUrl) validateCallbackUrl(callbackUrl);
     const isActive = input.is_active !== undefined ? (input.is_active ? 1 : 0) : app.is_active;
-    // undefined = tidak diubah; null/string kosong = hapus QRIS.
-    const qrisStatic =
-      input.qris_static !== undefined ? input.qris_static || null : app.qris_static;
+    // undefined = tidak diubah; schema menolak null/kosong (QRIS wajib).
+    const qrisStatic = input.qris_static !== undefined ? input.qris_static : app.qris_static;
 
     const updated = await env.DB.prepare(
       `UPDATE apps SET name = ?, callback_url = ?, is_active = ?, qris_static = ?, updated_at = datetime('now') WHERE id = ? RETURNING ${APP_PUBLIC_COLS}`,

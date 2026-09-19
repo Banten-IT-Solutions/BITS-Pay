@@ -2,12 +2,14 @@
   import { api } from '../lib/api';
   import { auth } from '../stores/auth';
   import { showToast } from '../lib/toast';
+  import { copyText } from '../lib/clipboard';
   import { workspaces } from '../stores/workspace';
   import Modal from './ui/Modal.svelte';
   import Button from './ui/Button.svelte';
   import Input from './ui/Input.svelte';
   import Icon from './ui/Icon.svelte';
   import Badge from './ui/Badge.svelte';
+  import QrisInput from './QrisInput.svelte';
   import type { AppWithSecrets, ChargeCreateResponse } from '@bits-pay/shared';
 
   interface Props {
@@ -86,18 +88,15 @@
   }
 
   async function buatApp() {
-    if (!appName || !wid) return;
+    if (!appName || !wid || !qrisStatic.trim()) return;
     submitting = true;
     try {
       const app = await api.post<AppWithSecrets>(`/app/workspaces/${wid}/apps`, {
         name: appName,
         callback_url: callbackUrl || undefined,
+        qris_static: qrisStatic.trim(),
       });
-      // QRIS opsional: simpan via update app bila diisi.
-      if (qrisStatic.trim()) {
-        await api.put(`/app/workspaces/${wid}/apps/${app.id}`, { qris_static: qrisStatic.trim() });
-        qrisInstalled = true;
-      }
+      qrisInstalled = true;
       apiKey = app.api_key;
       callbackSecret = app.callback_secret;
       showToast('Aplikasi berhasil dibuat', 'success');
@@ -148,13 +147,18 @@
     }
   }
 
+  // Clipboard API hanya ada di secure context (localhost/HTTPS). Akses via IP LAN
+  // (http://192.168.x.x) bukan secure context → pakai fallback textarea.
   async function salin(text: string, label: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast(`${label} disalin`, 'success');
-    } catch {
-      showToast('Gagal menyalin — salin manual', 'error');
+    if (!text) {
+      showToast(`${label} kosong — belum ada yang bisa disalin`, 'error');
+      return;
     }
+    const ok = await copyText(text);
+    showToast(
+      ok ? `${label} disalin` : 'Gagal menyalin — salin manual',
+      ok ? 'success' : 'error',
+    );
   }
 
   function rupiah(n: number): string {
@@ -253,28 +257,18 @@
             oninput={(e) => (callbackUrl = (e.target as HTMLInputElement).value)}
             placeholder="https://example.com/callback"
           />
-          <div>
-            <label for="onboarding-qris" class="mb-1.5 block text-[13px] font-medium text-muted">
-              QRIS Static (opsional)
-            </label>
-            <textarea
-              id="onboarding-qris"
-              class="min-h-24 w-full rounded-lg border border-border bg-surface px-3 py-2 font-mono text-xs text-text"
-              placeholder="00020101021126..."
-              value={qrisStatic}
-              oninput={(e) => (qrisStatic = (e.target as HTMLTextAreaElement).value)}
-            ></textarea>
-            <p class="mt-1.5 text-xs text-faint">
-              Salin payload QRIS static dari QRIS merchant milikmu (misalnya dari aplikasi mobile
-              banking atau penyedia QRIS merchant). Dana pembayaran akan langsung masuk ke rekening
-              merchant tersebut.
-            </p>
-          </div>
+          <QrisInput bind:value={qrisStatic} />
           <div class="flex items-center justify-between pt-1">
             <Button variant="muted" onclick={() => (step = 1)}>Kembali</Button>
             <div class="flex gap-2">
               <Button variant="muted" onclick={() => (step = 3)}>Lewati</Button>
-              <Button type="submit" loading={submitting} disabled={!appName}>Buat Aplikasi</Button>
+              <Button
+                type="submit"
+                loading={submitting}
+                disabled={!appName || !qrisStatic.trim()}
+              >
+                Buat Aplikasi
+              </Button>
             </div>
           </div>
         </form>
