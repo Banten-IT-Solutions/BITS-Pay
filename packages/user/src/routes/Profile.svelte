@@ -278,7 +278,7 @@
         <Card class="p-5 sm:p-6">
           <div class="flex items-start gap-3.5 border-b border-border pb-4">
             <div
-              class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-surface-2 text-text"
+              class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-accent-soft text-accent"
             >
               <Icon name="lock" size={20} />
             </div>
@@ -422,20 +422,6 @@
               <Icon name="subscription" size={14} />
               Kelola Paket Langganan
             </a>
-          </div>
-        </Card>
-
-        <!-- Card Bantuan -->
-        <Card class="p-5 text-xs">
-          <div class="flex items-start gap-2.5 text-muted">
-            <Icon name="shield" size={16} class="mt-0.5 flex-none text-accent" />
-            <div class="space-y-1">
-              <p class="font-medium text-text">Keamanan Akun BITS Pay</p>
-              <p class="leading-relaxed">
-                Jaga kerahasiaan kata sandi dan API Key kamu. Tim BITS Pay tidak akan pernah
-                meminta kata sandi akun kamu.
-              </p>
-            </div>
           </div>
         </Card>
       </div>
