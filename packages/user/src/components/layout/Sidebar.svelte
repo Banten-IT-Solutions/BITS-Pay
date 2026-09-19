@@ -61,28 +61,48 @@
     {/each}
   </nav>
 
-  <div class="flex-none space-y-3 border-t border-border p-3">
+  <div class="flex-none space-y-2.5 border-t border-border p-3">
     {#if $auth.user}
-      <div class="flex items-center justify-between gap-2 px-1">
-        <span class="text-xs text-faint">Paket kamu</span>
-        {#if $auth.user.tier === 'premium'}
-          <Badge status="premium" dot={false} />
-        {:else}
+      {#if $auth.user.tier === 'premium'}
+        <div class="rounded-xl border border-border bg-surface-2/60 p-3">
+          <div class="flex items-center justify-between">
+            <span class="font-display text-xs font-semibold text-text">Paket Kamu</span>
+            <Badge status="premium" dot={false} />
+          </div>
+          <p class="mt-1 text-[11px] text-muted">Semua fitur premium aktif.</p>
           <a
             href="#/subscription"
             onclick={onNavigate}
-            class="text-xs font-semibold text-accent hover:text-accent-strong"
+            class="mt-2 flex items-center justify-between font-mono text-[11px] text-accent transition-colors hover:text-accent-strong"
           >
-            Upgrade →
+            <span>Kelola Langganan</span>
+            <Icon name="chevron-right" size={12} />
           </a>
-        {/if}
-      </div>
+        </div>
+      {:else}
+        <div class="rounded-xl border border-accent/20 bg-accent-soft/40 p-3">
+          <div class="flex items-center justify-between">
+            <span class="font-display text-xs font-semibold text-text">Paket Kamu</span>
+            <Badge status="free" dot={false} label="Free" />
+          </div>
+          <p class="mt-1 text-[11px] leading-tight text-muted">Buka transaksi tanpa batas.</p>
+          <a
+            href="#/subscription"
+            onclick={onNavigate}
+            class="mt-2.5 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-accent text-xs font-semibold text-on-accent transition-colors hover:bg-accent-strong"
+          >
+            <span>Upgrade ke Premium</span>
+            <Icon name="chevron-right" size={13} />
+          </a>
+        </div>
+      {/if}
     {/if}
+
     <button
-      class="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
+      class="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
       onclick={logout}
     >
-      <Icon name="logout" size={18} class="flex-none" />
+      <Icon name="logout" size={15} class="flex-none" />
       <span>Keluar</span>
     </button>
   </div>
