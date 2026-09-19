@@ -26,10 +26,10 @@ function createAuthStore() {
       }
       try {
         const user = await api.get<UserPublic>('/auth/me');
-        update({ user, token: t, loading: false });
+        set({ user, token: t, loading: false });
       } catch {
         localStorage.removeItem('token');
-        update({ user: null, token: null, loading: false });
+        set({ user: null, token: null, loading: false });
       }
     },
     async login(email: string, password: string) {

@@ -20,7 +20,7 @@
     "lint:fix": "eslint --fix --no-error-on-unmatched-pattern --pass-on-no-patterns packages/api/src packages/shared/src",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit && pnpm -r exec tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

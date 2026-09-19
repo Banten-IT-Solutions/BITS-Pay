@@ -18,7 +18,9 @@ toggle?.addEventListener('click', () => {
 // Pill navbar: elevasi saat halaman di-scroll.
 const navbar = document.querySelector<HTMLElement>('.navbar');
 if (navbar) {
-  const onScroll = (): void => navbar.classList.toggle('scrolled', window.scrollY > 8);
+  const onScroll = (): void => {
+    navbar.classList.toggle('scrolled', window.scrollY > 8);
+  };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 }
@@ -103,8 +105,12 @@ async function handleLogin(e: Event) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    const json = await res.json();
-    if (!res.ok || !json.success) {
+    const json = (await res.json()) as {
+      success?: boolean;
+      error?: { message?: string };
+      data?: { token?: string };
+    };
+    if (!res.ok || !json.success || !json.data?.token) {
       showError('login-error', json.error?.message || 'Login gagal');
       return;
     }
@@ -134,7 +140,10 @@ async function handleSignup(e: Event) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
     });
-    const json = await res.json();
+    const json = (await res.json()) as {
+      success?: boolean;
+      error?: { message?: string };
+    };
     if (!res.ok || !json.success) {
       showError('signup-error', json.error?.message || 'Daftar gagal');
       return;
