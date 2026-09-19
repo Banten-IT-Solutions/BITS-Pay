@@ -20,10 +20,16 @@ function createAuthStore() {
     subscribe,
     async init() {
       // Handoff token lintas origin khusus dev (landing 7002 -> user 7003).
-      const urlToken = new URLSearchParams(window.location.search).get('token');
-      if (urlToken) {
-        localStorage.setItem('token', urlToken);
-        history.replaceState(null, '', window.location.pathname + window.location.hash);
+      // Jangan timpa token sesi jika rute saat ini adalah aksi publik ber-token (verifikasi email / reset password).
+      const hash = typeof window !== 'undefined' ? window.location.hash || '' : '';
+      const isPublicTokenRoute =
+        hash.startsWith('#/verify-email') || hash.startsWith('#/reset-password');
+      if (!isPublicTokenRoute && typeof window !== 'undefined') {
+        const urlToken = new URLSearchParams(window.location.search).get('token');
+        if (urlToken) {
+          localStorage.setItem('token', urlToken);
+          history.replaceState(null, '', window.location.pathname + window.location.hash);
+        }
       }
       const t = localStorage.getItem('token');
       if (!t) {

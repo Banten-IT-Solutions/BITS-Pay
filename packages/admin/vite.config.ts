@@ -3,6 +3,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+  base: '/admin/',
   plugins: [tailwindcss(), svelte()],
   build: { outDir: 'dist' },
 });

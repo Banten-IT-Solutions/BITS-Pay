@@ -27,14 +27,26 @@ export default defineConfig({
   // di-copy ke dist/{user,admin} dan di-serve worker yang sama.
   server: {
     proxy: {
-      '/user': 'http://localhost:7003',
-      '/admin': 'http://localhost:7004',
+      '/user': {
+        target: 'http://localhost:7003',
+        ws: true,
+      },
+      '/admin': {
+        target: 'http://localhost:7004',
+        ws: true,
+      },
     },
   },
   preview: {
     proxy: {
-      '/user': 'http://localhost:7003',
-      '/admin': 'http://localhost:7004',
+      '/user': {
+        target: 'http://localhost:7003',
+        ws: true,
+      },
+      '/admin': {
+        target: 'http://localhost:7004',
+        ws: true,
+      },
     },
   },
   plugins: [

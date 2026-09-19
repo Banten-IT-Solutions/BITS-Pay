@@ -124,12 +124,7 @@ async function handleLogin(e: Event) {
     }
     const token: string = json.data.token;
     localStorage.setItem('token', token);
-    // Dev: web di 7002, user SPA di 7003 (beda origin, localStorage tidak shared).
-    if (window.location.port === '7002') {
-      window.location.href = `http://${window.location.hostname}:7003/?token=${encodeURIComponent(token)}`;
-    } else {
-      window.location.href = '/user/';
-    }
+    window.location.href = '/user/';
   } catch {
     showError('login-error', 'Gagal terhubung ke server');
   }
