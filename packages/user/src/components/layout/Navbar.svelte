@@ -24,12 +24,22 @@
     '/login': 'Masuk',
   };
 
+  const pageSubtitles: Record<string, string> = {
+    '/profile': 'Kelola identitas akun, kredensial, dan preferensi keamanan kamu.',
+  };
+
   let title = $derived.by(() => {
     const path = router.location;
     if (path in pageTitles) return pageTitles[path];
     if (path.startsWith('/workspaces/')) return 'Detail Workspace';
     if (path.startsWith('/payments/')) return 'Detail Pembayaran';
     return 'Dashboard';
+  });
+
+  let subtitle = $derived.by(() => {
+    const path = router.location;
+    if (path in pageSubtitles) return pageSubtitles[path];
+    return '';
   });
 
   function switchTheme() {
@@ -63,9 +73,18 @@
     >
       <Icon name="menu" size={20} />
     </button>
-    <h1 class="truncate font-display text-[15px] font-semibold tracking-tight text-text sm:text-base">
-      {title}
-    </h1>
+    <div class="flex min-w-0 items-baseline gap-2">
+      <h1 class="truncate font-display text-[15px] font-semibold tracking-tight text-text sm:text-base">
+        {title}
+      </h1>
+      {#if subtitle}
+        <span
+          class="hidden truncate font-mono text-[10px] font-medium tracking-[0.12em] text-faint uppercase sm:inline"
+        >
+          // {subtitle}
+        </span>
+      {/if}
+    </div>
   </div>
 
   <div class="flex flex-none items-center gap-1.5">

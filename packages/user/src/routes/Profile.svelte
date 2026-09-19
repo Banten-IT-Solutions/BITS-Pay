@@ -136,14 +136,6 @@
 </script>
 
 <div class="mx-auto max-w-5xl space-y-6">
-  <!-- Header Halaman -->
-  <div>
-    <h1 class="font-display text-2xl font-bold tracking-tight text-text">Profil Akun</h1>
-    <p class="mt-1 text-sm text-muted">
-      Kelola identitas akun, kredensial, dan preferensi keamanan kamu.
-    </p>
-  </div>
-
   {#if loading}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <Card class="p-6">
