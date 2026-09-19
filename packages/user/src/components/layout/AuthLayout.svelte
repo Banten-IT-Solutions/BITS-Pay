@@ -19,7 +19,7 @@
       title: 'QRIS dinamis + kode unik',
       desc: 'Tiap invoice otomatis punya kode unik 3-digit untuk identifikasi transfer instan.',
       tag: 'PAYMENT',
-      icon: 'zap' as const,
+      icon: 'qr' as const,
     },
     {
       title: 'OCR konfirmasi otomatis',
@@ -78,12 +78,6 @@
 
     <!-- Center: Main Value & Card Showcase -->
     <div class="relative my-auto py-8">
-      <!-- Tag pill -->
-      <div class="inline-flex items-center gap-2 rounded-lg border border-accent/20 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent mb-4">
-        <span class="font-mono">// 01</span>
-        <span>QRIS Payment Gateway</span>
-      </div>
-
       <h2 class="font-display text-3xl xl:text-4xl leading-[1.15] font-bold tracking-tight text-text">
         Terima pembayaran QRIS.<br />
         <span class="bg-gradient-to-r from-accent via-accent to-accent-strong bg-clip-text text-transparent">
