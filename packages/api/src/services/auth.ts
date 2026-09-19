@@ -166,6 +166,62 @@ export class AuthService {
     ]);
   }
 
+  static async resendVerification(
+    env: Env,
+    input: { email?: string; userId?: string },
+  ): Promise<void> {
+    let user: { id: string; email: string; name: string; email_verified: number } | null = null;
+    if (input.userId) {
+      user = await env.DB.prepare('SELECT id, email, name, email_verified FROM users WHERE id = ?')
+        .bind(input.userId)
+        .first();
+    } else if (input.email) {
+      user = await env.DB.prepare(
+        'SELECT id, email, name, email_verified FROM users WHERE email = ?',
+      )
+        .bind(input.email)
+        .first();
+    }
+    if (!user || user.email_verified) return;
+
+    const recent = await env.DB.prepare(
+      "SELECT created_at FROM email_verifications WHERE user_id = ? AND created_at > datetime('now', '-60 seconds') ORDER BY created_at DESC LIMIT 1",
+    )
+      .bind(user.id)
+      .first<{ created_at: string }>();
+
+    if (recent) {
+      throw AppError.tooMany('Silakan tunggu 1 menit sebelum meminta email verifikasi baru');
+    }
+
+    await env.DB.prepare('UPDATE email_verifications SET used = 1 WHERE user_id = ? AND used = 0')
+      .bind(user.id)
+      .run();
+
+    const token = generateToken();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    await env.DB.prepare(
+      'INSERT INTO email_verifications (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
+    )
+      .bind(crypto.randomUUID(), user.id, token, expiresAt)
+      .run();
+
+    const verifyUrl = `${env.APP_URL}/user/?token=${encodeURIComponent(token)}#/verify-email`;
+    const tpl = await EmailTemplateService.get(env, 'email_template_verify');
+    const defaultText = `Halo ${user.name}, verifikasi email kamu: ${verifyUrl}`;
+    const text =
+      EmailTemplateService.render(tpl, { name: user.name, verify_url: verifyUrl }) || defaultText;
+    await EmailService.send(env, {
+      to: user.email,
+      subject: 'Verifikasi Email BITS Pay',
+      text,
+      html:
+        text === defaultText
+          ? `<p>Halo ${user.name},</p><p>Klik <a href="${verifyUrl}">di sini</a> untuk verifikasi email.</p>`
+          : undefined,
+    }).catch(() => {});
+  }
+
   static async forgotPassword(env: Env, email: string): Promise<void> {
     const user = await env.DB.prepare('SELECT id, name FROM users WHERE email = ?')
       .bind(email)

@@ -6,11 +6,13 @@
   import AuthLayout from '../components/layout/AuthLayout.svelte';
   import Button from '../components/ui/Button.svelte';
   import Input from '../components/ui/Input.svelte';
+  import Icon from '../components/ui/Icon.svelte';
 
   const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:7001`;
 
   let mode = $state<'login' | 'signup'>('login');
   let loading = $state(false);
+  let resending = $state(false);
   let name = $state('');
   let email = $state('');
   let password = $state('');
@@ -18,6 +20,20 @@
 
   function handleGoogleAuth() {
     window.location.href = `${API_URL}/auth/google`;
+  }
+
+  async function handleResendFromLogin() {
+    if (!email || resending) return;
+    resending = true;
+    try {
+      await api.post('/auth/resend-verification', { email });
+      showToast('Tautan verifikasi baru berhasil dikirim ke email Anda!', 'success');
+      error = '';
+    } catch (e) {
+      showToast((e as Error).message || 'Gagal mengirim ulang email verifikasi', 'error');
+    } finally {
+      resending = false;
+    }
   }
 
   async function handleSubmit() {
@@ -54,12 +70,37 @@
     : 'Gratis untuk mulai — upgrade kapan saja.'}
 >
   {#if error}
-    <div
-      class="mb-4 rounded-lg border border-error/30 bg-error/10 px-3.5 py-2.5 text-sm text-error"
-      role="alert"
-    >
-      {error}
-    </div>
+    {#if /verifikasi email/i.test(error)}
+      <div
+        class="mb-4 rounded-xl border border-accent/30 bg-accent/10 p-3.5 text-left"
+        role="alert"
+      >
+        <div class="flex items-center gap-2 font-medium text-accent">
+          <Icon name="mail" size={16} />
+          <span class="text-sm">Verifikasi Email Diperlukan</span>
+        </div>
+        <p class="mt-1.5 text-xs leading-relaxed text-muted">
+          Akun kamu telah terdaftar tetapi belum diverifikasi. Buka kotak masuk email kamu atau kirim ulang tautan verifikasi.
+        </p>
+        <div class="mt-2.5">
+          <button
+            type="button"
+            class="text-xs font-semibold text-accent hover:underline cursor-pointer"
+            onclick={handleResendFromLogin}
+            disabled={resending || !email}
+          >
+            {resending ? 'Mengirim...' : 'Kirim Ulang Email Verifikasi'}
+          </button>
+        </div>
+      </div>
+    {:else}
+      <div
+        class="mb-4 rounded-lg border border-error/30 bg-error/10 px-3.5 py-2.5 text-sm text-error"
+        role="alert"
+      >
+        {error}
+      </div>
+    {/if}
   {/if}
 
   <Button
