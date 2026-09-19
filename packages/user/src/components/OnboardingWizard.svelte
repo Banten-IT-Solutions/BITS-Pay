@@ -208,7 +208,7 @@
         />
         <p class="text-xs text-faint">Slug hanya boleh huruf kecil, angka, dan strip.</p>
         <div class="flex items-center justify-between pt-1">
-          <Button variant="ghost" onclick={selesai}>Lewati</Button>
+          <Button variant="muted" onclick={selesai}>Lewati</Button>
           <Button type="submit" loading={submitting} disabled={!wsName || !wsSlug}>Lanjut</Button>
         </div>
       </form>
@@ -241,7 +241,7 @@
           <div class="flex items-center justify-between pt-1">
             <Button variant="ghost" onclick={() => (step = 1)}>Kembali</Button>
             <div class="flex gap-2">
-              <Button variant="ghost" onclick={() => (step = 3)}>Lewati</Button>
+              <Button variant="muted" onclick={() => (step = 3)}>Lewati</Button>
               <Button type="submit" loading={submitting} disabled={!appName}>Buat Aplikasi</Button>
             </div>
           </div>
@@ -331,7 +331,7 @@
           <div class="flex items-center justify-between pt-1">
             <Button variant="ghost" onclick={() => (step = 2)}>Kembali</Button>
             <div class="flex gap-2">
-              <Button variant="ghost" onclick={selesai}>Lewati</Button>
+              <Button variant="muted" onclick={selesai}>Lewati</Button>
               <Button type="submit" loading={submitting} disabled={!apiKey || !orderId || !amount}>
                 Buat Tagihan
               </Button>

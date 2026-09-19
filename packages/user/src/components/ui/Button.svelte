@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte';
 
   interface Props {
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'muted' | 'danger';
     type?: 'button' | 'submit' | 'reset';
     disabled?: boolean;
     loading?: boolean;
@@ -30,6 +30,8 @@
     primary: 'bg-accent text-on-accent hover:bg-accent-strong',
     secondary: 'bg-surface text-text border border-border-strong hover:bg-surface-2 hover:border-faint',
     ghost: 'bg-transparent text-muted hover:bg-surface-2 hover:text-text',
+    // Seperti ghost saat hover; hover-nya satu tingkat lebih gelap.
+    muted: 'bg-surface-2 text-text hover:bg-border',
     danger: 'bg-error text-white hover:opacity-90',
   };
   const sizes: Record<string, string> = {
