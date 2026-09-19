@@ -67,7 +67,7 @@
   <ErrorState {error} onRetry={load} />
 {:else if $workspaces.length === 0}
   <EmptyState
-    title="Belum ada workspace"
+    title="Belum Ada Workspace"
     message="Workspace mengelompokkan aplikasi dan pembayaran kamu."
     icon="workspaces"
   >
@@ -128,6 +128,6 @@
       required
       placeholder="my-workspace"
     />
-    <Button type="submit" block loading={submitting}>Buat</Button>
+    <Button type="submit" block loading={submitting}>Buat Workspace</Button>
   </form>
 </Modal>

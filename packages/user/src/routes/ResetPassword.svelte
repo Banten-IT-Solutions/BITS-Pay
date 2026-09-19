@@ -34,7 +34,7 @@
   }
 </script>
 
-<AuthLayout title="Buat password baru" subtitle="Masukkan password baru untuk akun kamu.">
+<AuthLayout title="Buat Password Baru" subtitle="Masukkan password baru untuk akun kamu.">
   {#if error}
     <div
       class="mb-4 rounded-lg border border-error/30 bg-error/10 px-3.5 py-2.5 text-sm text-error"
@@ -59,13 +59,13 @@
       required
     />
     <Button type="submit" block size="lg" loading={loading} disabled={!token}>
-      Simpan password
+      Simpan Password
     </Button>
   </form>
 
   {#snippet footer()}
     <button class="font-medium text-accent hover:text-accent-strong" onclick={() => push('/login')}>
-      ← Kembali ke login
+      ← Kembali ke Login
     </button>
   {/snippet}
 </AuthLayout>

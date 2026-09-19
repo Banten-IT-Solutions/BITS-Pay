@@ -30,7 +30,7 @@
 </script>
 
 <AuthLayout
-  title={status === 'success' ? 'Email terverifikasi' : status === 'error' ? 'Verifikasi gagal' : 'Verifikasi email'}
+  title={status === 'success' ? 'Email Terverifikasi' : status === 'error' ? 'Verifikasi Gagal' : 'Verifikasi Email'}
 >
   {#if status === 'loading'}
     <Loading text="Memverifikasi email..." />
@@ -51,7 +51,7 @@
         <Icon name="alert" size={20} />
       </div>
       <p class="text-sm text-muted">{message}</p>
-      <Button block onclick={() => push('/login')}>Ke halaman login</Button>
+      <Button block onclick={() => push('/login')}>Ke Halaman Login</Button>
     </div>
   {/if}
 </AuthLayout>

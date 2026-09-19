@@ -82,7 +82,7 @@
       {/snippet}
       {#if !loading && recent.length === 0}
         <EmptyState
-          title="Belum ada transaksi"
+          title="Belum Ada Transaksi"
           message="Transaksi QRIS yang masuk akan tampil di sini."
           icon="payments"
         />

@@ -48,7 +48,7 @@
 </script>
 
 <AuthLayout
-  title={mode === 'login' ? 'Masuk ke dashboard' : 'Buat akun baru'}
+  title={mode === 'login' ? 'Masuk ke Dashboard' : 'Buat Akun Baru'}
   subtitle={mode === 'login'
     ? 'Kelola pembayaran QRIS aplikasi kamu.'
     : 'Gratis untuk mulai — upgrade kapan saja.'}

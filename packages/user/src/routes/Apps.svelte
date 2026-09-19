@@ -106,7 +106,7 @@
   <ErrorState {error} onRetry={load} />
 {:else if workspaces.length === 0}
   <EmptyState
-    title="Belum ada workspace"
+    title="Belum Ada Workspace"
     message="Buat workspace dulu sebelum membuat app."
     icon="workspaces"
   />
@@ -134,7 +134,7 @@
 
   {#if apps.length === 0}
     <EmptyState
-      title="Belum ada app"
+      title="Belum Ada App"
       message="Buat app untuk workspace ini dan dapatkan API key."
       icon="apps"
     >
@@ -198,6 +198,6 @@
       oninput={(e) => (newCallback = (e.target as HTMLInputElement).value)}
       placeholder="https://example.com/callback"
     />
-    <Button type="submit" block loading={submitting}>Buat</Button>
+    <Button type="submit" block loading={submitting}>Buat App</Button>
   </form>
 </Modal>

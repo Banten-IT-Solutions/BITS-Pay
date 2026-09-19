@@ -25,7 +25,7 @@
   }
 </script>
 
-<AuthLayout title="Lupa password" subtitle="Kami kirim link reset ke email kamu.">
+<AuthLayout title="Lupa Password" subtitle="Kami kirim link reset ke email kamu.">
   {#if sent}
     <div class="flex flex-col items-start gap-3">
       <div
@@ -36,7 +36,7 @@
       <p class="text-sm text-muted">
         Jika email terdaftar, link reset password telah dikirim. Periksa inbox kamu.
       </p>
-      <Button block onclick={() => push('/login')}>Kembali ke login</Button>
+      <Button block onclick={() => push('/login')}>Kembali ke Login</Button>
     </div>
   {:else}
     {#if error}
@@ -61,13 +61,13 @@
         oninput={(e) => (email = (e.target as HTMLInputElement).value)}
         required
       />
-      <Button type="submit" block size="lg" loading={loading}>Kirim link reset</Button>
+      <Button type="submit" block size="lg" loading={loading}>Kirim Link Reset</Button>
     </form>
   {/if}
 
   {#snippet footer()}
     <button class="font-medium text-accent hover:text-accent-strong" onclick={() => push('/login')}>
-      ← Kembali ke login
+      ← Kembali ke Login
     </button>
   {/snippet}
 </AuthLayout>

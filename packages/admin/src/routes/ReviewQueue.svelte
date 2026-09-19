@@ -66,7 +66,7 @@
 {:else if error}
   <ErrorState {error} onRetry={load} />
 {:else if items.length === 0}
-  <EmptyState title="Tidak ada review" message="Semua transaksi sudah terverifikasi." />
+  <EmptyState title="Tidak Ada Review" message="Semua transaksi sudah terverifikasi." />
 {:else}
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     {#each items as p}

@@ -121,7 +121,7 @@
   <ErrorState {error} onRetry={() => load()} />
 {:else if !loading && data && data.items.length === 0}
   <EmptyState
-    title="Tidak ada tagihan"
+    title="Tidak Ada Tagihan"
     message="Tagihan langganan premium akan muncul di sini."
     icon="invoices"
   />

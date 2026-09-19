@@ -233,7 +233,7 @@
             <li class="reveal" style="--d: 0s">
               <span class="log-idx">[1]</span>
               <div class="log-body">
-                <h3>Buat charge</h3>
+                <h3>Buat Charge</h3>
                 <p>
                   Panggil <code>POST /v1/charges</code> dengan <code>order_id</code> &amp; amount.
                   QRIS dinamis terbit, nominal dihitung saat itu juga.
@@ -244,7 +244,7 @@
             <li class="reveal" style="--d: 0.12s">
               <span class="log-idx">[2]</span>
               <div class="log-body">
-                <h3>Pelanggan scan &amp; bayar</h3>
+                <h3>Pelanggan Scan &amp; Bayar</h3>
                 <p>
                   Nominal sudah termasuk kode unik 3 digit. Transfer dengan nominal tidak persis
                   akan gagal verifikasi.
@@ -255,7 +255,7 @@
             <li class="reveal" style="--d: 0.24s">
               <span class="log-idx">[3]</span>
               <div class="log-body">
-                <h3>Upload bukti transfer</h3>
+                <h3>Upload Bukti Transfer</h3>
                 <p>Pelanggan kirim screenshot transfer. Tidak ada rekap pembayaran manual.</p>
               </div>
               <span class="log-tag">Upload</span>
@@ -263,7 +263,7 @@
             <li class="reveal" style="--d: 0.36s">
               <span class="log-idx">[4]</span>
               <div class="log-body">
-                <h3>Auto-confirm</h3>
+                <h3>Auto-Confirm</h3>
                 <p>
                   OCR baca nominal, cocokkan dengan <code>amount_due</code>, kirim callback webhook
                   bertanda tangan. Selesai.
@@ -303,7 +303,7 @@
                   <path d="M14 14h3v3h-3zM20 14h1M14 20h1M18 18h3v3h-3v-1" />
                 </svg>
               </div>
-              <h3>QRIS dinamis anti-salah bayar</h3>
+              <h3>QRIS Dinamis Anti-Salah Bayar</h3>
             </div>
             <p>
               Setiap transaksi punya nominal unik. Transfer dengan jumlah yang tidak persis otomatis
@@ -330,7 +330,7 @@
                   <path d="M8 9l1.5 6M12 9v6M16 9l-1.5 6" />
                 </svg>
               </div>
-              <h3>OCR auto-confirm</h3>
+              <h3>OCR Auto-Confirm</h3>
             </div>
             <p>
               Bukti transfer dibaca otomatis. Confidence rendah? Masuk review manual admin, bukan
@@ -354,7 +354,7 @@
                   <path d="M6 21v-8M11 21V5M16 21v-12M21 21v-4" />
                 </svg>
               </div>
-              <h3>Overview &amp; laporan</h3>
+              <h3>Overview &amp; Laporan</h3>
             </div>
             <p>Pantau transaksi, filter status, export laporan untuk semua tier.</p>
             <p class="feature-point"><span>&#10003;</span>Export laporan kapan saja</p>
@@ -375,7 +375,7 @@
                   <path d="M10.9 12.1 21 2M15 8l3 3M18 5l2.5 2.5" />
                 </svg>
               </div>
-              <h3>API key + webhook signature</h3>
+              <h3>API Key + Webhook Signature</h3>
             </div>
             <p>
               Satu API key per app, ditampilkan sekali saat create. Callback ditandatangani
@@ -401,7 +401,7 @@
                   <path d="m3 13 9 5 9-5" />
                 </svg>
               </div>
-              <h3>Multi-workspace &amp; app</h3>
+              <h3>Multi-Workspace &amp; App</h3>
             </div>
             <p>Pisahkan environment dengan API key berbeda per aplikasi.</p>
             <p class="feature-point"><span>&#10003;</span>Satu akun untuk banyak aplikasi</p>

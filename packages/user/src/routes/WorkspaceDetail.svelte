@@ -108,7 +108,7 @@
     {/snippet}
     {#if apps.length === 0}
       <EmptyState
-        title="Belum ada app"
+        title="Belum Ada App"
         message="Buat app untuk mendapatkan API key dan mulai terima pembayaran."
         icon="apps"
       >

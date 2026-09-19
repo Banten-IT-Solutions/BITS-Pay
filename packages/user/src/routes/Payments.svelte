@@ -75,7 +75,7 @@
   <ErrorState {error} onRetry={() => load()} />
 {:else if !loading && $payments.items.length === 0}
   <EmptyState
-    title="Tidak ada transaksi"
+    title="Tidak Ada Transaksi"
     message={search || statusFilter
       ? 'Tidak ada transaksi yang cocok dengan filter.'
       : 'Transaksi QRIS yang masuk akan tampil di sini.'}
