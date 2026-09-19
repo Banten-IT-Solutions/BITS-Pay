@@ -7,8 +7,9 @@
   import Button from '../components/ui/Button.svelte';
   import Input from '../components/ui/Input.svelte';
   import Modal from '../components/ui/Modal.svelte';
-  import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
+  import EmptyState from '../components/ui/EmptyState.svelte';
+  import Icon from '../components/ui/Icon.svelte';
   import type { WorkspaceWithMemberCount, AppPublic } from '@bits-pay/shared';
 
   let { params } = $props();
@@ -72,47 +73,91 @@
 </script>
 
 {#if loading}
-  <Loading />
+  <div class="space-y-4">
+    <div class="skeleton h-8 w-48"></div>
+    <div class="skeleton h-56 rounded-[10px]"></div>
+  </div>
 {:else if error}
   <ErrorState {error} onRetry={load} />
 {:else if ws}
-  <div class="mb-6 flex items-center justify-between">
-    <div>
-      <h2 class="text-xl font-semibold">{ws.name}</h2>
-      <p class="text-sm text-neutral-400">{ws.slug}</p>
-    </div>
-    <div class="flex gap-2">
-      <Button variant="secondary" onclick={() => showEdit = true}>Edit</Button>
-      <Button variant="danger" onclick={remove}>Hapus</Button>
+  <div class="mb-5">
+    <button
+      class="mb-3 inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
+      onclick={() => push('/workspaces')}
+    >
+      <Icon name="arrow-left" size={16} />
+      Workspaces
+    </button>
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="min-w-0">
+        <h2 class="font-display text-xl font-semibold tracking-tight text-text">{ws.name}</h2>
+        <p class="num mt-0.5 text-xs text-faint">{ws.slug}</p>
+      </div>
+      <div class="flex flex-none gap-2">
+        <Button variant="secondary" size="sm" onclick={() => (showEdit = true)}>Edit</Button>
+        <Button variant="danger" size="sm" onclick={remove}>Hapus</Button>
+      </div>
     </div>
   </div>
 
-  <Card title="Apps">
+  <Card title="Apps" padding={false} class="overflow-hidden">
+    {#snippet actions()}
+      <Button variant="secondary" size="sm" onclick={() => push(`/apps?workspace=${wsId}`)}>
+        Kelola Apps
+      </Button>
+    {/snippet}
     {#if apps.length === 0}
-      <p class="py-4 text-sm text-neutral-400">Belum ada app.</p>
+      <EmptyState
+        title="Belum ada app"
+        message="Buat app untuk mendapatkan API key dan mulai terima pembayaran."
+        icon="apps"
+      >
+        <Button onclick={() => push(`/apps?workspace=${wsId}`)}>
+          <Icon name="plus" size={16} />
+          Buat App
+        </Button>
+      </EmptyState>
     {:else}
-      <div class="divide-y divide-neutral-100">
-        {#each apps as app}
-          <div class="flex items-center justify-between py-3">
-            <div>
-              <p class="font-medium text-neutral-900">{app.name}</p>
-              <p class="text-xs text-neutral-400 font-mono">{app.api_key_prefix}...</p>
-            </div>
-            <Button variant="ghost" onclick={() => push(`/apps?workspace=${wsId}`)}>Detail</Button>
-          </div>
+      <ul class="divide-y divide-border">
+        {#each apps as app (app.id)}
+          <li>
+            <button
+              class="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-surface-2/50 sm:px-5"
+              onclick={() => push(`/apps?workspace=${wsId}`)}
+            >
+              <div class="min-w-0">
+                <p class="truncate font-medium text-text">{app.name}</p>
+                <p class="num mt-0.5 text-xs text-faint">{app.api_key_prefix}…</p>
+              </div>
+              <Icon name="chevron-right" size={16} class="flex-none text-faint" />
+            </button>
+          </li>
         {/each}
-      </div>
+      </ul>
     {/if}
-    <div class="mt-4">
-      <Button variant="secondary" onclick={() => push(`/apps?workspace=${wsId}`)}>Kelola Apps</Button>
-    </div>
   </Card>
 {/if}
 
-<Modal open={showEdit} title="Edit Workspace" onClose={() => showEdit = false}>
-  <form onsubmit={(e) => { e.preventDefault(); update(); }} class="space-y-4">
-    <Input label="Nama" value={editName} oninput={(e) => editName = (e.target as HTMLInputElement).value} required />
-    <Input label="Slug" value={editSlug} oninput={(e) => editSlug = (e.target as HTMLInputElement).value} required />
+<Modal open={showEdit} title="Edit Workspace" onClose={() => (showEdit = false)}>
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      update();
+    }}
+    class="space-y-4"
+  >
+    <Input
+      label="Nama"
+      value={editName}
+      oninput={(e) => (editName = (e.target as HTMLInputElement).value)}
+      required
+    />
+    <Input
+      label="Slug"
+      value={editSlug}
+      oninput={(e) => (editSlug = (e.target as HTMLInputElement).value)}
+      required
+    />
     <Button type="submit" block loading={submitting}>Simpan</Button>
   </form>
 </Modal>

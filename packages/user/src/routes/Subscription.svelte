@@ -6,9 +6,10 @@
   import Button from '../components/ui/Button.svelte';
   import Badge from '../components/ui/Badge.svelte';
   import Modal from '../components/ui/Modal.svelte';
-  import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
+  import Icon from '../components/ui/Icon.svelte';
   import { showToast } from '../lib/toast';
+  import { formatDate } from '../lib/format';
   import {
     formatAmount,
     type Subscription,
@@ -91,7 +92,6 @@
     '1 Aplikasi per workspace',
     '300 Transaksi per bulan',
     '10 req/s rate limit',
-    'Callback URL tidak tersedia',
   ];
   const premiumFeatures = [
     '1 Workspace',
@@ -103,41 +103,44 @@
   ];
 </script>
 
-<div class="mb-4">
-  <h2 class="text-xl font-semibold">Langganan</h2>
-</div>
-
 {#if loading}
-  <Loading />
+  <div class="space-y-4">
+    <div class="skeleton h-8 w-56 rounded-lg"></div>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div class="skeleton h-72 rounded-[10px]"></div>
+      <div class="skeleton h-72 rounded-[10px]"></div>
+    </div>
+  </div>
 {:else if error}
   <ErrorState {error} onRetry={load} />
 {:else if sub}
-  <Card title="Langganan Aktif">    <div class="space-y-4">
-      <div class="flex items-center justify-between">
+  <Card title="Langganan Aktif" class="max-w-xl">
+    <div class="space-y-4">
+      <div class="flex items-center justify-between gap-3">
         <div>
-          <p class="text-sm text-neutral-400">Tier</p>
-          <p class="text-lg font-semibold capitalize">
+          <p class="text-xs font-medium text-faint">Tier</p>
+          <p class="mt-0.5 font-display text-lg font-semibold text-text">
             {sub.tier === 'premium_monthly' ? 'Premium Bulanan' : 'Premium Tahunan'}
           </p>
         </div>
         <Badge status={sub.status} />
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 gap-4 border-t border-dashed border-border pt-4">
         <div>
-          <p class="text-sm text-neutral-400">Mulai</p>
-          <p class="font-medium">{new Date(sub.current_period_start).toLocaleDateString('id-ID')}</p>
+          <p class="text-xs font-medium text-faint">Mulai</p>
+          <p class="mt-0.5 text-sm font-medium text-text">{formatDate(sub.current_period_start)}</p>
         </div>
         <div>
-          <p class="text-sm text-neutral-400">Berakhir</p>
-          <p class="font-medium">{new Date(sub.current_period_end).toLocaleDateString('id-ID')}</p>
+          <p class="text-xs font-medium text-faint">Berakhir</p>
+          <p class="mt-0.5 text-sm font-medium text-text">{formatDate(sub.current_period_end)}</p>
         </div>
       </div>
-      <div>
-        <p class="text-sm text-neutral-400">Biaya</p>
-        <p class="text-lg font-bold text-primary-500">{formatAmount(sub.amount)}</p>
+      <div class="border-t border-dashed border-border pt-4">
+        <p class="text-xs font-medium text-faint">Biaya</p>
+        <p class="num mt-0.5 text-xl font-semibold text-text">{formatAmount(sub.amount)}</p>
       </div>
       {#if sub.status === 'active'}
-        <div class="pt-2">
+        <div class="border-t border-dashed border-border pt-4">
           <Button variant="danger" loading={cancelLoading} onclick={handleCancel}>
             Batalkan Langganan
           </Button>
@@ -147,59 +150,92 @@
   </Card>
 {:else}
   {#if me?.is_trial && me.tier_expires_at}
-    <div class="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-      Kamu dalam masa <strong>trial premium</strong> sampai
-      <strong>{new Date(me.tier_expires_at).toLocaleDateString('id-ID')}</strong>.
-      Setelah itu akun turun ke Free dan resource berlebih dibekukan.
+    <div
+      class="mb-5 flex items-start gap-2.5 rounded-[10px] border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning"
+      role="status"
+    >
+      <span class="mt-0.5 flex-none"><Icon name="clock" size={16} /></span>
+      <p>
+        Kamu dalam masa <strong>trial premium</strong> sampai
+        <strong>{formatDate(me.tier_expires_at)}</strong>. Setelah itu akun turun ke Free dan
+        resource berlebih dibekukan.
+      </p>
     </div>
   {/if}
-  <div class="grid gap-6 lg:grid-cols-2">
+  <div class="grid items-start gap-4 lg:grid-cols-2">
     <Card title="Free" subtitle="Cocok untuk mencoba">
-      <div class="space-y-4">
-        <p class="text-3xl font-bold text-neutral-900">Gratis</p>
-        <ul class="space-y-2">
-          {#each freeFeatures as f}
-            <li class="flex items-center gap-2 text-sm text-neutral-600">
-              <span class="text-success">&#10003;</span> {f}
-            </li>
-          {/each}
-        </ul>
-        <p class="text-xs text-neutral-400">Sedang dipakai</p>
-      </div>
+      <p class="num text-3xl font-semibold text-text">Gratis</p>
+      <ul class="mt-5 space-y-2.5 border-t border-border pt-4">
+        {#each freeFeatures as f (f)}
+          <li class="flex items-center gap-2.5 text-sm text-muted">
+            <span class="flex-none text-success"><Icon name="check" size={15} /></span>
+            {f}
+          </li>
+        {/each}
+        <li class="flex items-center gap-2.5 text-sm text-faint">
+          <span class="flex-none"><Icon name="x" size={15} /></span>
+          Callback URL tidak tersedia
+        </li>
+      </ul>
+      <p class="mt-5 text-xs font-medium text-faint">Sedang dipakai</p>
     </Card>
-    <Card title="Premium" subtitle="Untuk bisnis serius">
-      <div class="space-y-4">
-        <p class="text-3xl font-bold text-primary-500">50.000<span class="text-base font-normal text-neutral-400">/bln</span></p>
-        <ul class="space-y-2">
-          {#each premiumFeatures as f}
-            <li class="flex items-center gap-2 text-sm text-neutral-600">
-              <span class="text-success">&#10003;</span> {f}
-            </li>
-          {/each}
-        </ul>
-        <div class="space-y-2">
-          <Button block loading={upgrading} onclick={() => handleUpgrade('premium_monthly')}>
-            Premium Bulanan 50.000
-          </Button>
-          <Button variant="secondary" block loading={upgrading} onclick={() => handleUpgrade('premium_yearly')}>
-            Premium Tahunan 500.000
-          </Button>
-        </div>
+
+    <Card
+      title="Premium"
+      subtitle="Untuk bisnis serius"
+      class="relative border-accent shadow-[0_0_0_1px_var(--accent)]"
+    >
+      {#snippet actions()}
+        <span
+          class="rounded-md bg-accent px-2 py-0.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-on-accent uppercase"
+        >
+          Rekomendasi
+        </span>
+      {/snippet}
+      <p class="num text-3xl font-semibold text-text">
+        50.000<span class="text-base font-normal text-faint">/bln</span>
+      </p>
+      <ul class="mt-5 space-y-2.5 border-t border-border pt-4">
+        {#each premiumFeatures as f (f)}
+          <li class="flex items-center gap-2.5 text-sm text-muted">
+            <span class="flex-none text-success"><Icon name="check" size={15} /></span>
+            {f}
+          </li>
+        {/each}
+      </ul>
+      <div class="mt-5 space-y-2">
+        <Button block loading={upgrading} onclick={() => handleUpgrade('premium_monthly')}>
+          Premium Bulanan — Rp50.000
+        </Button>
+        <Button
+          variant="secondary"
+          block
+          loading={upgrading}
+          onclick={() => handleUpgrade('premium_yearly')}
+        >
+          Premium Tahunan — Rp500.000
+        </Button>
       </div>
     </Card>
   </div>
 {/if}
 
-<Modal open={showQr} title="Bayar Langganan" onClose={() => showQr = false}>
+<Modal open={showQr} title="Bayar Langganan" onClose={() => (showQr = false)}>
   {#if qrData}
     <div class="flex flex-col items-center gap-4">
-      <img src={qrData.qr.qr_image} alt="QRIS" class="w-64 rounded-lg border" />
-      <div class="text-center">
-        <p class="text-sm text-neutral-400">Total Pembayaran</p>
-        <p class="text-2xl font-bold text-neutral-900">{formatAmount(qrData.qr.amount_due)}</p>
-        <p class="text-xs text-neutral-400">(termasuk kode unik)</p>
+      <div class="rounded-lg border border-border bg-white p-4">
+        <img src={qrData.qr.qr_image} alt="Kode QRIS langganan premium" class="w-56 max-w-full" />
       </div>
-      <p class="text-center text-sm text-neutral-400">Scan QRIS di atas menggunakan aplikasi pembayaran untuk menyelesaikan pembayaran.</p>
+      <div class="text-center">
+        <p class="text-xs font-medium text-faint">Total Pembayaran</p>
+        <p class="num mt-1 text-2xl font-semibold text-text">
+          {formatAmount(qrData.qr.amount_due)}
+        </p>
+        <p class="mt-1 text-xs text-faint">(sudah termasuk kode unik)</p>
+      </div>
+      <p class="text-center text-sm text-muted">
+        Scan QRIS di atas menggunakan aplikasi pembayaran untuk menyelesaikan pembayaran.
+      </p>
     </div>
   {/if}
 </Modal>

@@ -7,9 +7,9 @@
   import Button from '../components/ui/Button.svelte';
   import Input from '../components/ui/Input.svelte';
   import Modal from '../components/ui/Modal.svelte';
-  import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
+  import Icon from '../components/ui/Icon.svelte';
 
   let loading = $state(true);
   let error = $state('');
@@ -50,40 +50,84 @@
   }
 </script>
 
-<div class="mb-6 flex items-center justify-between">
-  <h2 class="text-xl font-semibold">Workspaces</h2>
-  <Button onclick={() => showCreate = true}>Buat Workspace</Button>
+<div class="mb-5 flex items-center justify-end">
+  <Button onclick={() => (showCreate = true)}>
+    <Icon name="plus" size={16} />
+    Buat Workspace
+  </Button>
 </div>
 
 {#if loading}
-  <Loading />
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {#each [1, 2, 3] as n (n)}
+      <div class="skeleton h-[118px] rounded-[10px]"></div>
+    {/each}
+  </div>
 {:else if error}
   <ErrorState {error} onRetry={load} />
 {:else if $workspaces.length === 0}
-  <EmptyState title="Belum ada workspace" message="Buat workspace pertama untuk mulai.">
-    <Button onclick={() => showCreate = true}>Buat Workspace</Button>
+  <EmptyState
+    title="Belum ada workspace"
+    message="Workspace mengelompokkan aplikasi dan pembayaran kamu."
+    icon="workspaces"
+  >
+    <Button onclick={() => (showCreate = true)}>
+      <Icon name="plus" size={16} />
+      Buat Workspace
+    </Button>
   </EmptyState>
 {:else}
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    {#each $workspaces as ws}
-      <Card>
-        <div class="cursor-pointer" onclick={() => push(`/workspaces/${ws.id}`)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') push(`/workspaces/${ws.id}`); }} role="button" tabindex="0">
-          <h3 class="text-lg font-semibold text-primary-500">{ws.name}</h3>
-          <p class="mt-1 text-sm text-neutral-400">{ws.slug}</p>
-          <div class="mt-3 flex gap-4 text-xs text-neutral-400">
-            <span>{ws.app_count ?? 0} App</span>
-            <span>{ws.member_count ?? 0} Anggota</span>
+    {#each $workspaces as ws (ws.id)}
+      <a
+        href="#/workspaces/{ws.id}"
+        class="group block rounded-[10px] border border-border bg-surface p-4 transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-card sm:p-5"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="truncate font-semibold text-text group-hover:text-accent">{ws.name}</h3>
+            <p class="num mt-0.5 truncate text-xs text-faint">{ws.slug}</p>
           </div>
+          <span class="mt-0.5 flex-none text-faint transition-colors duration-150 group-hover:text-accent">
+            <Icon name="chevron-right" size={16} />
+          </span>
         </div>
-      </Card>
+        <div class="mt-4 flex items-center gap-4 border-t border-dashed border-border pt-3 text-xs text-muted">
+          <span class="inline-flex items-center gap-1.5">
+            <Icon name="apps" size={14} class="text-faint" />
+            <span class="num">{ws.app_count ?? 0}</span> App
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <Icon name="overview" size={14} class="text-faint" />
+            <span class="num">{ws.member_count ?? 0}</span> Anggota
+          </span>
+        </div>
+      </a>
     {/each}
   </div>
 {/if}
 
-<Modal open={showCreate} title="Buat Workspace" onClose={() => showCreate = false}>
-  <form onsubmit={(e) => { e.preventDefault(); create(); }} class="space-y-4">
-    <Input label="Nama" value={newName} oninput={(e) => newName = (e.target as HTMLInputElement).value} required />
-    <Input label="Slug" value={newSlug} oninput={(e) => newSlug = (e.target as HTMLInputElement).value} required placeholder="my-workspace" />
+<Modal open={showCreate} title="Buat Workspace" onClose={() => (showCreate = false)}>
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      create();
+    }}
+    class="space-y-4"
+  >
+    <Input
+      label="Nama"
+      value={newName}
+      oninput={(e) => (newName = (e.target as HTMLInputElement).value)}
+      required
+    />
+    <Input
+      label="Slug"
+      value={newSlug}
+      oninput={(e) => (newSlug = (e.target as HTMLInputElement).value)}
+      required
+      placeholder="my-workspace"
+    />
     <Button type="submit" block loading={submitting}>Buat</Button>
   </form>
 </Modal>

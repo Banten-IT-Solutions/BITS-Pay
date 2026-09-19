@@ -5,9 +5,11 @@
   import Card from '../components/ui/Card.svelte';
   import Badge from '../components/ui/Badge.svelte';
   import Pagination from '../components/ui/Pagination.svelte';
-  import Loading from '../components/ui/Loading.svelte';
+  import Table from '../components/ui/Table.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
+  import Icon from '../components/ui/Icon.svelte';
+  import { formatDateTime } from '../lib/format';
   import { formatAmount, type PaymentStatus } from '@bits-pay/shared';
 
   let search = $state('');
@@ -36,64 +38,77 @@
   function handleSearch() {
     load(1);
   }
+
+  const selectCls =
+    'h-10 rounded-lg border border-border-strong bg-bg px-3 text-sm text-text transition-[border-color,box-shadow] duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-soft)] focus:outline-none';
 </script>
 
-<div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-  <h2 class="text-xl font-semibold">Pembayaran</h2>
-  <div class="flex gap-2">
+<div class="mb-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-end">
+  <div class="relative flex-1 sm:max-w-xs">
+    <span class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint">
+      <Icon name="search" size={16} />
+    </span>
     <input
-      class="rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+      class="{selectCls} w-full pl-9"
       placeholder="Cari order_id..."
       bind:value={search}
       onkeydown={(e) => e.key === 'Enter' && handleSearch()}
+      aria-label="Cari order ID"
     />
-    <select
-      class="rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
-      bind:value={statusFilter}
-      onchange={handleSearch}
-    >
-      <option value="">Semua status</option>
-      <option value="pending">Pending</option>
-      <option value="success">Sukses</option>
-      <option value="failed">Gagal</option>
-      <option value="expired">Expired</option>
-      <option value="pending_review">Review</option>
-    </select>
   </div>
+  <select
+    class={selectCls}
+    bind:value={statusFilter}
+    onchange={handleSearch}
+    aria-label="Filter status"
+  >
+    <option value="">Semua status</option>
+    <option value="pending">Pending</option>
+    <option value="success">Sukses</option>
+    <option value="failed">Gagal</option>
+    <option value="expired">Expired</option>
+    <option value="pending_review">Review</option>
+  </select>
 </div>
 
-{#if loading}
-  <Loading />
-{:else if error}
+{#if error}
   <ErrorState {error} onRetry={() => load()} />
-{:else if $payments.items.length === 0}
-  <EmptyState message="Tidak ada transaksi ditemukan." />
+{:else if !loading && $payments.items.length === 0}
+  <EmptyState
+    title="Tidak ada transaksi"
+    message={search || statusFilter
+      ? 'Tidak ada transaksi yang cocok dengan filter.'
+      : 'Transaksi QRIS yang masuk akan tampil di sini.'}
+    icon="payments"
+  />
 {:else}
-  <Card>
-    <table class="w-full text-left text-sm">
-      <thead class="border-b border-neutral-100">
-        <tr>
-          <th class="px-4 py-3 font-medium text-neutral-400">Order ID</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Amount</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Status</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Tanggal</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Aksi</th>
+  <Card padding={false} class="overflow-hidden">
+    <Table headers={['Order ID', 'Jumlah', 'Status', 'Waktu', '']} {loading} stickyFirst>
+      {#each $payments.items as p (p.id)}
+        <tr
+          class="cursor-pointer transition-colors duration-150 hover:bg-surface-2/50"
+          onclick={() => push(`/payments/${p.id}`)}
+        >
+          <td class="num sticky left-0 bg-surface px-4 py-3 text-xs font-medium first:pl-5">
+            {p.order_id || '-'}
+          </td>
+          <td class="num px-4 py-3 whitespace-nowrap">{formatAmount(p.amount)}</td>
+          <td class="px-4 py-3"><Badge status={p.status} /></td>
+          <td class="px-4 py-3 text-xs whitespace-nowrap text-faint">{formatDateTime(p.created_at)}</td>
+          <td class="px-4 py-3 text-right last:pr-5">
+            <span class="inline-flex items-center gap-1 text-[13px] font-semibold text-accent">
+              Detail
+              <Icon name="chevron-right" size={14} />
+            </span>
+          </td>
         </tr>
-      </thead>
-      <tbody class="divide-y divide-neutral-100">
-        {#each $payments.items as p}
-          <tr class="hover:bg-neutral-50 cursor-pointer" onclick={() => push(`/payments/${p.id}`)}>
-            <td class="px-4 py-3 font-mono text-xs">{p.order_id || '-'}</td>
-            <td class="px-4 py-3">{formatAmount(p.amount)}</td>
-            <td class="px-4 py-3"><Badge status={p.status} /></td>
-            <td class="px-4 py-3 text-neutral-400">{new Date(p.created_at).toLocaleDateString('id-ID')}</td>
-            <td class="px-4 py-3">
-              <button class="text-sm text-primary-500 hover:underline" onclick={() => push(`/payments/${p.id}`)}>Detail</button>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-    <Pagination page={$payments.page} perPage={$payments.perPage} total={$payments.total} onPageChange={(p) => load(p)} />
+      {/each}
+    </Table>
+    <Pagination
+      page={$payments.page}
+      perPage={$payments.perPage}
+      total={$payments.total}
+      onPageChange={(p) => load(p)}
+    />
   </Card>
 {/if}

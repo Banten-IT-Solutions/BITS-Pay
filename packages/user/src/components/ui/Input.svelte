@@ -24,18 +24,12 @@
     oninput,
   }: Props = $props();
 
-  const inputId = label.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
-
-  function handleInput(e: Event) {
-    const target = e.currentTarget as HTMLInputElement;
-    oninput?.(e);
-    value = target.value;
-  }
+  const inputId = $props.id();
 </script>
 
 <div>
   {#if label}
-    <label for={inputId} class="mb-1 block text-sm font-medium text-neutral-600">{label}</label>
+    <label for={inputId} class="mb-1.5 block text-[13px] font-medium text-muted">{label}</label>
   {/if}
   <input
     id={inputId}
@@ -47,10 +41,11 @@
     {disabled}
     {required}
     {oninput}
-    class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:bg-neutral-100"
-    class:border-error={error}
+    class="h-10 w-full rounded-lg border bg-bg px-3 text-sm text-text transition-[border-color,box-shadow] duration-150 placeholder:text-faint focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-soft)] focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-2 {error
+      ? 'border-error'
+      : 'border-border-strong'}"
   />
   {#if error}
-    <p class="mt-1 text-xs text-error">{error}</p>
+    <p class="mt-1.5 text-xs text-error">{error}</p>
   {/if}
 </div>

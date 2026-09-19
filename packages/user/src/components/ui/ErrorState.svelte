@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Button from './Button.svelte';
+  import Icon from './Icon.svelte';
+
   interface Props {
     message?: string;
     error?: string;
@@ -8,13 +11,20 @@
   let displayMessage = $derived(error || message);
 </script>
 
-<div class="flex flex-col items-center justify-center gap-3 py-16 text-center">
-  <div class="flex h-16 w-16 items-center justify-center rounded-full bg-error/10 text-3xl">&#9888;&#65039;</div>
-  <h3 class="text-base font-semibold text-neutral-900">Terjadi kesalahan</h3>
-  <p class="text-sm text-neutral-400">{displayMessage}</p>
+<div class="flex flex-col items-center justify-center gap-2 px-4 py-14 text-center" role="alert">
+  <div
+    class="mb-1 flex h-12 w-12 items-center justify-center rounded-[10px] border border-error/30 bg-error/10 text-error"
+  >
+    <Icon name="alert" size={22} />
+  </div>
+  <h3 class="text-[15px] font-semibold text-text">Terjadi kesalahan</h3>
+  <p class="max-w-sm text-sm text-muted">{displayMessage}</p>
   {#if onRetry}
-    <button class="mt-2 rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600" onclick={onRetry}>
-      Coba lagi
-    </button>
+    <div class="mt-3">
+      <Button variant="secondary" onclick={onRetry}>
+        <Icon name="refresh" size={15} />
+        Coba lagi
+      </Button>
+    </div>
   {/if}
 </div>

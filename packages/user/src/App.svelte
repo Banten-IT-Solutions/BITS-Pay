@@ -38,7 +38,7 @@
 
 <Toast />
 {#if !initialized}
-  <div class="flex h-screen items-center justify-center">
+  <div class="flex h-dvh items-center justify-center bg-bg">
     <Loading text="Memuat..." />
   </div>
 {:else if $auth.token}

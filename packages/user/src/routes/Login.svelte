@@ -3,9 +3,9 @@
   import { auth } from '../stores/auth';
   import { api } from '../lib/api';
   import { showToast } from '../lib/toast';
+  import AuthLayout from '../components/layout/AuthLayout.svelte';
   import Button from '../components/ui/Button.svelte';
   import Input from '../components/ui/Input.svelte';
-  import Card from '../components/ui/Card.svelte';
 
   let mode = $state<'login' | 'signup'>('login');
   let loading = $state(false);
@@ -34,42 +34,80 @@
       loading = false;
     }
   }
+
+  function switchMode(next: 'login' | 'signup') {
+    mode = next;
+    error = '';
+  }
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-  <Card padding={true}>
-    <div class="w-full max-w-sm">
-      <div class="mb-6 text-center">
-        <h2 class="text-2xl font-bold text-primary-500">BITS Pay</h2>
-        <p class="mt-1 text-sm text-neutral-400">{mode === 'login' ? 'Masuk ke dashboard' : 'Buat akun baru'}</p>
-      </div>
-
-      {#if error}
-        <div class="mb-4 rounded-lg bg-error/10 px-4 py-3 text-sm text-error">{error}</div>
-      {/if}
-
-      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
-        {#if mode === 'signup'}
-          <Input label="Nama" value={name} oninput={(e) => name = (e.target as HTMLInputElement).value} required />
-        {/if}
-        <Input label="Email" type="email" value={email} oninput={(e) => email = (e.target as HTMLInputElement).value} required />
-        <Input label="Password" type="password" value={password} oninput={(e) => password = (e.target as HTMLInputElement).value} required />
-        <Button type="submit" block loading={loading}>
-          {mode === 'login' ? 'Masuk' : 'Daftar'}
-        </Button>
-      </form>
-
-      <p class="mt-4 text-center text-sm text-neutral-400">
-        {#if mode === 'login'}
-          <button class="font-medium text-primary-500 hover:underline" onclick={() => push('/forgot-password')}>Lupa password?</button>
-          <span class="mx-2">·</span>
-          Belum punya akun?
-          <button class="font-medium text-primary-500 hover:underline" onclick={() => { mode = 'signup'; error = ''; }}>Daftar</button>
-        {:else}
-          Sudah punya akun?
-          <button class="font-medium text-primary-500 hover:underline" onclick={() => { mode = 'login'; error = ''; }}>Masuk</button>
-        {/if}
-      </p>
+<AuthLayout
+  title={mode === 'login' ? 'Masuk ke dashboard' : 'Buat akun baru'}
+  subtitle={mode === 'login'
+    ? 'Kelola pembayaran QRIS aplikasi kamu.'
+    : 'Gratis untuk mulai — upgrade kapan saja.'}
+>
+  {#if error}
+    <div
+      class="mb-4 rounded-lg border border-error/30 bg-error/10 px-3.5 py-2.5 text-sm text-error"
+      role="alert"
+    >
+      {error}
     </div>
-  </Card>
-</div>
+  {/if}
+
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
+    class="space-y-4"
+  >
+    {#if mode === 'signup'}
+      <Input
+        label="Nama"
+        value={name}
+        oninput={(e) => (name = (e.target as HTMLInputElement).value)}
+        required
+      />
+    {/if}
+    <Input
+      label="Email"
+      type="email"
+      value={email}
+      oninput={(e) => (email = (e.target as HTMLInputElement).value)}
+      required
+    />
+    <Input
+      label="Password"
+      type="password"
+      value={password}
+      oninput={(e) => (password = (e.target as HTMLInputElement).value)}
+      required
+    />
+    <Button type="submit" block size="lg" loading={loading}>
+      {mode === 'login' ? 'Masuk' : 'Daftar'}
+    </Button>
+  </form>
+
+  {#snippet footer()}
+    {#if mode === 'login'}
+      <button
+        class="font-medium text-accent hover:text-accent-strong"
+        onclick={() => push('/forgot-password')}
+      >
+        Lupa password?
+      </button>
+      <span class="mx-2 text-faint">·</span>
+      <span>Belum punya akun?</span>
+      <button class="font-medium text-accent hover:text-accent-strong" onclick={() => switchMode('signup')}>
+        Daftar
+      </button>
+    {:else}
+      <span>Sudah punya akun?</span>
+      <button class="font-medium text-accent hover:text-accent-strong" onclick={() => switchMode('login')}>
+        Masuk
+      </button>
+    {/if}
+  {/snippet}
+</AuthLayout>

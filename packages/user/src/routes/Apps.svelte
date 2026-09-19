@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { push } from 'svelte-spa-router';
   import { api } from '../lib/api';
   import { showToast } from '../lib/toast';
   import Card from '../components/ui/Card.svelte';
@@ -8,9 +7,9 @@
   import Button from '../components/ui/Button.svelte';
   import Input from '../components/ui/Input.svelte';
   import Modal from '../components/ui/Modal.svelte';
-  import Loading from '../components/ui/Loading.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
+  import Icon from '../components/ui/Icon.svelte';
   import type { WorkspaceWithMemberCount, AppPublic, AppWithSecrets } from '@bits-pay/shared';
 
   let workspaces = $state<WorkspaceWithMemberCount[]>([]);
@@ -76,7 +75,9 @@
   async function rotateKey(appId: string) {
     if (!confirm('Rotate API key? Key lama tidak bisa dipakai lagi.')) return;
     try {
-      const app = await api.post<AppWithSecrets>(`/app/workspaces/${selectedWid}/apps/${appId}/rotate-key`);
+      const app = await api.post<AppWithSecrets>(
+        `/app/workspaces/${selectedWid}/apps/${appId}/rotate-key`,
+      );
       showToast(`API Key baru: ${app.api_key} — simpan!`, 'success');
       if (app.callback_secret) {
         showToast(`Callback Secret: ${app.callback_secret} — simpan untuk verifikasi webhook!`, 'info');
@@ -87,22 +88,43 @@
   }
 </script>
 
-<div class="mb-6 flex items-center justify-between">
-  <h2 class="text-xl font-semibold">Apps</h2>
-  <Button onclick={() => showCreate = true}>Buat App</Button>
+<div class="mb-5 flex items-center justify-end">
+  <Button onclick={() => (showCreate = true)} disabled={workspaces.length === 0}>
+    <Icon name="plus" size={16} />
+    Buat App
+  </Button>
 </div>
 
 {#if loading}
-  <Loading />
+  <div class="skeleton mb-4 h-10 w-64 rounded-lg"></div>
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    {#each [1, 2] as n (n)}
+      <div class="skeleton h-[120px] rounded-[10px]"></div>
+    {/each}
+  </div>
 {:else if error}
   <ErrorState {error} onRetry={load} />
 {:else if workspaces.length === 0}
-  <EmptyState title="Belum ada workspace" message="Buat workspace dulu sebelum membuat app." />
+  <EmptyState
+    title="Belum ada workspace"
+    message="Buat workspace dulu sebelum membuat app."
+    icon="workspaces"
+  />
 {:else}
-  <div class="mb-4 flex gap-2">
-    {#each workspaces as ws}
+  <!-- Segmented workspace picker -->
+  <div
+    class="mb-5 flex w-full flex-wrap items-center gap-1 rounded-[10px] border border-border bg-surface-2 p-1 sm:w-auto sm:inline-flex"
+    role="tablist"
+    aria-label="Pilih workspace"
+  >
+    {#each workspaces as ws (ws.id)}
       <button
-        class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {selectedWid === ws.id ? 'bg-primary-500 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
+        role="tab"
+        aria-selected={selectedWid === ws.id}
+        class="h-8 rounded-lg px-3 text-[13px] font-medium transition-colors duration-150 {selectedWid ===
+        ws.id
+          ? 'bg-surface text-text shadow-card'
+          : 'text-muted hover:text-text'}"
         onclick={() => loadApps(ws.id)}
       >
         {ws.name}
@@ -111,25 +133,43 @@
   </div>
 
   {#if apps.length === 0}
-    <EmptyState title="Belum ada app" message="Buat app untuk workspace ini.">
-      <Button onclick={() => showCreate = true}>Buat App</Button>
+    <EmptyState
+      title="Belum ada app"
+      message="Buat app untuk workspace ini dan dapatkan API key."
+      icon="apps"
+    >
+      <Button onclick={() => (showCreate = true)}>
+        <Icon name="plus" size={16} />
+        Buat App
+      </Button>
     </EmptyState>
   {:else}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {#each apps as app}
+      {#each apps as app (app.id)}
         <Card>
-          <div class="flex items-start justify-between">
-            <div>
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-neutral-900">{app.name}</h3>
+                <h3 class="truncate font-semibold text-text">{app.name}</h3>
                 <Badge status={app.is_active ? 'active' : 'inactive'} />
               </div>
-              <p class="mt-1 text-xs font-mono text-neutral-400">{app.api_key_prefix}...</p>
+              <div class="mt-2 flex items-center gap-1.5">
+                <code class="num rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-muted">
+                  {app.api_key_prefix}…
+                </code>
+              </div>
               {#if app.callback_url}
-                <p class="mt-1 text-xs text-neutral-400">Callback: {app.callback_url}</p>
+                <p class="mt-2 truncate text-xs text-faint" title={app.callback_url}>
+                  Callback: {app.callback_url}
+                </p>
+              {:else}
+                <p class="mt-2 text-xs text-faint">Callback belum diatur</p>
               {/if}
             </div>
-            <Button variant="ghost" size="sm" onclick={() => rotateKey(app.id)}>Rotate Key</Button>
+            <Button variant="ghost" size="sm" class="flex-none" onclick={() => rotateKey(app.id)}>
+              <Icon name="refresh" size={14} />
+              Rotate Key
+            </Button>
           </div>
         </Card>
       {/each}
@@ -137,10 +177,27 @@
   {/if}
 {/if}
 
-<Modal open={showCreate} title="Buat App" onClose={() => showCreate = false}>
-  <form onsubmit={(e) => { e.preventDefault(); create(); }} class="space-y-4">
-    <Input label="Nama App" value={newName} oninput={(e) => newName = (e.target as HTMLInputElement).value} required />
-    <Input label="Callback URL (opsional)" type="url" value={newCallback} oninput={(e) => newCallback = (e.target as HTMLInputElement).value} placeholder="https://example.com/callback" />
+<Modal open={showCreate} title="Buat App" onClose={() => (showCreate = false)}>
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      create();
+    }}
+    class="space-y-4"
+  >
+    <Input
+      label="Nama App"
+      value={newName}
+      oninput={(e) => (newName = (e.target as HTMLInputElement).value)}
+      required
+    />
+    <Input
+      label="Callback URL (opsional)"
+      type="url"
+      value={newCallback}
+      oninput={(e) => (newCallback = (e.target as HTMLInputElement).value)}
+      placeholder="https://example.com/callback"
+    />
     <Button type="submit" block loading={submitting}>Buat</Button>
   </form>
 </Modal>

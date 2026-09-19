@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { push } from 'svelte-spa-router';
   import { api } from '../lib/api';
   import Card from '../components/ui/Card.svelte';
   import Badge from '../components/ui/Badge.svelte';
-  import Loading from '../components/ui/Loading.svelte';
+  import Table from '../components/ui/Table.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
+  import { formatDateTime } from '../lib/format';
   import { formatAmount, type Payment } from '@bits-pay/shared';
 
   interface OverviewStats {
@@ -38,65 +40,62 @@
   }
 
   onMount(load);
+
+  const statDefs = $derived([
+    { label: 'Total Transaksi', value: stats?.total_payments ?? 0, cls: 'text-text' },
+    { label: 'Hari Ini', value: stats?.today_payments ?? 0, cls: 'text-text' },
+    { label: 'Pending', value: stats?.pending_count ?? 0, cls: 'text-warning' },
+    { label: 'Sukses', value: stats?.success_count ?? 0, cls: 'text-success' },
+  ]);
 </script>
 
-{#if loading}
-  <Loading />
-{:else if error}
+{#if error}
   <ErrorState {error} onRetry={load} />
 {:else}
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <Card>
-      <div class="text-center">
-        <p class="text-sm text-neutral-400">Total Transaksi</p>
-        <p class="text-3xl font-bold text-neutral-900">{stats?.total_payments ?? 0}</p>
-      </div>
-    </Card>
-    <Card>
-      <div class="text-center">
-        <p class="text-sm text-neutral-400">Hari Ini</p>
-        <p class="text-3xl font-bold text-neutral-900">{stats?.today_payments ?? 0}</p>
-      </div>
-    </Card>
-    <Card>
-      <div class="text-center">
-        <p class="text-sm text-neutral-400">Pending</p>
-        <p class="text-3xl font-bold text-warning">{stats?.pending_count ?? 0}</p>
-      </div>
-    </Card>
-    <Card>
-      <div class="text-center">
-        <p class="text-sm text-neutral-400">Sukses</p>
-        <p class="text-3xl font-bold text-success">{stats?.success_count ?? 0}</p>
-      </div>
-    </Card>
+  <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    {#each statDefs as s (s.label)}
+      <Card class="p-4 sm:p-5" padding={false}>
+        {#if loading}
+          <div class="skeleton mb-2.5 h-3 w-20"></div>
+          <div class="skeleton h-8 w-16"></div>
+        {:else}
+          <p class="text-xs font-medium text-muted">{s.label}</p>
+          <p class="num mt-1.5 text-2xl font-semibold sm:text-[28px] {s.cls}">{s.value}</p>
+        {/if}
+      </Card>
+    {/each}
   </div>
 
-  <div class="mt-6">
-    <Card title="Transaksi Terbaru">
-      {#if recent.length === 0}
-        <EmptyState message="Belum ada transaksi." />
+  <div class="mt-5 sm:mt-6">
+    <Card title="Transaksi Terbaru" padding={false} class="overflow-hidden">
+      {#snippet actions()}
+        <button
+          class="text-[13px] font-semibold text-accent hover:text-accent-strong"
+          onclick={() => push('/payments')}
+        >
+          Lihat semua →
+        </button>
+      {/snippet}
+      {#if !loading && recent.length === 0}
+        <EmptyState
+          title="Belum ada transaksi"
+          message="Transaksi QRIS yang masuk akan tampil di sini."
+          icon="payments"
+        />
       {:else}
-        <table class="w-full text-left text-sm">
-          <thead class="border-b border-neutral-100">
-            <tr>
-              <th class="px-4 py-3 font-medium text-neutral-400">Order ID</th>
-              <th class="px-4 py-3 font-medium text-neutral-400">Amount</th>
-              <th class="px-4 py-3 font-medium text-neutral-400">Status</th>
-              <th class="px-4 py-3 font-medium text-neutral-400">Tanggal</th>
+        <Table headers={['Order ID', 'Jumlah', 'Status', 'Waktu']} {loading} loadingRows={5}>
+          {#each recent as p (p.id)}
+            <tr
+              class="cursor-pointer transition-colors duration-150 hover:bg-surface-2/50"
+              onclick={() => push(`/payments/${p.id}`)}
+            >
+              <td class="num px-4 py-3 text-xs first:pl-5">{p.order_id || '-'}</td>
+              <td class="num px-4 py-3 font-medium">{formatAmount(p.amount)}</td>
+              <td class="px-4 py-3"><Badge status={p.status} /></td>
+              <td class="px-4 py-3 text-xs text-faint last:pr-5">{formatDateTime(p.created_at)}</td>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-100">
-            {#each recent as p}
-              <tr>
-                <td class="px-4 py-3 font-mono text-xs">{p.order_id || '-'}</td>
-                <td class="px-4 py-3">{formatAmount(p.amount)}</td>
-                <td class="px-4 py-3"><Badge status={p.status} /></td>
-                <td class="px-4 py-3 text-neutral-400">{new Date(p.created_at).toLocaleDateString('id-ID')}</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+          {/each}
+        </Table>
       {/if}
     </Card>
   </div>

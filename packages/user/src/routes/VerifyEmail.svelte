@@ -3,9 +3,10 @@
   import { push } from 'svelte-spa-router';
   import { api } from '../lib/api';
   import { getQueryParam } from '../lib/query';
-  import Card from '../components/ui/Card.svelte';
+  import AuthLayout from '../components/layout/AuthLayout.svelte';
   import Loading from '../components/ui/Loading.svelte';
   import Button from '../components/ui/Button.svelte';
+  import Icon from '../components/ui/Icon.svelte';
 
   let status = $state<'loading' | 'success' | 'error'>('loading');
   let message = $state('');
@@ -18,9 +19,7 @@
       return;
     }
     try {
-      await api.get<{ message: string }>(
-        `/auth/verify-email?token=${encodeURIComponent(token)}`,
-      );
+      await api.get<{ message: string }>(`/auth/verify-email?token=${encodeURIComponent(token)}`);
       status = 'success';
       setTimeout(() => push('/login'), 2000);
     } catch (e) {
@@ -30,21 +29,29 @@
   });
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-  <Card padding={true}>
-    <div class="w-full max-w-sm text-center">
-      {#if status === 'loading'}
-        <Loading text="Memverifikasi email..." />
-      {:else if status === 'success'}
-        <h2 class="text-xl font-bold text-primary-500">Email terverifikasi!</h2>
-        <p class="mt-2 text-sm text-neutral-600">Mengalihkan ke halaman login...</p>
-      {:else}
-        <h2 class="text-xl font-bold text-error">Verifikasi gagal</h2>
-        <p class="mt-2 text-sm text-neutral-600">{message}</p>
-        <div class="mt-4">
-          <Button block onclick={() => push('/login')}>Ke halaman login</Button>
-        </div>
-      {/if}
+<AuthLayout
+  title={status === 'success' ? 'Email terverifikasi' : status === 'error' ? 'Verifikasi gagal' : 'Verifikasi email'}
+>
+  {#if status === 'loading'}
+    <Loading text="Memverifikasi email..." />
+  {:else if status === 'success'}
+    <div class="flex flex-col items-start gap-3">
+      <div
+        class="flex h-11 w-11 items-center justify-center rounded-[10px] border border-success/30 bg-success/10 text-success"
+      >
+        <Icon name="check" size={20} />
+      </div>
+      <p class="text-sm text-muted">Email kamu sudah aktif. Mengalihkan ke halaman login...</p>
     </div>
-  </Card>
-</div>
+  {:else}
+    <div class="flex flex-col items-start gap-3">
+      <div
+        class="flex h-11 w-11 items-center justify-center rounded-[10px] border border-error/30 bg-error/10 text-error"
+      >
+        <Icon name="alert" size={20} />
+      </div>
+      <p class="text-sm text-muted">{message}</p>
+      <Button block onclick={() => push('/login')}>Ke halaman login</Button>
+    </div>
+  {/if}
+</AuthLayout>

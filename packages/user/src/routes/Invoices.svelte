@@ -6,10 +6,12 @@
   import Button from '../components/ui/Button.svelte';
   import Modal from '../components/ui/Modal.svelte';
   import Pagination from '../components/ui/Pagination.svelte';
-  import Loading from '../components/ui/Loading.svelte';
+  import Table from '../components/ui/Table.svelte';
   import ErrorState from '../components/ui/ErrorState.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
+  import Icon from '../components/ui/Icon.svelte';
   import { showToast } from '../lib/toast';
+  import { formatDate } from '../lib/format';
   import { formatAmount, type Invoice, type InvoiceStatus } from '@bits-pay/shared';
 
   interface InvoicePage {
@@ -93,7 +95,10 @@
     const formData = new FormData(form);
     formData.set('amount', String(payData.amount_due));
     try {
-      const res = await api.upload<PaymentConfirmResponse>(`/app/payments/${payData.id}/confirm`, formData);
+      const res = await api.upload<PaymentConfirmResponse>(
+        `/app/payments/${payData.id}/confirm`,
+        formData,
+      );
       confirmResult = res;
       showToast('Pembayaran berhasil dikonfirmasi', 'success');
       await load(currentPage);
@@ -112,99 +117,112 @@
   };
 </script>
 
-<div class="mb-4">
-  <h2 class="text-xl font-semibold">Tagihan</h2>
-</div>
-
-{#if loading}
-  <Loading />
-{:else if error}
+{#if error}
   <ErrorState {error} onRetry={() => load()} />
-{:else if data && data.items.length === 0}
-  <EmptyState message="Tidak ada tagihan." />
-{:else if data}
-  <Card>
-    <table class="w-full text-left text-sm">
-      <thead class="border-b border-neutral-100">
-        <tr>
-          <th class="px-4 py-3 font-medium text-neutral-400">ID Tagihan</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Tier</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Jumlah</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Status</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Jatuh Tempo</th>
-          <th class="px-4 py-3 font-medium text-neutral-400">Aksi</th>
+{:else if !loading && data && data.items.length === 0}
+  <EmptyState
+    title="Tidak ada tagihan"
+    message="Tagihan langganan premium akan muncul di sini."
+    icon="invoices"
+  />
+{:else}
+  <Card padding={false} class="overflow-hidden">
+    <Table headers={['ID Tagihan', 'Tier', 'Jumlah', 'Status', 'Jatuh Tempo', '']} {loading}>
+      {#each data?.items ?? [] as inv (inv.id)}
+        <tr class="transition-colors duration-150 hover:bg-surface-2/50">
+          <td class="num px-4 py-3 text-xs first:pl-5">{inv.id.slice(0, 8)}…</td>
+          <td class="px-4 py-3 text-sm">
+            {inv.tier === 'premium_monthly' ? 'Bulanan' : 'Tahunan'}
+          </td>
+          <td class="num px-4 py-3 whitespace-nowrap">{formatAmount(inv.amount)}</td>
+          <td class="px-4 py-3"><Badge status={inv.status} /></td>
+          <td class="px-4 py-3 text-xs whitespace-nowrap text-faint">{formatDate(inv.due_at)}</td>
+          <td class="px-4 py-3 text-right last:pr-5">
+            {#if inv.status === 'pending'}
+              <Button size="sm" loading={payLoading && payingId === inv.id} onclick={() => handlePay(inv)}>
+                Bayar
+              </Button>
+            {:else}
+              <span class="text-xs text-faint">{statusLabels[inv.status]}</span>
+            {/if}
+          </td>
         </tr>
-      </thead>
-      <tbody class="divide-y divide-neutral-100">
-        {#each data.items as inv}
-          <tr class="hover:bg-neutral-50">
-            <td class="px-4 py-3 font-mono text-xs">{inv.id.slice(0, 8)}...</td>
-            <td class="px-4 py-3 text-sm capitalize">
-              {inv.tier === 'premium_monthly' ? 'Bulanan' : 'Tahunan'}
-            </td>
-            <td class="px-4 py-3">{formatAmount(inv.amount)}</td>
-            <td class="px-4 py-3"><Badge status={inv.status} /></td>
-            <td class="px-4 py-3 text-neutral-400">{new Date(inv.due_at).toLocaleDateString('id-ID')}</td>
-            <td class="px-4 py-3">
-              {#if inv.status === 'pending'}
-                <Button size="sm" loading={payLoading && payingId === inv.id} onclick={() => handlePay(inv)}>
-                  Bayar
-                </Button>
-              {:else}
-                <span class="text-sm text-neutral-400">{statusLabels[inv.status]}</span>
-              {/if}
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-    <Pagination page={data.page} perPage={data.per_page} total={data.total} onPageChange={(p) => load(p)} />
+      {/each}
+    </Table>
+    {#if data}
+      <Pagination
+        page={data.page}
+        perPage={data.per_page}
+        total={data.total}
+        onPageChange={(p) => load(p)}
+      />
+    {/if}
   </Card>
 {/if}
 
-<Modal open={payModal} title="Bayar Tagihan" onClose={() => { payModal = false; confirmResult = null; }}>
+<Modal
+  open={payModal}
+  title="Bayar Tagihan"
+  onClose={() => {
+    payModal = false;
+    confirmResult = null;
+  }}
+>
   {#if payData && !confirmResult}
     <div class="flex flex-col items-center gap-4">
-      <img src={payData.qr_image} alt="QRIS" class="w-64 rounded-lg border" />
+      <div class="rounded-lg border border-border bg-white p-4">
+        <img src={payData.qr_image} alt="Kode QRIS tagihan" class="w-56 max-w-full" />
+      </div>
       <div class="text-center">
-        <p class="text-sm text-neutral-400">Total Pembayaran</p>
-        <p class="text-2xl font-bold text-neutral-900">{formatAmount(payData.amount_due)}</p>
-        <p class="text-xs text-neutral-400">(termasuk kode unik)</p>
+        <p class="text-xs font-medium text-faint">Total Pembayaran</p>
+        <p class="num mt-1 text-2xl font-semibold text-text">{formatAmount(payData.amount_due)}</p>
+        <p class="mt-1 text-xs text-faint">(sudah termasuk kode unik)</p>
       </div>
       <form class="w-full space-y-4" onsubmit={handleConfirm}>
         <div>
-          <label for="invoice-proof" class="mb-1 block text-sm font-medium text-neutral-600">Upload Bukti Transfer</label>
+          <label for="invoice-proof" class="mb-1.5 block text-[13px] font-medium text-muted">
+            Upload Bukti Transfer
+          </label>
           <input
             id="invoice-proof"
             type="file"
             name="proof_image"
             accept="image/jpeg,image/png"
             required
-            class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            class="w-full rounded-lg border border-border-strong bg-bg px-3 py-2.5 text-sm text-text file:mr-3 file:rounded-md file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-text focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-soft)] focus:outline-none"
           />
         </div>
         {#if confirmError}
-          <p class="text-sm text-error">{confirmError}</p>
+          <p class="text-sm text-error" role="alert">{confirmError}</p>
         {/if}
-        <Button type="submit" block loading={confirmLoading}>
-          Konfirmasi Pembayaran
-        </Button>
+        <Button type="submit" block loading={confirmLoading}>Konfirmasi Pembayaran</Button>
       </form>
     </div>
   {:else if confirmResult}
-    <div class="flex flex-col items-center gap-4 text-center">
-      <div class="flex h-16 w-16 items-center justify-center rounded-full {confirmResult.status === 'success' ? 'bg-success/10' : 'bg-warning/15'}">
-        <span class="text-2xl">{confirmResult.status === 'success' ? '&#10003;' : '&#9888;'}</span>
+    <div class="flex flex-col items-center gap-3 py-2 text-center">
+      <div
+        class="flex h-14 w-14 items-center justify-center rounded-full border {confirmResult.status ===
+        'success'
+          ? 'border-success/30 bg-success/10 text-success'
+          : 'border-warning/30 bg-warning/10 text-warning'}"
+      >
+        <Icon name={confirmResult.status === 'success' ? 'check' : 'clock'} size={26} />
       </div>
-      <p class="text-lg font-semibold">
+      <p class="text-lg font-semibold text-text">
         {confirmResult.status === 'success' ? 'Pembayaran Dikonfirmasi' : 'Menunggu Review'}
       </p>
-      <p class="text-sm text-neutral-400">{confirmResult.message || 'Status: ' + confirmResult.status}</p>
+      <p class="text-sm text-muted">
+        {confirmResult.message || 'Status: ' + confirmResult.status}
+      </p>
       {#if confirmResult.ocr_amount}
-        <p class="text-sm text-neutral-600">Terbaca: {formatAmount(confirmResult.ocr_amount)}</p>
+        <p class="text-sm text-muted">
+          Terbaca: <span class="num">{formatAmount(confirmResult.ocr_amount)}</span>
+        </p>
       {/if}
       {#if confirmResult.ocr_confidence}
-        <p class="text-sm text-neutral-600">Akurasi OCR: {confirmResult.ocr_confidence}%</p>
+        <p class="text-sm text-muted">
+          Akurasi OCR: <span class="num">{confirmResult.ocr_confidence}%</span>
+        </p>
       {/if}
     </div>
   {/if}

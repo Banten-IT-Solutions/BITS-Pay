@@ -6,20 +6,42 @@
     subtitle?: string;
     padding?: boolean;
     class?: string;
+    actions?: Snippet;
     children?: Snippet;
   }
-  let { title = '', subtitle = '', padding = true, class: className = '', children }: Props =
-    $props();
+  let {
+    title = '',
+    subtitle = '',
+    padding = true,
+    class: className = '',
+    actions,
+    children,
+  }: Props = $props();
 </script>
 
-<div class="rounded-xl border border-neutral-100 bg-white shadow-sm {className}" class:p-6={padding}>
-  {#if title}
-    <div class="mb-4">
-      <h3 class="text-lg font-semibold text-neutral-900">{title}</h3>
-      {#if subtitle}
-        <p class="text-sm text-neutral-600">{subtitle}</p>
+<div class="rounded-[10px] border border-border bg-surface {className}">
+  {#if title || actions}
+    <div class="flex items-center justify-between gap-3 px-4 pt-4 sm:px-5 sm:pt-5 {padding ? 'pb-0 mb-4' : 'pb-4'}">
+      <div class="min-w-0">
+        {#if title}
+          <h3 class="font-display text-[15px] font-semibold tracking-tight text-text">{title}</h3>
+        {/if}
+        {#if subtitle}
+          <p class="mt-0.5 text-sm text-muted">{subtitle}</p>
+        {/if}
+      </div>
+      {#if actions}
+        <div class="flex flex-none items-center gap-2">
+          {@render actions()}
+        </div>
       {/if}
     </div>
   {/if}
-  {@render children?.()}
+  {#if padding}
+    <div class={title || actions ? 'px-4 pb-4 sm:px-5 sm:pb-5' : 'p-4 sm:p-5'}>
+      {@render children?.()}
+    </div>
+  {:else}
+    {@render children?.()}
+  {/if}
 </div>

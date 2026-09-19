@@ -1,35 +1,174 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-primary-50: oklch(0.97 0.02 250);
-  --color-primary-100: oklch(0.93 0.04 250);
-  --color-primary-200: oklch(0.87 0.06 250);
-  --color-primary-400: oklch(0.68 0.12 250);
-  --color-primary-500: oklch(0.55 0.15 250);
-  --color-primary-600: oklch(0.45 0.13 250);
-  --color-primary-700: oklch(0.35 0.1 250);
-  --color-primary-900: oklch(0.2 0.06 250);
-  --color-accent-500: oklch(0.62 0.16 165);
-  --color-accent-600: oklch(0.52 0.14 165);
-  --color-neutral-50: oklch(0.99 0.005 80);
-  --color-neutral-100: oklch(0.97 0.005 80);
-  --color-neutral-200: oklch(0.93 0.005 80);
-  --color-neutral-400: oklch(0.8 0.01 80);
-  --color-neutral-600: oklch(0.55 0.01 80);
-  --color-neutral-900: oklch(0.2 0.01 80);
-  --color-success: oklch(0.62 0.16 165);
-  --color-warning: oklch(0.75 0.15 80);
-  --color-error: oklch(0.55 0.2 30);
-  --color-info: oklch(0.6 0.1 250);
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+/* ── Runtime tokens — satu bahasa dengan landing
+   (packages/web/src/style.css). Dark via [data-theme] di <html>. */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f2f2f3;
+  --border: #e3e4e7;
+  --border-strong: #c9cbd0;
+  --text: #17181c;
+  --muted: #555a63;
+  --faint: #878c96;
+  --accent: #e0272f;
+  --accent-strong: #ba1e25;
+  --accent-soft: rgba(224, 39, 47, 0.08);
+  --on-accent: #ffffff;
+  --success: #157a3e;
+  --warning: #b45309;
+  --error: #b91c1c;
+  --info: #1d4ed8;
+  --shadow: 0 1px 2px rgba(20, 22, 26, 0.05), 0 6px 20px rgba(20, 22, 26, 0.06);
+  --shadow-lg: 0 2px 6px rgba(20, 22, 26, 0.07), 0 18px 44px rgba(20, 22, 26, 0.1);
+  --radius: 8px;
+  --radius-lg: 10px;
 }
 
-html,
-body {
-  @apply m-0 p-0;
-  font-family: var(--font-sans);
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0e0f12;
+  --surface: #16181d;
+  --surface-2: #1d2026;
+  --border: #262932;
+  --border-strong: #3b3f49;
+  --text: #ecedef;
+  --muted: #a3a8b1;
+  --faint: #6e737d;
+  --accent: #e0272f;
+  --accent-strong: #f03a42;
+  --accent-soft: rgba(224, 39, 47, 0.14);
+  --on-accent: #ffffff;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --info: #60a5fa;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.45), 0 18px 44px rgba(0, 0, 0, 0.5);
 }
-body {
-  @apply bg-neutral-50 text-neutral-900 antialiased;
+
+/* Map runtime var → utility Tailwind. `inline` supaya var tetap runtime
+   (dark mode tanpa duplikasi kelas, opacity modifier pakai color-mix). */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  --shadow-card: var(--shadow);
+  --shadow-overlay: var(--shadow-lg);
+}
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition:
+      background-color 0.25s,
+      color 0.25s;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  /* Angka rupiah/id: monospace + tabular-nums, konsisten di semua halaman. */
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Skeleton loading — pulse halus, bukan spinner penuh layar. */
+.skeleton {
+  border-radius: 6px;
+  background: var(--surface-2);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Motion: hanya feedback state change 150–250ms. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+  }
 }
