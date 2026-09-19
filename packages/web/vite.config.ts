@@ -23,6 +23,20 @@ function redirectHtmlPages(): Connect.NextHandleFunction {
 
 export default defineConfig({
   appType: 'mpa',
+  // Dev: SPA user/admin jalan terpisah (7003/7004). Di produksi keduanya
+  // di-copy ke dist/{user,admin} dan di-serve worker yang sama.
+  server: {
+    proxy: {
+      '/user': 'http://localhost:7003',
+      '/admin': 'http://localhost:7004',
+    },
+  },
+  preview: {
+    proxy: {
+      '/user': 'http://localhost:7003',
+      '/admin': 'http://localhost:7004',
+    },
+  },
   plugins: [
     {
       name: 'redirect-html-pages',

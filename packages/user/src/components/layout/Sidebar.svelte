@@ -17,6 +17,7 @@
     { href: '/payments', icon: 'payments', label: 'Pembayaran' },
     { href: '/invoices', icon: 'invoices', label: 'Tagihan' },
     { href: '/subscription', icon: 'subscription', label: 'Langganan' },
+    { href: '/profile', icon: 'user', label: 'Profil' },
   ];
 
   function isActive(href: string): boolean {

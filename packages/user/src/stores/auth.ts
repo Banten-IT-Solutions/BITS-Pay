@@ -19,6 +19,12 @@ function createAuthStore() {
   return {
     subscribe,
     async init() {
+      // Handoff token lintas origin khusus dev (landing 7002 -> user 7003).
+      const urlToken = new URLSearchParams(window.location.search).get('token');
+      if (urlToken) {
+        localStorage.setItem('token', urlToken);
+        history.replaceState(null, '', window.location.pathname + window.location.hash);
+      }
       const t = localStorage.getItem('token');
       if (!t) {
         update((s) => ({ ...s, loading: false }));
@@ -48,6 +54,16 @@ function createAuthStore() {
     logout() {
       localStorage.removeItem('token');
       set({ user: null, token: null, loading: false });
+    },
+    updateUser(partialUser: Partial<UserPublic>) {
+      update((s) => {
+        if (!s.user) return s;
+        return { ...s, user: { ...s.user, ...partialUser } };
+      });
+    },
+    setToken(token: string) {
+      localStorage.setItem('token', token);
+      update((s) => ({ ...s, token }));
     },
   };
 }

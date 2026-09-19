@@ -35,6 +35,9 @@ export type UserPublic = Pick<User, 'id' | 'email' | 'name' | 'avatar_url' | 'ti
 export interface UserMe extends UserPublic {
   tier_expires_at: string | null;
   is_trial: boolean;
+  email_verified?: boolean;
+  has_password?: boolean;
+  created_at?: string;
 }
 
 export interface UserSignupInput {

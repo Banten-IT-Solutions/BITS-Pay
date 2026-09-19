@@ -12,6 +12,7 @@ import OAuthCallback from './routes/OAuthCallback.svelte';
 import VerifyEmail from './routes/VerifyEmail.svelte';
 import ResetPassword from './routes/ResetPassword.svelte';
 import ForgotPassword from './routes/ForgotPassword.svelte';
+import Profile from './routes/Profile.svelte';
 
 const routes: RouteDefinition = {
   '/login': Login,
@@ -19,6 +20,7 @@ const routes: RouteDefinition = {
   '/verify-email': VerifyEmail,
   '/reset-password': ResetPassword,
   '/forgot-password': ForgotPassword,
+  '/profile': Profile,
   '/': Overview,
   '/workspaces': Workspaces,
   '/workspaces/:id': WorkspaceDetail,

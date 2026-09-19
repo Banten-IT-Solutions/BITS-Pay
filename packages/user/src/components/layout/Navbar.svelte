@@ -20,6 +20,7 @@
     '/payments': 'Pembayaran',
     '/invoices': 'Tagihan',
     '/subscription': 'Langganan',
+    '/profile': 'Profil Akun',
     '/login': 'Masuk',
   };
 
@@ -105,8 +106,17 @@
               <p class="truncate text-sm font-semibold text-text">{$auth.user.name}</p>
               <p class="truncate text-xs text-faint">{$auth.user.email}</p>
             </div>
-            <button
+            <a
+              href="#/profile"
               class="mt-1 flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
+              onclick={() => (menuOpen = false)}
+              role="menuitem"
+            >
+              <Icon name="user" size={16} />
+              Profil Akun
+            </a>
+            <button
+              class="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
               onclick={logout}
               role="menuitem"
             >

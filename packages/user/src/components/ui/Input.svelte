@@ -14,7 +14,7 @@
   let {
     type = 'text',
     label = '',
-    value = '',
+    value = $bindable(''),
     placeholder = '',
     disabled = false,
     required = false,
@@ -36,7 +36,7 @@
     {type}
     {name}
     {step}
-    {value}
+    bind:value
     {placeholder}
     {disabled}
     {required}

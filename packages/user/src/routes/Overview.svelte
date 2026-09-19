@@ -23,6 +23,10 @@
   let error = $state('');
 
   async function load() {
+    if (!localStorage.getItem('token')) {
+      push('/login');
+      return;
+    }
     loading = true;
     error = '';
     try {
