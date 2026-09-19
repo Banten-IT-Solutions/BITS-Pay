@@ -288,7 +288,7 @@
                 disabled={!hasProfileChanges || savingProfile}
                 loading={savingProfile}
               >
-                Simpan Perubahan
+                Simpan
               </Button>
               {#if hasProfileChanges}
                 <button
