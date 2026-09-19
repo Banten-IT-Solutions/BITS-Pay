@@ -313,15 +313,15 @@
         </Card>
 
         <!-- Card 2: Keamanan & Kata Sandi -->
-        <Card class="p-5 sm:p-6">
-          <div class="flex items-start gap-3.5 border-b border-border pb-4">
+        <Card class="p-4 sm:p-5">
+          <div class="flex items-center gap-3 border-b border-border pb-3">
             <div
-              class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-accent-soft text-accent"
+              class="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-accent-soft text-accent"
             >
-              <Icon name="lock" size={20} />
+              <Icon name="lock" size={16} />
             </div>
             <div>
-              <h2 class="font-display text-base font-semibold text-text">Kata Sandi</h2>
+              <h2 class="font-display text-sm font-semibold text-text">Kata Sandi</h2>
               <p class="text-xs text-muted">
                 Perbarui kata sandi untuk melindungi keamanan akun BITS Pay kamu.
               </p>
@@ -330,10 +330,10 @@
 
           {#if !me.has_password}
             <div
-              class="mt-4 rounded-lg border border-accent/20 bg-accent-soft p-3.5 text-xs text-text"
+              class="mt-3 rounded-lg border border-accent/20 bg-accent-soft p-3 text-xs text-text"
             >
-              <div class="flex items-start gap-2.5">
-                <Icon name="shield" size={16} class="mt-0.5 flex-none text-accent" />
+              <div class="flex items-start gap-2">
+                <Icon name="shield" size={15} class="mt-0.5 flex-none text-accent" />
                 <p class="text-muted leading-relaxed">
                   Akun ini terhubung via <strong class="text-text">Google OAuth</strong> dan belum
                   memiliki kata sandi mandiri. Kamu dapat membuat kata sandi di bawah untuk masuk
@@ -343,42 +343,62 @@
             </div>
           {/if}
 
-          <form onsubmit={handleChangePassword} class="mt-5 space-y-4">
+          <form onsubmit={handleChangePassword} class="mt-4 space-y-3">
             {#if me.has_password}
-              <Input
-                label="Kata Sandi Saat Ini"
-                type="password"
-                bind:value={currentPassword}
-                placeholder="Masukkan kata sandi saat ini"
-                required
-                disabled={savingPassword}
-              />
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Input
+                  label="Kata Sandi Saat Ini"
+                  type="password"
+                  bind:value={currentPassword}
+                  placeholder="Masukkan kata sandi saat ini"
+                  required
+                  disabled={savingPassword}
+                />
+                <Input
+                  label="Kata Sandi Baru"
+                  type="password"
+                  bind:value={newPassword}
+                  placeholder="Minimal 8 karakter"
+                  required
+                  disabled={savingPassword}
+                />
+                <Input
+                  label="Konfirmasi Kata Sandi"
+                  type="password"
+                  bind:value={confirmPassword}
+                  placeholder="Ulangi kata sandi baru"
+                  required
+                  disabled={savingPassword}
+                  error={passwordMismatch ? 'Kata sandi tidak cocok' : ''}
+                />
+              </div>
+            {:else}
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Input
+                  label="Kata Sandi Baru"
+                  type="password"
+                  bind:value={newPassword}
+                  placeholder="Minimal 8 karakter"
+                  required
+                  disabled={savingPassword}
+                />
+                <Input
+                  label="Konfirmasi Kata Sandi"
+                  type="password"
+                  bind:value={confirmPassword}
+                  placeholder="Ulangi kata sandi baru"
+                  required
+                  disabled={savingPassword}
+                  error={passwordMismatch ? 'Kata sandi tidak cocok' : ''}
+                />
+              </div>
             {/if}
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input
-                label="Kata Sandi Baru"
-                type="password"
-                bind:value={newPassword}
-                placeholder="Minimal 8 karakter"
-                required
-                disabled={savingPassword}
-              />
-              <Input
-                label="Konfirmasi Kata Sandi"
-                type="password"
-                bind:value={confirmPassword}
-                placeholder="Ulangi kata sandi baru"
-                required
-                disabled={savingPassword}
-                error={passwordMismatch ? 'Kata sandi konfirmasi tidak cocok' : ''}
-              />
-            </div>
-
-            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
               <Button
                 type="submit"
                 variant="secondary"
+                size="sm"
                 disabled={!canSubmitPassword}
                 loading={savingPassword}
               >
