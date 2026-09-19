@@ -113,7 +113,7 @@
               role="menuitem"
             >
               <Icon name="user" size={16} />
-              Profil Akun
+              Profil
             </a>
             <button
               class="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"

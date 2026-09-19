@@ -69,7 +69,7 @@
             <span class="font-display text-xs font-semibold text-text">Paket Kamu</span>
             <Badge status="premium" dot={false} />
           </div>
-          <p class="mt-1 text-[11px] text-muted">Semua fitur premium aktif.</p>
+          <p class="mt-1 text-[11px] text-muted">Kuota 3.000 transaksi/bulan.</p>
           <a
             href="#/subscription"
             onclick={onNavigate}
@@ -85,7 +85,7 @@
             <span class="font-display text-xs font-semibold text-text">Paket Kamu</span>
             <Badge status="free" dot={false} label="Free" />
           </div>
-          <p class="mt-1 text-[11px] leading-tight text-muted">Buka transaksi tanpa batas.</p>
+          <p class="mt-1 text-[11px] leading-tight text-muted">Buka kuota hingga 3.000 tx/bulan.</p>
           <a
             href="#/subscription"
             onclick={onNavigate}
