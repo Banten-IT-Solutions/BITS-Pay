@@ -165,7 +165,7 @@ describe('POST /v1/charges', () => {
     expect(d.amount_due).toBe(150001);
     expect(d.currency).toBe('IDR');
     expect(d.status).toBe('pending');
-    expect(String(d.qr_image)).toMatch(/^data:image\/png;base64,/);
+    expect(String(d.qr_image)).toMatch(/^data:image\/svg\+xml;base64,/);
     expect(String(d.qris_dynamic)).toMatch(/^00020101/);
 
     const isoRe = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;

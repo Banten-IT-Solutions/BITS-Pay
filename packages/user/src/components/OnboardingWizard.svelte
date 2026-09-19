@@ -15,9 +15,10 @@
   }
   let { open, onClose }: Props = $props();
 
-  const STEPS = ['Workspace', 'App & API Key', 'Test Charge'];
-  // Test charge pakai API key app yang baru dibuat (public API /v1/charges
-  // pakai Bearer sk_..., bukan JWT) — api client selalu kirim JWT, jadi fetch langsung.
+  const STEPS = ['Workspace', 'Aplikasi & API Key', 'Uji Coba Pembayaran'];
+  // Uji coba pembayaran pakai API key aplikasi yang baru dibuat (public API
+  // /v1/charges pakai Bearer sk_..., bukan JWT) — api client selalu kirim JWT,
+  // jadi fetch langsung.
   const API_BASE = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:7001`;
 
   let step = $state<1 | 2 | 3>(1);
@@ -89,7 +90,7 @@
       });
       apiKey = app.api_key;
       callbackSecret = app.callback_secret;
-      showToast('App berhasil dibuat', 'success');
+      showToast('Aplikasi berhasil dibuat', 'success');
     } catch (e) {
       showToast((e as Error).message, 'error');
     } finally {
@@ -100,7 +101,7 @@
   async function testCharge() {
     const amountNum = Number(amount);
     if (!orderId || !Number.isInteger(amountNum) || amountNum < 100) {
-      showToast('Order ID wajib diisi dan amount minimal Rp100', 'error');
+      showToast('Order ID wajib diisi dan nominal minimal Rp100', 'error');
       return;
     }
     submitting = true;
@@ -114,17 +115,17 @@
         body: JSON.stringify({
           order_id: orderId,
           amount: amountNum,
-          description: 'Test charge onboarding',
+          description: 'Tagihan uji coba onboarding',
         }),
       });
       const json = (await res.json()) as
         | { success: true; data: ChargeCreateResponse }
         | { success: false; error: { message: string } };
       if (!res.ok || !json.success) {
-        throw new Error(json.success ? 'Gagal membuat charge' : json.error.message);
+        throw new Error(json.success ? 'Gagal membuat tagihan' : json.error.message);
       }
       charge = json.data;
-      showToast('Test charge berhasil dibuat', 'success');
+      showToast('Tagihan uji coba berhasil dibuat', 'success');
     } catch (e) {
       showToast((e as Error).message, 'error');
     } finally {
@@ -179,7 +180,7 @@
 
     {#if step === 1}
       <p class="mb-4 text-sm text-muted">
-        Mulai dengan membuat workspace — wadah untuk app dan transaksi bisnismu.
+        Mulai dengan membuat workspace — wadah untuk aplikasi dan transaksi bisnismu.
       </p>
       <form
         onsubmit={(e) => {
@@ -214,7 +215,7 @@
     {:else if step === 2}
       {#if !apiKey}
         <p class="mb-4 text-sm text-muted">
-          Buat app pertama untuk mendapatkan API key integrasi.
+          Buat aplikasi pertamamu untuk mendapatkan API key integrasi.
         </p>
         <form
           onsubmit={(e) => {
@@ -224,7 +225,7 @@
           class="space-y-4"
         >
           <Input
-            label="Nama App"
+            label="Nama Aplikasi"
             value={appName}
             oninput={(e) => (appName = (e.target as HTMLInputElement).value)}
             placeholder="Website Toko Saya"
@@ -241,7 +242,7 @@
             <Button variant="ghost" onclick={() => (step = 1)}>Kembali</Button>
             <div class="flex gap-2">
               <Button variant="ghost" onclick={() => (step = 3)}>Lewati</Button>
-              <Button type="submit" loading={submitting} disabled={!appName}>Buat App</Button>
+              <Button type="submit" loading={submitting} disabled={!appName}>Buat Aplikasi</Button>
             </div>
           </div>
         </form>
@@ -294,12 +295,12 @@
     {:else}
       {#if !charge}
         <p class="mb-4 text-sm text-muted">
-          Coba buat test charge pertama memakai API key app barumu.
+          Coba terbitkan tagihan uji coba pertama menggunakan API key aplikasi barumu.
         </p>
         {#if !apiKey}
           <p class="mb-4 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-muted">
-            Kamu melewati pembuatan app, jadi test charge dilewati. Buat app dulu dari menu Apps
-            untuk mencoba.
+            Kamu melewati pembuatan aplikasi, jadi uji coba pembayaran dilewati. Buat aplikasi
+            terlebih dahulu dari menu Apps untuk mencoba.
           </p>
         {/if}
         <form
@@ -318,7 +319,7 @@
             disabled={!apiKey}
           />
           <Input
-            label="Amount (Rp)"
+            label="Nominal (Rp)"
             type="number"
             step="1"
             value={amount}
@@ -332,14 +333,14 @@
             <div class="flex gap-2">
               <Button variant="ghost" onclick={selesai}>Lewati</Button>
               <Button type="submit" loading={submitting} disabled={!apiKey || !orderId || !amount}>
-                Buat Charge
+                Buat Tagihan
               </Button>
             </div>
           </div>
         </form>
       {:else}
         <div class="mb-4 flex items-center gap-2">
-          <h4 class="text-sm font-semibold text-text">Charge berhasil dibuat</h4>
+          <h4 class="text-sm font-semibold text-text">Tagihan berhasil dibuat</h4>
           <Badge status={charge.status} />
         </div>
         <div class="mb-4 rounded-lg border border-border bg-surface-2 p-3">
@@ -349,7 +350,7 @@
               <dd class="num text-text">{orderId}</dd>
             </div>
             <div class="flex justify-between gap-3">
-              <dt class="text-faint">Amount</dt>
+              <dt class="text-faint">Nominal</dt>
               <dd class="num text-text">{rupiah(charge.amount)}</dd>
             </div>
             <div class="flex justify-between gap-3">
@@ -365,7 +366,7 @@
         {#if charge.qr_image}
           <img
             src={charge.qr_image}
-            alt="QRIS test charge"
+            alt="Kode QRIS tagihan uji coba"
             class="mx-auto mb-4 h-44 w-44 rounded-lg border border-border bg-white p-2"
           />
         {/if}

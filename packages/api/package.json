@@ -12,15 +12,17 @@
   },
   "dependencies": {
     "@bits-pay/shared": "workspace:*",
-    "hono": "^4.13.7",
-    "zod": "^4.5.4",
-    "jose": "^6.2.12",
     "bcryptjs": "^3.0.3",
-    "bits-qris": "^1.5.0"
+    "bits-qris": "^1.5.0",
+    "hono": "^4.13.7",
+    "jose": "^6.2.12",
+    "qrcode": "^1.5.4",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260914.1",
+    "@types/qrcode": "^1.5.6",
     "typescript": "6.0.3",
-    "wrangler": "^4.129.0",
-    "@cloudflare/workers-types": "^5.20260914.1"
+    "wrangler": "^4.129.0"
   }
 }
