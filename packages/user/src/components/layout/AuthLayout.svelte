@@ -105,7 +105,7 @@
                 <h3 class="font-display text-sm font-semibold tracking-tight text-text leading-snug">
                   {f.title}
                 </h3>
-                <span class="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[9px] font-medium text-faint border border-border/50">
+                <span class="rounded-md border border-accent/25 bg-accent-soft px-1.5 py-0.5 font-mono text-[9px] font-semibold tracking-wider text-accent uppercase">
                   {f.tag}
                 </span>
               </div>
