@@ -1,10 +1,11 @@
 <script lang="ts">
   import type { PaymentStatus } from '@bits-pay/shared';
   interface Props {
-    status: PaymentStatus | 'active' | 'suspended' | 'banned' | string;
+    status: PaymentStatus | 'active' | 'suspended' | 'banned' | 'verified' | 'unverified' | string;
+    label?: string;
     dot?: boolean;
   }
-  let { status, dot = true }: Props = $props();
+  let { status, label, dot = true }: Props = $props();
 
   const styles: Record<string, string> = {
     success: 'bg-success/10 text-success border-success/30',
@@ -22,6 +23,8 @@
     premium: 'bg-accent-soft text-accent border-accent/30',
     premium_monthly: 'bg-accent-soft text-accent border-accent/30',
     premium_yearly: 'bg-accent-soft text-accent border-accent/30',
+    verified: 'bg-success/10 text-success border-success/30',
+    unverified: 'bg-warning/10 text-warning border-warning/30',
   };
   const labels: Record<string, string> = {
     success: 'Sukses',
@@ -39,6 +42,8 @@
     premium: 'Premium',
     premium_monthly: 'Premium Bulanan',
     premium_yearly: 'Premium Tahunan',
+    verified: 'Email Terverifikasi',
+    unverified: 'Belum Terverifikasi',
   };
 
   let cls = $derived(styles[status] || 'bg-surface-2 text-muted border-border');
@@ -50,5 +55,5 @@
   {#if dot}
     <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
   {/if}
-  {labels[status] || status}
+  {label || labels[status] || status}
 </span>

@@ -200,22 +200,18 @@
                 required
                 disabled={savingProfile}
               />
-              <div class="mt-1.5 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-1.5 text-xs">
-                  {#if me.email_verified}
-                    <span class="inline-flex items-center gap-1 font-medium text-success">
-                      <Icon name="check" size={13} />
-                      Email terverifikasi
-                    </span>
-                  {:else}
-                    <span class="inline-flex items-center gap-1 font-medium text-warning">
-                      <Icon name="alert" size={13} />
-                      Belum terverifikasi
-                    </span>
-                  {/if}
-                </div>
+              <div class="mt-2 flex items-center justify-between gap-2">
+                <Badge
+                  status={me.email_verified ? 'verified' : 'unverified'}
+                  label={me.email_verified ? 'Email terverifikasi' : 'Belum terverifikasi'}
+                  dot={true}
+                />
                 {#if emailChanged}
-                  <span class="font-mono text-[11px] text-accent">Perubahan terdeteksi</span>
+                  <span
+                    class="inline-flex items-center rounded-md border border-accent/30 bg-accent-soft px-2 py-0.5 font-mono text-[11px] font-medium text-accent"
+                  >
+                    Perubahan terdeteksi
+                  </span>
                 {/if}
               </div>
             </div>
@@ -366,9 +362,14 @@
             <h3 class="mt-3 truncate font-display text-base font-semibold text-text">{me.name}</h3>
             <p class="truncate text-xs text-muted">{me.email}</p>
 
-            <div class="mt-3 flex items-center justify-center gap-2">
+            <div class="mt-3 flex flex-wrap items-center justify-center gap-1.5">
               <Badge status={me.tier === 'premium' ? 'premium' : 'free'} dot={false} />
               <Badge status={me.status} dot={true} />
+              <Badge
+                status={me.email_verified ? 'verified' : 'unverified'}
+                label={me.email_verified ? 'Terverifikasi' : 'Belum Verifikasi'}
+                dot={true}
+              />
             </div>
           </div>
 
