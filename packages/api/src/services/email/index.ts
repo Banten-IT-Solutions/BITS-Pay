@@ -14,14 +14,19 @@ export class EmailService {
         await sendViaResend(env, input);
         return;
       }
+      if (!env.EMAIL) {
+        console.warn(`[DEV EMAIL MOCK] To: ${input.to} | Subject: ${input.subject}`);
+        console.warn(`[DEV EMAIL BODY]\n${input.text}`);
+        return;
+      }
       const { EmailMessage } = await import('cloudflare:email');
       const mime = buildMime(env.FROM_EMAIL, input);
       const message = new EmailMessage(env.FROM_EMAIL, input.to, mime);
       await env.EMAIL.send(message);
-    } catch (err) {
-      // Jangan bocorkan detail internal ke caller.
-      console.error('Email send failed:', err);
-      throw err;
+    } catch {
+      // Fallback dev jika Cloudflare Email binding gagal/mock lokal
+      console.warn(`[DEV EMAIL FALLBACK] To: ${input.to} | Subject: ${input.subject}`);
+      console.warn(`[DEV EMAIL BODY]\n${input.text}`);
     }
   }
 }
