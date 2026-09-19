@@ -65,6 +65,14 @@ function closeModal(id: string) {
 function showError(id: string, msg: string) {
   const el = document.getElementById(id)!;
   el.textContent = msg;
+  el.className = 'form-error';
+  el.style.display = 'block';
+}
+
+function showSuccess(id: string, msg: string) {
+  const el = document.getElementById(id)!;
+  el.textContent = msg;
+  el.className = 'form-success';
   el.style.display = 'block';
 }
 
@@ -148,8 +156,11 @@ async function handleSignup(e: Event) {
       showError('signup-error', json.error?.message || 'Daftar gagal');
       return;
     }
-    // Verifikasi email dikirim; jangan auto-login (akun belum terverifikasi).
-    showError('signup-error', 'Cek email kamu untuk verifikasi akun.');
+    // Verifikasi email dikirim; beri instruksi sukses.
+    showSuccess(
+      'signup-error',
+      'Pendaftaran berhasil! Silakan cek email kamu untuk verifikasi akun.',
+    );
   } catch {
     showError('signup-error', 'Gagal terhubung ke server');
   }

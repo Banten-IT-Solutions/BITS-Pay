@@ -1498,6 +1498,15 @@ code {
   font-size: 0.85rem;
   margin-bottom: 1rem;
 }
+.form-success {
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
 .form-footer {
   text-align: center;
   font-size: 0.85rem;
