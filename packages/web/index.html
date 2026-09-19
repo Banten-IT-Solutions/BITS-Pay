@@ -218,9 +218,9 @@
       <div class="container">
         <div class="section-head reveal">
           <span class="section-kicker">cara kerja</span>
-          <h2 class="section-title">Dari charge ke konfirmasi dalam empat langkah</h2>
+          <h2 class="section-title">Dari Pembuatan Tagihan ke Konfirmasi dalam Empat Langkah</h2>
           <p class="section-desc">
-            Urutan yang sama di tiap transaksi &mdash; semua bisa diotomasi via API.
+            Urutan yang sama di tiap transaksi &mdash; semua berjalan otomatis via API.
           </p>
         </div>
         <div class="terminal reveal">
@@ -233,10 +233,10 @@
             <li class="reveal" style="--d: 0s">
               <span class="log-idx">[1]</span>
               <div class="log-body">
-                <h3>Buat Charge</h3>
+                <h3>Terbitkan Tagihan</h3>
                 <p>
-                  Panggil <code>POST /v1/charges</code> dengan <code>order_id</code> &amp; amount.
-                  QRIS dinamis terbit, nominal dihitung saat itu juga.
+                  Panggil endpoint <code>POST /v1/charges</code> dengan <code>order_id</code> &amp;
+                  nominal. QRIS dinamis langsung aktif beserta kode unik uniknya.
                 </p>
               </div>
               <span class="log-tag">201</span>
@@ -244,10 +244,10 @@
             <li class="reveal" style="--d: 0.12s">
               <span class="log-idx">[2]</span>
               <div class="log-body">
-                <h3>Pelanggan Scan &amp; Bayar</h3>
+                <h3>Pelanggan Pindai &amp; Bayar</h3>
                 <p>
-                  Nominal sudah termasuk kode unik 3 digit. Transfer dengan nominal tidak persis
-                  akan gagal verifikasi.
+                  Nominal sudah termasuk kode unik 3 digit. Pembeli cukup scan dengan aplikasi bank
+                  atau e-wallet apa pun.
                 </p>
               </div>
               <span class="log-tag">Scan</span>
@@ -255,18 +255,21 @@
             <li class="reveal" style="--d: 0.24s">
               <span class="log-idx">[3]</span>
               <div class="log-body">
-                <h3>Upload Bukti Transfer</h3>
-                <p>Pelanggan kirim screenshot transfer. Tidak ada rekap pembayaran manual.</p>
+                <h3>Unggah Bukti Transfer</h3>
+                <p>
+                  Pelanggan melampirkan tangkapan layar struk pembayaran tanpa perlu verifikasi
+                  manual.
+                </p>
               </div>
               <span class="log-tag">Upload</span>
             </li>
             <li class="reveal" style="--d: 0.36s">
               <span class="log-idx">[4]</span>
               <div class="log-body">
-                <h3>Auto-Confirm</h3>
+                <h3>Konfirmasi Otomatis</h3>
                 <p>
-                  OCR baca nominal, cocokkan dengan <code>amount_due</code>, kirim callback webhook
-                  bertanda tangan. Selesai.
+                  OCR mencocokkan nominal <code>amount_due</code>, lalu sistem mengirim webhook
+                  callback bertanda tangan HMAC ke server aplikasimu.
                 </p>
               </div>
               <span class="log-tag ok">Success</span>
@@ -281,8 +284,11 @@
       <div class="container">
         <div class="section-head reveal">
           <span class="section-kicker">fitur</span>
-          <h2 class="section-title">Dibangun untuk flow pembayaran, bukan sekadar QR</h2>
-          <p class="section-desc">Setiap fitur ada karena alur pembayaran nyata membutuhkannya.</p>
+          <h2 class="section-title">Dirancang Khusus untuk Kelancaran Transaksi</h2>
+          <p class="section-desc">
+            Setiap fitur dihadirkan untuk memastikan pembayaran tercatat otomatis, aman, dan tanpa
+            hambatan.
+          </p>
         </div>
         <div class="features-grid">
           <div class="feature-card reveal" style="--d: 0s">
@@ -330,11 +336,11 @@
                   <path d="M8 9l1.5 6M12 9v6M16 9l-1.5 6" />
                 </svg>
               </div>
-              <h3>OCR Auto-Confirm</h3>
+              <h3>Konfirmasi Otomatis OCR</h3>
             </div>
             <p>
-              Bukti transfer dibaca otomatis. Confidence rendah? Masuk review manual admin, bukan
-              hang di pending.
+              Bukti transfer dibaca otomatis oleh mesin OCR cerdas. Bila foto buram, transaksi
+              dialihkan ke tinjauan manual admin.
             </p>
             <p class="feature-point"><span>&#10003;</span>Terkonfirmasi dalam hitungan detik</p>
           </div>

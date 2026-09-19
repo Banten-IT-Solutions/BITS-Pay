@@ -33,3 +33,14 @@ body {
 body {
   @apply bg-neutral-50 text-neutral-900 antialiased;
 }
+
+a,
+button,
+[role='button'] {
+  cursor: pointer;
+}
+
+button:disabled,
+[role='button'][aria-disabled='true'] {
+  cursor: not-allowed;
+}
