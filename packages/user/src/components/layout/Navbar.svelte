@@ -20,7 +20,7 @@
     '/payments': 'Pembayaran',
     '/invoices': 'Tagihan',
     '/subscription': 'Langganan',
-    '/profile': 'Profil Akun',
+    '/profile': 'Profil',
     '/login': 'Masuk',
   };
 
